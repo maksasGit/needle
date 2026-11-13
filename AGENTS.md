@@ -384,6 +384,8 @@ These project-specific decisions supplement the standards above. Preserve them u
 
 ### Workspace and communication
 
+- Per user instruction on 2026-11-13, after finishing an authorized task and its relevant checks, commit the task's changes and push to the connected GitHub repository. Choose concise, descriptive commit messages without asking each time. This authorizes Git pushes, not game publishing or deployment. Inspect the diff, exclude secrets and unrelated changes, and report failures instead of force-pushing.
+
 - The repository/application is in `needle-in-a-haystack/`; run npm commands there.
 - Communicate with the user in Russian. English must also be available in the game under section 12; Russian communication does not replace that requirement.
 - Explain the intended change before editing, work in small iterations, and preserve working features.
