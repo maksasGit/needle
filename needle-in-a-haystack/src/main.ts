@@ -15,6 +15,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <main id="game"></main><div class="crosshair" aria-hidden="true">+</div><div id="aim-label"></div>
 <div id="joystick" role="group" data-label="joystick"><span class="joystick-guide" aria-hidden="true">✥</span><span class="joystick-knob" aria-hidden="true"></span></div>
 ${text('action', 'button', 'id="interact" aria-describedby="aim-label"')}
+<button id="jump" data-label="jump"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V4M5 11l7-7 7 7M5 21h14"/></svg></button>
 <section class="hud"><div>${icon('M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M14.5 8H11a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9.5 M12 6v12')}${text('coins')}<strong id="coins">0</strong></div><div>${icon('M5 9h14l2 12H3L5 9 M8 9V6a4 4 0 0 1 8 0v3')}${text('inventory')}<strong id="inventory">0 / 5</strong></div><div>${icon('M3 21 12 3l9 18H3 M7 20l5-13 5 13 M9 17h6 M10 13h4')}${text('remaining')}<strong id="remaining">${config.totalHay}</strong></div><div>${icon('M12 21V9 M6 3v6h12V3 M12 3v6')}${text('tool')}<strong id="tool"></strong></div></section>
 <footer><span class="dot"></span><span id="status" role="status" aria-live="polite"></span>${text('shop', 'button', 'id="shop"')}<button id="help" data-label="help">?</button><button id="settings" data-label="settings">⚙</button></footer>
 <div id="save-notice" role="status"></div>

@@ -72,7 +72,10 @@ try {
   const page = await context.newPage();
   page.on('pageerror', error => report.errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') report.errors.push(message.text()); });
-  page.on('requestfailed', request => report.network.push({url:request.url(),failure:request.failure()}));
+  page.on('requestfailed', request => {
+    if (request.failure()?.errorText === 'net::ERR_ABORTED' && /cart(?:_colored)?-|cartModel-|model-loader-/.test(request.url())) return; // Intentional reload can cancel optional loading.
+    report.network.push({url:request.url(),failure:request.failure()});
+  });
   page.on('response', response => { if (response.status() >= 400) report.network.push({url:response.url(),status:response.status()}); });
   const boot = performance.now();
   await page.goto(`${base}/embedded/index.html?diagnostics`);
@@ -81,6 +84,8 @@ try {
   assert.equal(await page.locator('canvas').count(), 1);
   assert.equal(await page.locator('#remaining').textContent(), String(config.totalHay));
   report.tests.push('Production build starts from a nested URL with CSS and one canvas');
+  await page.waitForFunction(()=>window.needleDiagnostics().cartModelStatus==='ready');
+  report.tests.push('User cart GLB loads from a nested production URL after first frame');
   await page.screenshot({path:path.join(output,'desktop.png')}); report.screenshots.push('desktop.png');
   await page.locator('#settings').click();
   await page.locator('#language').selectOption('en');
@@ -156,7 +161,7 @@ try {
     await page.setViewportSize({width,height});
     await page.waitForFunction(before=>window.needleDiagnostics().samples >= before + 2,beforeSample,{timeout:30000});
     const layout = await page.evaluate(() => {
-      const ids = ['#interact','#shop','#settings','#help','#joystick'];
+      const ids = ['#interact','#jump','#shop','#settings','#help','#joystick'];
       const controls = ids.map(id=>document.querySelector(id)).map(node => {
         const r=node.getBoundingClientRect(); return {id:node.id||node.dataset.move,x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};
       });
@@ -303,6 +308,10 @@ try {
   assert.equal(await touch.locator('#joystick').getAttribute('data-active'),'false');
   await touch.locator('#settings-dialog [data-close]').tap();
   report.tests.push('Joystick dead zone, two-finger move/look, release, touch cancellation and menu reset');
+  await touch.locator('#jump').tap();
+  await touch.waitForFunction(()=>window.needleDiagnostics().height>0.3);
+  await touch.waitForFunction(()=>window.needleDiagnostics().grounded);
+  report.tests.push('Touch jump button launches and lands');
   await touchContext.close();
   const deniedContext=await browser.newContext({viewport:{width:800,height:600}});
   await deniedContext.addInitScript(()=>{
@@ -321,6 +330,46 @@ try {
   assert.equal(await denied.locator('#inventory').textContent(),'1 / 5');
   report.tests.push('Denied/quota-limited storage shows warning and gameplay remains usable');
   await deniedContext.close();
+  const climbContext=await browser.newContext({viewport:{width:1280,height:720}});
+  const climb=await climbContext.newPage();
+  climb.on('pageerror',error=>report.errors.push(error.message));
+  await climb.goto(`${base}/embedded/index.html?diagnostics`);
+  await climb.waitForFunction(()=>window.needleDiagnostics?.().readyMs>0);
+  await climb.keyboard.down('Space');
+  await climb.waitForFunction(()=>window.needleDiagnostics().height>0.5);
+  await climb.waitForFunction(()=>window.needleDiagnostics().grounded);
+  await climb.waitForTimeout(200);
+  assert.equal(await climb.evaluate(()=>window.needleDiagnostics().height),0,'Held Space does not repeat jumps');
+  await climb.keyboard.up('Space');
+  await climb.keyboard.down('KeyW');
+  try { await climb.waitForFunction(()=>window.needleDiagnostics().height>1.8,{timeout:10000}); }
+  finally { await climb.keyboard.up('KeyW'); }
+  await climb.waitForTimeout(100);
+  const summitHeight=await climb.evaluate(()=>window.needleDiagnostics().height);
+  assert.ok(summitHeight>1.8);
+  await climb.keyboard.press('Space');
+  await climb.waitForFunction(h=>window.needleDiagnostics().height>h+0.5,summitHeight);
+  await climb.waitForFunction(()=>window.needleDiagnostics().grounded);
+  await climb.screenshot({path:path.join(output,'hay-climbing.png')});report.screenshots.push('hay-climbing.png');
+  await climb.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+  await climb.reload();await climb.waitForFunction(()=>window.needleDiagnostics?.().readyMs>0);
+  assert.ok(Math.abs(await climb.evaluate(()=>window.needleDiagnostics().height)-summitHeight)<.1,'Reload restores hay support under feet');
+  await climb.keyboard.down('KeyS');
+  try { await climb.waitForFunction(()=>window.needleDiagnostics().height<.05 && window.needleDiagnostics().grounded,{timeout:10000}); }
+  finally { await climb.keyboard.up('KeyS'); }
+  report.tests.push('Keyboard jump, held-key protection, walk/jump on hay, elevated save reload and return to ground');
+  await climbContext.close();
+  const fallbackContext=await browser.newContext({viewport:{width:800,height:600}});
+  const fallback=await fallbackContext.newPage();
+  await fallback.route('**/*.glb',route=>route.abort('failed'));
+  await fallback.goto(`${base}/embedded/index.html?diagnostics`);
+  await fallback.waitForFunction(()=>window.needleDiagnostics?.().cartModelStatus==='fallback');
+  await walkKeyboardTo(fallback,-1.6,1.25);await lookAt(fallback,-1.6,1.2,-.8);
+  await fallback.locator('#interact').click();await fallback.waitForFunction(()=>window.needleDiagnostics().inventory===1);
+  await walkKeyboardTo(fallback,2.7,2.4);await lookAt(fallback,2.7,1.05,.6);
+  await fallback.locator('#interact').click();await fallback.waitForFunction(()=>window.needleDiagnostics().coins===1);
+  report.tests.push('GLB load failure preserves procedural cart, collection and immediate sale');
+  await fallbackContext.close();
   // Explicit favicon requests are ignored; all game dependencies must resolve locally.
   assert.equal(report.errors.length,0,report.errors.join('\n'));
   assert.equal(report.network.length,0,JSON.stringify(report.network));

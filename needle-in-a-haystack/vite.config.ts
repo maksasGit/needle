@@ -7,8 +7,9 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
+            { name: 'model-loader', test: /three[\\/]examples[\\/]jsm[\\/]/, priority: 5 },
             { name: 'three-core', test: /three[\\/]build[\\/]three\.core/, priority: 20 },
-            { name: 'three-renderer', test: /node_modules[\\/]three/, priority: 10 },
+            { name: 'three-renderer', test: /three[\\/]build[\\/]three\.module/, priority: 10 },
           ],
         },
       },

@@ -26,6 +26,21 @@ export class Haystack {
   private supportHeight = config.hayVisual.layerHeight * config.hayVisual.contactScale;
   get count() { return this.pieces.length; }
   get activeCount() { return this.active.size; }
+  surfaceHeight(x: number, z: number) {
+    x -= this.group.position.x; z -= this.group.position.z;
+    if (Math.hypot(x, z) > config.hay.radius + config.playerRadius) return 0;
+    let height = 0;
+    // A continuous support envelope over column tops bridges tiny strand gaps.
+    // O(columns), never a raycast against all 20,000 instances.
+    for (const column of this.columns) {
+      const top = column.pieces.at(-1);
+      if (!top) continue;
+      const distance = Math.hypot(x - column.x, z - column.z);
+      height = Math.max(height, top.position.y + config.hayVisual.stalkWidth / 2 -
+        Math.max(0, distance - config.hayVisual.spacing * 0.6) * config.locomotion.surfaceSlope);
+    }
+    return height;
+  }
   constructor() {
     const settings = config.hayVisual;
     const geometry = createStrawGeometry();

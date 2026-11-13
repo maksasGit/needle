@@ -2,6 +2,7 @@
   "browser": "Installed Chrome, headless; synthetic desktop/touch viewports, not a real phone",
   "tests": [
     "Production build starts from a nested URL with CSS and one canvas",
+    "User cart GLB loads from a nested production URL after first frame",
     "English and reduced-motion settings persist after reload",
     "Clicks never move the player; keyboard walking enables a single range-limited collection",
     "Optional keyboard movement still works after clicking a UI button",
@@ -19,7 +20,10 @@
     "Focus loss pauses and resets input, focus restores safely",
     "Emulated touch action works; rotation preserves progress",
     "Joystick dead zone, two-finger move/look, release, touch cancellation and menu reset",
-    "Denied/quota-limited storage shows warning and gameplay remains usable"
+    "Touch jump button launches and lands",
+    "Denied/quota-limited storage shows warning and gameplay remains usable",
+    "Keyboard jump, held-key protection, walk/jump on hay, elevated save reload and return to ground",
+    "GLB load failure preserves procedural cart, collection and immediate sale"
   ],
   "errors": [],
   "network": [],
@@ -28,12 +32,12 @@
       "viewport": "360x640",
       "metrics": {
         "samples": 2,
-        "frameMs": 6.943333333333336,
-        "calls": 51,
-        "triangles": 240773,
-        "geometries": 34,
-        "textures": 3,
-        "readyMs": 149.7000000178814,
+        "frameMs": 40.73666666666667,
+        "calls": 36,
+        "triangles": 243400,
+        "geometries": 35,
+        "textures": 4,
+        "readyMs": 512.4000000059605,
         "remaining": 19998,
         "inventory": 0,
         "coins": 2,
@@ -41,23 +45,26 @@
         "won": false,
         "paused": false,
         "position": [
-          2.5991150628923236,
-          2.371381344741342
+          2.6151896029888544,
+          2.376467994426264
         ],
-        "yaw": -0.05689122551687964,
-        "pitch": -0.2746853332519531
+        "yaw": -0.04770470207937921,
+        "pitch": -0.2740628967285156,
+        "height": 0,
+        "grounded": true,
+        "cartModelStatus": "ready"
       }
     },
     {
       "viewport": "600x800",
       "metrics": {
         "samples": 4,
-        "frameMs": 6.945000000000001,
-        "calls": 55,
-        "triangles": 240821,
-        "geometries": 34,
-        "textures": 3,
-        "readyMs": 149.7000000178814,
+        "frameMs": 41.31333333333334,
+        "calls": 38,
+        "triangles": 243424,
+        "geometries": 35,
+        "textures": 4,
+        "readyMs": 512.4000000059605,
         "remaining": 19998,
         "inventory": 0,
         "coins": 2,
@@ -65,23 +72,26 @@
         "won": false,
         "paused": false,
         "position": [
-          2.5991150628923236,
-          2.371381344741342
+          2.6151896029888544,
+          2.376467994426264
         ],
-        "yaw": -0.05689122551687964,
-        "pitch": -0.2746853332519531
+        "yaw": -0.04770470207937921,
+        "pitch": -0.2740628967285156,
+        "height": 0,
+        "grounded": true,
+        "cartModelStatus": "ready"
       }
     },
     {
       "viewport": "720x720",
       "metrics": {
         "samples": 6,
-        "frameMs": 6.941666666666666,
-        "calls": 55,
-        "triangles": 240821,
-        "geometries": 34,
-        "textures": 3,
-        "readyMs": 149.7000000178814,
+        "frameMs": 39.23166666666666,
+        "calls": 39,
+        "triangles": 243436,
+        "geometries": 35,
+        "textures": 4,
+        "readyMs": 512.4000000059605,
         "remaining": 19998,
         "inventory": 0,
         "coins": 2,
@@ -89,23 +99,26 @@
         "won": false,
         "paused": false,
         "position": [
-          2.5991150628923236,
-          2.371381344741342
+          2.6151896029888544,
+          2.376467994426264
         ],
-        "yaw": -0.05689122551687964,
-        "pitch": -0.2746853332519531
+        "yaw": -0.04770470207937921,
+        "pitch": -0.2740628967285156,
+        "height": 0,
+        "grounded": true,
+        "cartModelStatus": "ready"
       }
     },
     {
       "viewport": "800x600",
       "metrics": {
         "samples": 8,
-        "frameMs": 6.939999999999994,
-        "calls": 67,
-        "triangles": 240965,
-        "geometries": 34,
-        "textures": 3,
-        "readyMs": 149.7000000178814,
+        "frameMs": 43.74333333333331,
+        "calls": 50,
+        "triangles": 243568,
+        "geometries": 35,
+        "textures": 4,
+        "readyMs": 512.4000000059605,
         "remaining": 19998,
         "inventory": 0,
         "coins": 2,
@@ -113,23 +126,26 @@
         "won": false,
         "paused": false,
         "position": [
-          2.5991150628923236,
-          2.371381344741342
+          2.6151896029888544,
+          2.376467994426264
         ],
-        "yaw": -0.05689122551687964,
-        "pitch": -0.2746853332519531
+        "yaw": -0.04770470207937921,
+        "pitch": -0.2740628967285156,
+        "height": 0,
+        "grounded": true,
+        "cartModelStatus": "ready"
       }
     },
     {
       "viewport": "1280x720",
       "metrics": {
         "samples": 10,
-        "frameMs": 13.076666666666657,
-        "calls": 73,
-        "triangles": 241037,
-        "geometries": 34,
-        "textures": 3,
-        "readyMs": 149.7000000178814,
+        "frameMs": 55.66333333333332,
+        "calls": 56,
+        "triangles": 243640,
+        "geometries": 35,
+        "textures": 4,
+        "readyMs": 512.4000000059605,
         "remaining": 19998,
         "inventory": 0,
         "coins": 2,
@@ -137,23 +153,26 @@
         "won": false,
         "paused": false,
         "position": [
-          2.5991150628923236,
-          2.371381344741342
+          2.6151896029888544,
+          2.376467994426264
         ],
-        "yaw": -0.05689122551687964,
-        "pitch": -0.2746853332519531
+        "yaw": -0.04770470207937921,
+        "pitch": -0.2740628967285156,
+        "height": 0,
+        "grounded": true,
+        "cartModelStatus": "ready"
       }
     },
     {
       "viewport": "1680x720",
       "metrics": {
         "samples": 12,
-        "frameMs": 17.125,
-        "calls": 80,
-        "triangles": 241121,
-        "geometries": 34,
-        "textures": 3,
-        "readyMs": 149.7000000178814,
+        "frameMs": 53.46666666666667,
+        "calls": 63,
+        "triangles": 243724,
+        "geometries": 35,
+        "textures": 4,
+        "readyMs": 512.4000000059605,
         "remaining": 19998,
         "inventory": 0,
         "coins": 2,
@@ -161,23 +180,26 @@
         "won": false,
         "paused": false,
         "position": [
-          2.5991150628923236,
-          2.371381344741342
+          2.6151896029888544,
+          2.376467994426264
         ],
-        "yaw": -0.05689122551687964,
-        "pitch": -0.2746853332519531
+        "yaw": -0.04770470207937921,
+        "pitch": -0.2740628967285156,
+        "height": 0,
+        "grounded": true,
+        "cartModelStatus": "ready"
       }
     },
     {
       "viewport": "844x390",
       "metrics": {
         "samples": 14,
-        "frameMs": 6.9433333333333245,
-        "calls": 79,
-        "triangles": 241109,
-        "geometries": 34,
-        "textures": 3,
-        "readyMs": 149.7000000178814,
+        "frameMs": 40.50333333333341,
+        "calls": 62,
+        "triangles": 243712,
+        "geometries": 35,
+        "textures": 4,
+        "readyMs": 512.4000000059605,
         "remaining": 19998,
         "inventory": 0,
         "coins": 2,
@@ -185,23 +207,26 @@
         "won": false,
         "paused": false,
         "position": [
-          2.5991150628923236,
-          2.371381344741342
+          2.6151896029888544,
+          2.376467994426264
         ],
-        "yaw": -0.05689122551687964,
-        "pitch": -0.2746853332519531
+        "yaw": -0.04770470207937921,
+        "pitch": -0.2740628967285156,
+        "height": 0,
+        "grounded": true,
+        "cartModelStatus": "ready"
       }
     },
     {
       "viewport": "320x568",
       "metrics": {
         "samples": 16,
-        "frameMs": 6.94333333333334,
-        "calls": 51,
-        "triangles": 240773,
-        "geometries": 34,
-        "textures": 3,
-        "readyMs": 149.7000000178814,
+        "frameMs": 33.096666666666714,
+        "calls": 36,
+        "triangles": 243400,
+        "geometries": 35,
+        "textures": 4,
+        "readyMs": 512.4000000059605,
         "remaining": 19998,
         "inventory": 0,
         "coins": 2,
@@ -209,11 +234,14 @@
         "won": false,
         "paused": false,
         "position": [
-          2.5991150628923236,
-          2.371381344741342
+          2.6151896029888544,
+          2.376467994426264
         ],
-        "yaw": -0.05689122551687964,
-        "pitch": -0.2746853332519531
+        "yaw": -0.04770470207937921,
+        "pitch": -0.2740628967285156,
+        "height": 0,
+        "grounded": true,
+        "cartModelStatus": "ready"
       }
     }
   ],
@@ -221,21 +249,22 @@
     "desktop.png",
     "target-outline.png",
     "portrait.png",
-    "touch-landscape.png"
+    "touch-landscape.png",
+    "hay-climbing.png"
   ],
-  "firstLoadMs": 916.6092000000001,
-  "saveBytes": 426914,
+  "firstLoadMs": 952.1734999999999,
+  "saveBytes": 426915,
   "restartHeapBytes": [
-    13193324,
-    12965352,
-    13128024,
-    13263240,
-    13280192,
-    13295068,
-    13342932,
-    13645396,
-    13668768,
-    13669620
+    13567648,
+    13658104,
+    13432016,
+    13589612,
+    13583520,
+    13942040,
+    13902012,
+    14011744,
+    14131484,
+    14230312
   ],
   "passed": true
 }

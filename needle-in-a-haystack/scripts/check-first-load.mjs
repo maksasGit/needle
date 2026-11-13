@@ -49,7 +49,11 @@ try {
       const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
       const page=await context.newPage();const session=await context.newCDPSession(page);
       page.on('pageerror',error=>report.errors.push({profile:profile.name,run,error:error.message}));
-      page.on('requestfailed',request=>report.errors.push({profile:profile.name,run,error:request.failure(),url:request.url()}));
+      let closing = false;
+      page.on('requestfailed',request=>{
+        if (closing && request.failure()?.errorText === 'net::ERR_ABORTED') return;
+        report.errors.push({profile:profile.name,run,error:request.failure(),url:request.url()});
+      });
       await session.send('Network.enable');await session.send('Network.setCacheDisabled',{cacheDisabled:true});
       await session.send('Network.setBypassServiceWorker',{bypass:true});
       await session.send('Network.emulateNetworkConditions',{offline:false,latency:profile.latency,downloadThroughput:profile.download,uploadThroughput:profile.upload});
@@ -98,7 +102,7 @@ try {
         await page.screenshot({path:path.join(output,`${profile.name}-landscape.png`)});
       }
       console.log(JSON.stringify({profile:profile.name,run:run+1,firstFrameMs:Math.round(firstFrameMs),firstMovementMs:Math.round(firstMovementMs),firstCollectionMs:Math.round(firstCollectionMs),encodedBytes:sample.initialEncodedBytes}));
-      await context.close();
+      closing = true; await context.close();
     }
     const median=key=>result.runs.map(r=>r[key]).sort((a,b)=>a-b)[1];
     result.medians={firstFrameMs:median('firstFrameMs'),firstMovementMs:median('firstMovementMs'),firstCollectionMs:median('firstCollectionMs')};

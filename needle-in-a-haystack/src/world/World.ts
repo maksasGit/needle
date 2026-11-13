@@ -14,6 +14,11 @@ export class World {
   private needleAdded = false;
   reducedMotion = false;
   private shadowDirty = true;
+  private disposed = false;
+  private modelRequested = false;
+  cartModelStatus: 'idle' | 'loading' | 'ready' | 'fallback' = 'idle';
+  private cart = new THREE.Group();
+  private cartFallback = new THREE.Group();
   private materials = new Map<number, THREE.MeshStandardMaterial>();
   private geometries = new Map<string, THREE.BoxGeometry>();
 
@@ -35,8 +40,9 @@ export class World {
     this.scene.add(this.needle.group);
     let seed = 42;
     const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-    const cart = new THREE.Group(); cart.position.set(config.cart.x, 0, config.cart.z);
-    cart.add(this.cargo.mesh);
+    this.cart.position.set(config.cart.x, 0, config.cart.z);
+    this.cart.add(this.cargo.mesh, this.cartFallback);
+    const cart = this.cartFallback;
     this.box(cart, [1.6, 0.15, 1.55], [0, 0.64, 0], 0x6d3c24);
     for (let i = 0; i < 3; i++) {
       for (const x of [-0.78, 0.78]) this.box(cart, [0.1, 0.16, 1.65], [x, 0.8 + i * 0.22, 0], 0xb86b38);
@@ -47,7 +53,7 @@ export class World {
       wheel.rotation.z = Math.PI / 2; wheel.position.set(x, 0.36, z); wheel.castShadow = true; cart.add(wheel);
       this.box(cart, [0.17, 0.12, 0.12], [x * 1.08, 0.36, z], 0xffe14a);
     }
-    this.scene.add(cart); this.tag(cart, 'cart');
+    this.scene.add(this.cart); this.tag(this.cart, 'cart');
     for (let i = -3; i <= 3; i++) {
       this.box(this.scene, [0.23, 1.1, 0.23], [i * 2, 0.44, -6.8], 0xfff4d6);
       this.box(this.scene, [0.23, 1.1, 0.23], [-6.8, 0.44, i * 2], 0xfff4d6);
@@ -97,6 +103,28 @@ export class World {
     mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
   hayIdAt(slot?: number) { return this.hay.idAt(slot); }
+  loadNoncriticalAssets() {
+    if (this.modelRequested || this.disposed) return;
+    this.modelRequested = true;
+    this.cartModelStatus = 'loading';
+    // Keep the first frame and interactions independent of model transfer/parse.
+    void import('./cartModel').then(module => module.loadCartModel()).then(model => {
+      if (this.disposed) { disposeTree(model); return; }
+      this.cartFallback.visible = false;
+      for (let i = this.pickables.length - 1; i >= 0; i--) {
+        if (this.pickables[i].parent === this.cartFallback) this.pickables.splice(i, 1);
+      }
+      this.cart.add(model); this.tag(model, 'cart');
+      this.cargo.mesh.scale.set(0.67, 1, 0.98);
+      this.cargo.mesh.position.y = 0.2;
+      this.cartModelStatus = 'ready';
+      this.shadowDirty = true;
+    }).catch(() => {
+      this.cartModelStatus = 'fallback';
+      // The procedural cart remains fully playable when offline/loading fails.
+    });
+  }
+  surfaceHeight(x: number, z: number) { return this.hay.surfaceHeight(x, z); }
   get cargoCount() { return this.cargo.count; }
   snapshotHay() { return this.hay.snapshot(); }
   restore(hay: string, sold: number, won: boolean, sourceContactScale: number = config.hayVisual.contactScale, sourceTotal: number = config.totalHay) {
@@ -136,7 +164,7 @@ export class World {
     this.hay.update(dt); this.cargo.update(dt); this.needle.update(dt, this.reducedMotion);
   }
   takeShadowUpdate() { const dirty = this.shadowDirty; this.shadowDirty = false; return dirty; }
-  dispose() { disposeTree(this.scene); this.pickables.length = 0; this.materials.clear(); this.geometries.clear(); }
+  dispose() { this.disposed = true; disposeTree(this.scene); this.pickables.length = 0; this.materials.clear(); this.geometries.clear(); }
   private tag(group: THREE.Group, target: Target) {
     group.traverse(object => { if (object instanceof THREE.Mesh) { object.userData.target = target; this.pickables.push(object); } });
   }

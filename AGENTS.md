@@ -396,6 +396,7 @@ These project-specific decisions supplement the standards above. Preserve them u
 
 - Three.js + TypeScript + Vite + HTML/CSS, without React or a heavyweight physics engine unless necessary and authorized.
 - The current view is first person with a PerspectiveCamera. This supersedes the original orthographic/isometric camera requirement.
+- Jumping uses Space on desktop and a large touch button on mobile. The haystack is walkable using a lightweight continuous support surface derived from its current column heights; do not restore its former solid circular movement obstacle. Recompute support after loading and let the player fall when hay beneath them is removed. Keep cart and world-boundary collisions.
 - Mouse and touch remain fully supported. Per user instruction on 2026-11-13, tap-to-approach is removed: desktop movement uses WASD/arrows with mouse look; mobile uses an analog virtual joystick plus touch look/actions. Ground taps never move the player; object taps only interact within range. No keyboard is required on mobile.
 - One tap starts one collection action. No hold-to-collect or automatic repeating collection. Taps during collection do not queue actions.
 - Collect only within interaction range. Manual movement cancels the route and unfinished collection.

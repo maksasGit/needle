@@ -454,3 +454,34 @@ for(let frame=0;frame<180;frame++)largeCargo.update(1/60);
 assert.equal(largeCargo.activeCount,0);
 console.log('Expanded progression checks passed: 80 capacity, 10 speed levels, 20,000 straws, affordable costs, legacy migration and larger carry.');
 
+
+const { Locomotion } = await load('src/systems/Locomotion.ts');
+for (const dt of [1/120,1/60,1/20]) {
+  const motion=new Locomotion();
+  assert.ok(motion.jump()); assert.equal(motion.jump(),false,'No double jump');
+  let peak=0;
+  for(let t=0;t<2;t+=dt){motion.update(dt,0);peak=Math.max(peak,motion.height);}
+  assert.ok(peak>1 && peak<1.12); assert.equal(motion.height,0);assert.ok(motion.grounded);
+  motion.height=2;motion.update(dt,0);assert.equal(motion.grounded,false);
+  for(let t=0;t<2;t+=dt)motion.update(dt,0);
+  assert.equal(motion.height,0,'Removed support leads to a safe landing');
+}
+const walkPile=new Haystack(), motion=new Locomotion();
+assert.equal(walkPile.surfaceHeight(5,5),0);
+const summit=walkPile.surfaceHeight(config.hay.x,config.hay.z);
+assert.ok(summit>1.5);
+game.world={surfaceHeight:(x,z)=>walkPile.surfaceHeight(x,z)};
+game.movement=new MovementSystem([config.cart]);game.locomotion=motion;game.economy=new EconomySystem();
+game.player.group.position.set(config.hay.x,0,config.hay.z+2.1);
+game.input={movement:()=>new (game.player.position.constructor)(0,1)};game.camera={yaw:0};
+for(let i=0;i<16;i++)game.moveManually(.05);
+assert.ok(motion.height>1,'Can walk up hay at 20 FPS');
+assert.ok(Math.abs(game.player.group.position.z-config.hay.z)<.2);
+const topBefore=walkPile.surfaceHeight(config.hay.x,config.hay.z);
+walkPile.remove(config.totalHay,new Vector3(),new Vector3());walkPile.settleImmediately();
+assert.equal(walkPile.surfaceHeight(config.hay.x,config.hay.z),0);
+assert.ok(topBefore>0);
+for(let i=0;i<60;i++)motion.update(1/60,0);
+assert.equal(motion.height,0);
+firstPerson.follow(game.player.position,2);assert.equal(firstPerson.camera.position.y,3.55);
+console.log('Jump/climb checks passed: FPS-independent arc, no double jump, low-FPS hay climbing, depletion fall and elevated camera.');

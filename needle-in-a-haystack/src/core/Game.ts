@@ -2,6 +2,7 @@
 import { World } from '../world/World';
 import type { Target } from '../world/World';
 import { Player } from '../entities/Player';
+import { Locomotion } from '../systems/Locomotion';
 import { MovementSystem } from '../systems/MovementSystem';
 import { EconomySystem } from '../systems/EconomySystem';
 import { config } from '../config/balance';
@@ -22,7 +23,8 @@ export class Game {
   private player = new Player();
   private camera = new CameraController();
   private economy = new EconomySystem();
-  private movement = new MovementSystem([config.hay, config.cart]);
+  private movement = new MovementSystem([config.cart]);
+  private locomotion = new Locomotion();
   private destination: Target = 'ground';
   private collectionTimer = 0;
   private collectionDuration = 0;
@@ -89,7 +91,9 @@ export class Game {
           if (!this.movement.walkable(this.player.position)) this.player.group.position.set(0, 0, 3.3);
         } catch { this.saveSystem!.invalid = true; }
       }
-      this.camera.follow(this.player.position);
+      this.locomotion.height = this.world.surfaceHeight(this.player.group.position.x, this.player.group.position.z);
+      this.player.group.position.y = this.locomotion.height;
+      this.camera.follow(this.player.position, this.locomotion.height);
       this.input = new InputManager(this.renderer.domElement, this.camera.camera, this.world.pickables,
         (target, point, instanceId) => this.command(target, point, instanceId),
         (dx, dy) => { this.camera.look(dx, dy); this.dirty = true; },
@@ -98,7 +102,7 @@ export class Game {
           const next = this.paused ? undefined : target;
           if (this.aimTarget !== next) { this.aimTarget = next; this.updateAimLabel(); }
         },
-        () => this.paused);
+        () => this.paused, () => this.jump());
       this.resizeObserver = new ResizeObserver(() => {
         const { width, height } = host.getBoundingClientRect();
         if (width <= 0 || height <= 0) return;
@@ -145,17 +149,21 @@ export class Game {
     try {
       if (!this.paused) {
         this.moveManually(dt); this.updateGameplay(dt); this.world.updateHay(dt);
+        this.player.group.position.y = this.locomotion.height;
         this.viewModel?.update(dt, this.collectionTimer, this.collectionDuration || this.economy.collectionSeconds);
         this.saveAge += dt;
         if (this.saveAge >= 5) { this.saveAge = 0; this.saveNow(); }
       }
-      this.camera.follow(this.player.position);
+      this.camera.follow(this.player.position, this.locomotion.height);
       this.world.scene.updateMatrixWorld(); this.input?.updateAim(dt, this.paused);
       this.renderer.shadowMap.needsUpdate = this.world.takeShadowUpdate();
       this.renderer.info.autoReset = false; this.renderer.info.reset();
       this.renderer.render(this.world.scene, this.camera.camera); this.viewModel?.render(this.renderer, this.camera.camera);
       this.needsRender = false;
-      if (!this.metrics.readyMs) this.metrics.readyMs = performance.now() - this.boot;
+      if (!this.metrics.readyMs) {
+        this.metrics.readyMs = performance.now() - this.boot;
+        this.world.loadNoncriticalAssets();
+      }
       this.frameTotal += elapsed; this.frameSamples++;
       if (this.frameSamples >= 60) {
         // Plain data for diagnostics; no per-frame DOM telemetry.
@@ -174,20 +182,33 @@ export class Game {
   }
   private inRange(target: 'hay' | 'cart' | 'needle') {
     const object = config[target];
+    if (target !== 'hay' && this.player.group.position.y > (target === 'cart' ? 1.8 : 1)) return false;
     return this.player.position.distanceTo(this.step ? this.step.set(object.x, object.z) : new THREE.Vector2(object.x, object.z)) <= object.radius + config.playerRadius + config.interactionGap + config.interactionTolerance;
+  }
+  private jump() {
+    if (this.paused || !this.locomotion.jump()) return;
+    this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
   }
   private moveManually(dt: number) {
     const input = this.input!.movement();
-    if (!input.lengthSq()) return;
-    this.collectionTimer = 0; this.player.command([]); this.destination = 'ground'; this.dirty = true;
+    if (input.lengthSq()) {
+      this.collectionTimer = 0; this.player.command([]); this.destination = 'ground'; this.dirty = true;
+    }
     const yaw = this.camera.yaw;
     const delta = this.delta ?? new THREE.Vector2();
-    delta.set(input.x * Math.cos(yaw) - input.y * Math.sin(yaw), -input.x * Math.sin(yaw) - input.y * Math.cos(yaw)).multiplyScalar(this.economy.movementSpeed * dt);
-    const start = this.player.position;
-    const x = start.clone().add(new THREE.Vector2(delta.x, 0));
-    if (this.movement.clear(start, x)) this.player.group.position.x = x.x;
-    const z = this.player.position.clone().add(new THREE.Vector2(0, delta.y));
-    if (this.movement.clear(this.player.position, z)) this.player.group.position.z = z.y;
+    const steps = Math.max(1, Math.ceil(dt / (1 / 120))), stepTime = dt / steps;
+    delta.set(input.x * Math.cos(yaw) - input.y * Math.sin(yaw), -input.x * Math.sin(yaw) - input.y * Math.cos(yaw)).multiplyScalar(this.economy.movementSpeed * stepTime);
+    const candidate = this.step ?? new THREE.Vector2();
+    for (let i = 0; i < steps; i++) {
+      const start = this.player.position;
+      candidate.set(start.x + delta.x, start.y);
+      if (this.movement.clear(start, candidate) && (!this.locomotion || this.locomotion.canStep(this.world.surfaceHeight(candidate.x, candidate.y)))) this.player.group.position.x = candidate.x;
+      const next = this.player.position;
+      candidate.set(next.x, next.y + delta.y);
+      if (this.movement.clear(next, candidate) && (!this.locomotion || this.locomotion.canStep(this.world.surfaceHeight(candidate.x, candidate.y)))) this.player.group.position.z = candidate.y;
+      if (this.locomotion) this.locomotion.update(stepTime, this.world.surfaceHeight(this.player.group.position.x, this.player.group.position.z));
+    }
+    if (this.locomotion) this.player.group.position.y = this.locomotion.height;
   }
   private command(target: Target, point: THREE.Vector3, instanceId?: number) {
     if (target === 'ground') return;
@@ -273,7 +294,7 @@ export class Game {
     this.renderer.domElement.setAttribute('aria-label', t('world'));
   }
   setReducedMotion(reduced: boolean) { this.world.reducedMotion = reduced; if (this.viewModel) this.viewModel.reducedMotion = reduced; }
-  diagnostics() { return { ...this.metrics, remaining: this.economy.remaining, inventory: this.economy.inventory, coins: this.economy.coins, cargo: this.world.cargoCount, won: this.won, paused: this.paused, position: [this.player.group.position.x, this.player.group.position.z], yaw: this.camera.yaw, pitch: this.camera.pitch }; }
+  diagnostics() { return { ...this.metrics, remaining: this.economy.remaining, inventory: this.economy.inventory, coins: this.economy.coins, cargo: this.world.cargoCount, won: this.won, paused: this.paused, position: [this.player.group.position.x, this.player.group.position.z], yaw: this.camera.yaw, pitch: this.camera.pitch, height: this.locomotion.height, grounded: this.locomotion.grounded, cartModelStatus: this.world.cartModelStatus }; }
   dispose(save = true) {
     if (this.disposed) return;
     if (save) this.saveNow();

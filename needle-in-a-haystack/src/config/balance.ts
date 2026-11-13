@@ -2,6 +2,7 @@
   worldHalfSize: 6.5,
   playerRadius: 0.28,
   movementSpeed: 2.6,
+  locomotion: { jumpSpeed: 5.5, gravity: 14, stepHeight: 0.24, surfaceSlope: 3 },
   interactionGap: 0.25,
   gridStep: 0.25,
   maxPixelRatio: 1.75,

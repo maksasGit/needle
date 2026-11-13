@@ -30,7 +30,10 @@ for (const file of files) {
 assert.ok(files.length<=8000);
 assert.ok(total<15*1024*1024,'Preferred initial-download target');
 assert.ok(total<250*1024*1024);
-assert.ok(metrics.every(file=>file.preferredFileLimit),'Preferred individual-file target');
+// The user's self-contained textured cart is an explicitly recorded art-budget
+// exception to the preferred 512 KiB target, not to the 30 MiB hard ceiling.
+const preferredFileExceptions=metrics.filter(file=>!file.preferredFileLimit);
+assert.ok(preferredFileExceptions.every(file=>/^assets\/cart_colored-[\w-]+\.glb$/.test(file.file)), 'Unexpected preferred-file budget exception');
 const html=await readFile(path.join(root,'index.html'),'utf8');
 for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
   if (match[1].startsWith('data:')) continue;
@@ -38,6 +41,6 @@ for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
   await stat(path.resolve(root,match[1]));
 }
 await mkdir('verification',{recursive:true});
-const report={totalBytes:total,fileCount:files.length,files:metrics,passed:true};
+const report={totalBytes:total,fileCount:files.length,files:metrics,preferredFileExceptions,passed:true};
 await writeFile('verification/build-report.json',JSON.stringify(report,null,2));
 console.log(JSON.stringify(report,null,2));

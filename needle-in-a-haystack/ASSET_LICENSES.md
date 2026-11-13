@@ -1,6 +1,16 @@
 # Asset and dependency provenance
 
-All visible game geometry, materials, interface, hand/tool models, hay, cart, barn, needle and favicon are generated locally from project code. There are no downloaded art assets, music, external fonts, analytics or runtime CDN dependencies. The block-style farm is an original procedural implementation, without Roblox branding/characters/assets or copied reference artwork.
+The environment, interface, hands/tools, hay, procedural fallback cart, barn, needle and favicon are generated locally from project code. The imported cart is an original user-authored model, described below. There are no downloaded third-party art assets, music, external fonts, analytics or runtime CDN dependencies. The block-style farm uses no Roblox branding/characters/assets or copied reference artwork.
+
+## Cart model
+
+- Source: `public/models/cart_colored.glb`, supplied by the project owner on 2026-11-13, replacing the initial untextured `cart.glb`.
+- Authorship: the user explicitly confirmed “я ее сделал сам” (I made it myself).
+- Permission: supplied for integration into this game; original project artwork, no third-party attribution requirement reported.
+- Format: self-contained textured GLB, 3,129,416 bytes, 3,027 triangles. Its UVs, normals, embedded PNG and original material are preserved. No remote texture dependencies.
+- The user supplied `Meshy_AI_Stylized Wooden Cart Concept.png` as a visual reference. The reference image itself is not embedded in the game. The subsequent colored GLB replaces the provisional procedural wood material; no generated repaint is applied to the user's texture.
+- Budget: this user-requested self-contained art asset exceeds the preferred 512 KiB per-file target but stays below the hard 30 MiB ceiling. It loads after the first frame, with a functional procedural fallback. Build validation reports this specific asset as a preferred-target exception; JavaScript and other files retain their size checks.
+- No separate redistribution license has been declared; this is not a public-domain or permissively licensed asset pack.
 
 System font fallbacks are used; no font files are distributed. Audio is not implemented.
 

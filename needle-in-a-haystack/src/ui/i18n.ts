@@ -25,6 +25,7 @@ const ru = {
   forward: 'Вперёд', back: 'Назад', left: 'Влево', right: 'Вправо', world: 'Ферма: стог, телега и спрятанная иголка',
   saveNotice: 'Автосохранение включено', needle: 'Подобрать иголку',
   aimHay: 'Собрать соломинку', aimCart: 'Продать всё сено',
+  jump: 'Прыжок · Пробел. На стог можно забраться',
   joystick: 'Джойстик движения: отклоняй для ходьбы, отпусти для остановки',
 } as const;
 type Key = keyof typeof ru;
@@ -35,7 +36,7 @@ const en: Record<Key, string> = {
   helpTitle: 'Find the needle in the haystack',
   help1: 'Walk up to the pile and tap a straw or Interact to collect one portion. Tap again for each action; holding does not collect. The mint-outlined straw under the crosshair is collected first.',
   help2: 'You can initially carry 5 straws. Tap the cart to sell everything. Coins arrive immediately while hay is stacked neatly in the cart.',
-  help3: 'Desktop: walk with WASD or arrow keys, and drag the mouse to look. Mobile: use the left joystick to walk and drag the scene with a second finger to look. Taps never move the player. Walking cancels unfinished collection.',
+  help3: 'Desktop: walk with WASD or arrow keys, and drag the mouse to look. Mobile: use the left joystick to walk and drag the scene with a second finger to look. Taps never move the player. Walking cancels unfinished collection. Jump with Space or the arrow button; you can climb onto the hay.',
   help4: 'Buy upgrades, clear the pile, then pick up the revealed needle! Progress saves automatically. Menus and background tabs pause the game.',
   shopTitle: 'Farm upgrades', shopHint: 'One tap starts one collection. Better tools collect more per action.',
   capacity: 'Carry capacity', movement: 'Walking speed', collection: 'Collection speed', tools: 'Tool',
@@ -49,6 +50,7 @@ const en: Record<Key, string> = {
   contextLost: 'Graphics temporarily unavailable. Restoring…', error: 'The game could not continue. Try recovering the game.', retry: 'Recover game', webgl: 'Could not start WebGL. Check browser hardware acceleration.',
   forward: 'Forward', back: 'Back', left: 'Left', right: 'Right', world: 'Farm: haystack, cart and a hidden needle', saveNotice: 'Autosave enabled', needle: 'Pick up needle',
   aimHay: 'Collect straw', aimCart: 'Sell all hay',
+  jump: 'Jump · Space. You can climb onto the hay',
   joystick: 'Movement joystick: drag to walk, release to stop',
 };
 let language: Language = 'ru';

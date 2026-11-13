@@ -12,8 +12,8 @@ export class CameraController {
     this.yaw -= dx * config.firstPerson.lookSensitivity;
     this.pitch = Math.max(-1.25, Math.min(1.25, this.pitch - dy * config.firstPerson.lookSensitivity));
   }
-  follow(position: Vector2) {
-    this.camera.position.set(position.x, config.firstPerson.eyeHeight, position.y);
+  follow(position: Vector2, feetHeight = 0) {
+    this.camera.position.set(position.x, feetHeight + config.firstPerson.eyeHeight, position.y);
     this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
     this.camera.updateMatrixWorld();
   }

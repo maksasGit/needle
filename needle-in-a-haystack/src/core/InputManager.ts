@@ -31,7 +31,7 @@ export class InputManager {
   private joystick: VirtualJoystick;
   private aimAge = Infinity;
   private down?: { x: number; y: number; lastX: number; lastY: number; id: number; dragged: boolean };
-  constructor(canvas: HTMLCanvasElement, private camera: Camera, private pickables: Object3D[], onCommand: (target: Target, point: Vector3, instanceId?: number) => void, onLook: (dx: number, dy: number) => void, private onAim: (instanceId?: number, target?: Target) => void, private isBlocked: () => boolean = () => !!document.querySelector('dialog[open]')) {
+  constructor(canvas: HTMLCanvasElement, private camera: Camera, private pickables: Object3D[], onCommand: (target: Target, point: Vector3, instanceId?: number) => void, onLook: (dx: number, dy: number) => void, private onAim: (instanceId?: number, target?: Target) => void, private isBlocked: () => boolean = () => !!document.querySelector('dialog[open]'), onJump: () => void = () => {}) {
     const blocked = this.isBlocked;
     const cast = (x: number, y: number) => {
       if (blocked()) return;
@@ -63,12 +63,14 @@ export class InputManager {
     this.listen(window, 'keydown', e => {
       if (blocked() || (e.target as HTMLElement)?.closest('input,textarea,select,[contenteditable="true"]')) return;
       if (['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight'].includes(e.code)) { e.preventDefault(); this.keys.add(e.code); }
+      if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) onJump(); }
       if (e.code === 'KeyE' && !e.repeat) cast(0, 0);
     });
     this.listen(window, 'keyup', e => this.keys.delete(e.code));
     this.listen(window, 'blur', () => this.reset());
     this.listen(document, 'visibilitychange', () => this.reset());
     this.listen(document.querySelector<HTMLButtonElement>('#interact')!, 'click', () => cast(0, 0));
+    this.listen(document.querySelector<HTMLButtonElement>('#jump')!, 'click', () => { if (!blocked()) onJump(); });
     this.joystick = new VirtualJoystick(document.querySelector<HTMLElement>('#joystick')!, blocked);
     this.observer = new MutationObserver(() => { if (blocked()) this.reset(); });
     this.observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });

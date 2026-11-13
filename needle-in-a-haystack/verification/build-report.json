@@ -1,35 +1,53 @@
 {
-  "totalBytes": 619092,
-  "fileCount": 6,
+  "totalBytes": 3835774,
+  "fileCount": 9,
   "files": [
     {
-      "file": "assets/index-B3nO6ZQ9.css",
-      "bytes": 9725,
-      "gzipBytes": 2796,
+      "file": "assets/cartModel-DDkXwB1j.js",
+      "bytes": 551,
+      "gzipBytes": 395,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/index-JP5iS8f0.js",
-      "bytes": 63019,
-      "gzipBytes": 21207,
+      "file": "assets/cart_colored-rCI2l03Y.glb",
+      "bytes": 3129416,
+      "gzipBytes": 3044957,
+      "preferredFileLimit": false
+    },
+    {
+      "file": "assets/index-CFEYj5Mq.css",
+      "bytes": 10134,
+      "gzipBytes": 2865,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/three-core-DV-7ZtLI.js",
-      "bytes": 191529,
-      "gzipBytes": 51436,
+      "file": "assets/index-YNvli1gG.js",
+      "bytes": 67977,
+      "gzipBytes": 22800,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/three-renderer-Dxdc_CUg.js",
-      "bytes": 352584,
-      "gzipBytes": 83730,
+      "file": "assets/model-loader-k9SjJ7FZ.js",
+      "bytes": 46445,
+      "gzipBytes": 13566,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/three-core-DNJrnzan.js",
+      "bytes": 226385,
+      "gzipBytes": 59503,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/three-renderer-CZo2U34P.js",
+      "bytes": 352631,
+      "gzipBytes": 83724,
       "preferredFileLimit": true
     },
     {
       "file": "index.html",
       "bytes": 1144,
-      "gzipBytes": 695,
+      "gzipBytes": 694,
       "preferredFileLimit": true
     },
     {
@@ -37,6 +55,14 @@
       "bytes": 1091,
       "gzipBytes": 671,
       "preferredFileLimit": true
+    }
+  ],
+  "preferredFileExceptions": [
+    {
+      "file": "assets/cart_colored-rCI2l03Y.glb",
+      "bytes": 3129416,
+      "gzipBytes": 3044957,
+      "preferredFileLimit": false
     }
   ],
   "passed": true

@@ -52,8 +52,6 @@ export class Player {
       if (this.actionTime <= 0) this.state = 'Idle';
     } else this.state = this.route.length ? 'Moving' : 'Idle';
     this.legs.forEach((leg, i) => { leg.rotation.x = this.state === 'Moving' ? Math.sin(this.time * 12 + i * Math.PI) * 0.5 : 0; });
-    this.group.position.y = this.state === 'Moving' ? Math.abs(Math.sin(this.time * 12)) * 0.035 : 0;
-    if (this.state === 'Collecting' || this.state === 'Unloading') this.group.position.y = Math.sin(this.actionTime / this.actionDuration * Math.PI) * 0.09;
     return wasMoving && this.state === 'Idle';
   }
 }

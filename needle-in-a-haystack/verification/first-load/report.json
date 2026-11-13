@@ -16,160 +16,202 @@
       "cpu": 1,
       "runs": [
         {
-          "firstFrameMs": 804.5,
-          "firstMovementMs": 1092.2000000178814,
-          "firstCollectionMs": 2594.600000023842,
+          "firstFrameMs": 832.4000000059605,
+          "firstMovementMs": 1329.0999999940395,
+          "firstCollectionMs": 2985.4000000059605,
           "under3Seconds": {
             "frame": true,
             "movement": true,
             "collection": true
           },
-          "initialEncodedBytes": 159864,
-          "initialDecodedBytes": 618001,
-          "initialTransferBytes": 161364,
+          "initialEncodedBytes": 183547,
+          "initialDecodedBytes": 705267,
+          "initialTransferBytes": 185647,
           "longTaskCount": 3,
-          "longestTaskMs": 363,
+          "longestTaskMs": 369,
           "resources": [
             {
-              "name": "http://127.0.0.1:65135/game/index.html?diagnostics",
-              "encodedBodySize": 695,
+              "name": "http://127.0.0.1:61972/game/index.html?diagnostics",
+              "encodedBodySize": 694,
               "decodedBodySize": 1144,
-              "transferSize": 995,
-              "responseEnd": 8.5
+              "transferSize": 994,
+              "responseEnd": 11.5
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-JP5iS8f0.js",
-              "encodedBodySize": 21207,
-              "decodedBodySize": 63019,
-              "transferSize": 21507,
-              "responseEnd": 29.100000023841858
+              "name": "http://127.0.0.1:61972/game/assets/index-YNvli1gG.js",
+              "encodedBodySize": 22800,
+              "decodedBodySize": 67977,
+              "transferSize": 23100,
+              "responseEnd": 38.19999998807907
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-core-DV-7ZtLI.js",
-              "encodedBodySize": 51436,
-              "decodedBodySize": 191529,
-              "transferSize": 51736,
-              "responseEnd": 31.700000017881393
+              "name": "http://127.0.0.1:61972/game/assets/three-core-DNJrnzan.js",
+              "encodedBodySize": 59503,
+              "decodedBodySize": 226385,
+              "transferSize": 59803,
+              "responseEnd": 41.5
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-renderer-Dxdc_CUg.js",
-              "encodedBodySize": 83730,
-              "decodedBodySize": 352584,
-              "transferSize": 84030,
-              "responseEnd": 32.900000005960464
+              "name": "http://127.0.0.1:61972/game/assets/three-renderer-CZo2U34P.js",
+              "encodedBodySize": 83724,
+              "decodedBodySize": 352631,
+              "transferSize": 84024,
+              "responseEnd": 43.099999994039536
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-B3nO6ZQ9.css",
-              "encodedBodySize": 2796,
-              "decodedBodySize": 9725,
-              "transferSize": 3096,
-              "responseEnd": 30.400000005960464
+              "name": "http://127.0.0.1:61972/game/assets/index-CFEYj5Mq.css",
+              "encodedBodySize": 2865,
+              "decodedBodySize": 10134,
+              "transferSize": 3165,
+              "responseEnd": 40
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/cartModel-DDkXwB1j.js",
+              "encodedBodySize": 395,
+              "decodedBodySize": 551,
+              "transferSize": 695,
+              "responseEnd": 797.6999999880791
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/model-loader-k9SjJ7FZ.js",
+              "encodedBodySize": 13566,
+              "decodedBodySize": 46445,
+              "transferSize": 13866,
+              "responseEnd": 798.6999999880791
             }
           ],
           "initialDialogs": 0
         },
         {
-          "firstFrameMs": 521.9000000059605,
-          "firstMovementMs": 642.4000000059605,
-          "firstCollectionMs": 2164,
+          "firstFrameMs": 762.2999999821186,
+          "firstMovementMs": 1123.699999988079,
+          "firstCollectionMs": 2824.7999999821186,
           "under3Seconds": {
             "frame": true,
             "movement": true,
             "collection": true
           },
-          "initialEncodedBytes": 159864,
-          "initialDecodedBytes": 618001,
-          "initialTransferBytes": 161364,
+          "initialEncodedBytes": 183547,
+          "initialDecodedBytes": 705267,
+          "initialTransferBytes": 185647,
           "longTaskCount": 3,
-          "longestTaskMs": 318,
+          "longestTaskMs": 354,
           "resources": [
             {
-              "name": "http://127.0.0.1:65135/game/index.html?diagnostics",
-              "encodedBodySize": 695,
+              "name": "http://127.0.0.1:61972/game/index.html?diagnostics",
+              "encodedBodySize": 694,
               "decodedBodySize": 1144,
-              "transferSize": 995,
-              "responseEnd": 4.0999999940395355
+              "transferSize": 994,
+              "responseEnd": 2.7999999821186066
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-JP5iS8f0.js",
-              "encodedBodySize": 21207,
-              "decodedBodySize": 63019,
-              "transferSize": 21507,
-              "responseEnd": 19.599999994039536
+              "name": "http://127.0.0.1:61972/game/assets/index-YNvli1gG.js",
+              "encodedBodySize": 22800,
+              "decodedBodySize": 67977,
+              "transferSize": 23100,
+              "responseEnd": 16.69999998807907
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-core-DV-7ZtLI.js",
-              "encodedBodySize": 51436,
-              "decodedBodySize": 191529,
-              "transferSize": 51736,
-              "responseEnd": 22.400000005960464
+              "name": "http://127.0.0.1:61972/game/assets/three-core-DNJrnzan.js",
+              "encodedBodySize": 59503,
+              "decodedBodySize": 226385,
+              "transferSize": 59803,
+              "responseEnd": 18.099999994039536
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-renderer-Dxdc_CUg.js",
-              "encodedBodySize": 83730,
-              "decodedBodySize": 352584,
-              "transferSize": 84030,
-              "responseEnd": 23.30000001192093
+              "name": "http://127.0.0.1:61972/game/assets/three-renderer-CZo2U34P.js",
+              "encodedBodySize": 83724,
+              "decodedBodySize": 352631,
+              "transferSize": 84024,
+              "responseEnd": 19.19999998807907
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-B3nO6ZQ9.css",
-              "encodedBodySize": 2796,
-              "decodedBodySize": 9725,
-              "transferSize": 3096,
-              "responseEnd": 20.80000001192093
+              "name": "http://127.0.0.1:61972/game/assets/index-CFEYj5Mq.css",
+              "encodedBodySize": 2865,
+              "decodedBodySize": 10134,
+              "transferSize": 3165,
+              "responseEnd": 17.19999998807907
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/cartModel-DDkXwB1j.js",
+              "encodedBodySize": 395,
+              "decodedBodySize": 551,
+              "transferSize": 695,
+              "responseEnd": 721.5
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/model-loader-k9SjJ7FZ.js",
+              "encodedBodySize": 13566,
+              "decodedBodySize": 46445,
+              "transferSize": 13866,
+              "responseEnd": 724
             }
           ],
           "initialDialogs": 0
         },
         {
-          "firstFrameMs": 437.80000001192093,
-          "firstMovementMs": 565.4000000059605,
-          "firstCollectionMs": 2138.800000011921,
+          "firstFrameMs": 722.8999999761581,
+          "firstMovementMs": 1029.5,
+          "firstCollectionMs": 2693.699999988079,
           "under3Seconds": {
             "frame": true,
             "movement": true,
             "collection": true
           },
-          "initialEncodedBytes": 159864,
-          "initialDecodedBytes": 618001,
-          "initialTransferBytes": 161364,
+          "initialEncodedBytes": 183547,
+          "initialDecodedBytes": 705267,
+          "initialTransferBytes": 185647,
           "longTaskCount": 3,
-          "longestTaskMs": 275,
+          "longestTaskMs": 359,
           "resources": [
             {
-              "name": "http://127.0.0.1:65135/game/index.html?diagnostics",
-              "encodedBodySize": 695,
+              "name": "http://127.0.0.1:61972/game/index.html?diagnostics",
+              "encodedBodySize": 694,
               "decodedBodySize": 1144,
-              "transferSize": 995,
-              "responseEnd": 2.800000011920929
+              "transferSize": 994,
+              "responseEnd": 2.699999988079071
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-JP5iS8f0.js",
-              "encodedBodySize": 21207,
-              "decodedBodySize": 63019,
-              "transferSize": 21507,
-              "responseEnd": 15.099999994039536
+              "name": "http://127.0.0.1:61972/game/assets/index-YNvli1gG.js",
+              "encodedBodySize": 22800,
+              "decodedBodySize": 67977,
+              "transferSize": 23100,
+              "responseEnd": 18.5
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-renderer-Dxdc_CUg.js",
-              "encodedBodySize": 83730,
-              "decodedBodySize": 352584,
-              "transferSize": 84030,
-              "responseEnd": 17.900000005960464
+              "name": "http://127.0.0.1:61972/game/assets/three-renderer-CZo2U34P.js",
+              "encodedBodySize": 83724,
+              "decodedBodySize": 352631,
+              "transferSize": 84024,
+              "responseEnd": 22.19999998807907
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-core-DV-7ZtLI.js",
-              "encodedBodySize": 51436,
-              "decodedBodySize": 191529,
-              "transferSize": 51736,
-              "responseEnd": 17.30000001192093
+              "name": "http://127.0.0.1:61972/game/assets/three-core-DNJrnzan.js",
+              "encodedBodySize": 59503,
+              "decodedBodySize": 226385,
+              "transferSize": 59803,
+              "responseEnd": 21.599999994039536
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-B3nO6ZQ9.css",
-              "encodedBodySize": 2796,
-              "decodedBodySize": 9725,
-              "transferSize": 3096,
-              "responseEnd": 15.900000005960464
+              "name": "http://127.0.0.1:61972/game/assets/index-CFEYj5Mq.css",
+              "encodedBodySize": 2865,
+              "decodedBodySize": 10134,
+              "transferSize": 3165,
+              "responseEnd": 19.799999982118607
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/cartModel-DDkXwB1j.js",
+              "encodedBodySize": 395,
+              "decodedBodySize": 551,
+              "transferSize": 695,
+              "responseEnd": 702.3999999761581
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/model-loader-k9SjJ7FZ.js",
+              "encodedBodySize": 13566,
+              "decodedBodySize": 46445,
+              "transferSize": 13866,
+              "responseEnd": 702.7999999821186
             }
           ],
           "initialDialogs": 0
@@ -177,9 +219,9 @@
       ],
       "initialVisibleText": "Needle in a Haystack\n+\nСобрать соломинку\n✥\nДействие · E\nМОНЕТЫ\n0\nВ РУКАХ\n0 / 5\nВ СТОГЕ\n20000\nИНСТРУМЕНТ\nРуки\nПодойди к стогу · собери сено и найди иголку\nМагазин\n?\n⚙",
       "medians": {
-        "firstFrameMs": 521.9000000059605,
-        "firstMovementMs": 642.4000000059605,
-        "firstCollectionMs": 2164
+        "firstFrameMs": 762.2999999821186,
+        "firstMovementMs": 1123.699999988079,
+        "firstCollectionMs": 2824.7999999821186
       },
       "observedSub3Counts": {
         "frame": 3,
@@ -195,160 +237,160 @@
       "cpu": 4,
       "runs": [
         {
-          "firstFrameMs": 2955.100000023842,
-          "firstMovementMs": 3257.2000000178814,
-          "firstCollectionMs": 4798.300000011921,
+          "firstFrameMs": 3353.5,
+          "firstMovementMs": 3691.4000000059605,
+          "firstCollectionMs": 5571.700000017881,
           "under3Seconds": {
-            "frame": true,
+            "frame": false,
             "movement": false,
             "collection": false
           },
-          "initialEncodedBytes": 159864,
-          "initialDecodedBytes": 618001,
-          "initialTransferBytes": 161364,
+          "initialEncodedBytes": 169586,
+          "initialDecodedBytes": 658271,
+          "initialTransferBytes": 171086,
           "longTaskCount": 3,
-          "longestTaskMs": 1398,
+          "longestTaskMs": 1550,
           "resources": [
             {
-              "name": "http://127.0.0.1:65135/game/index.html?diagnostics",
-              "encodedBodySize": 695,
+              "name": "http://127.0.0.1:61972/game/index.html?diagnostics",
+              "encodedBodySize": 694,
               "decodedBodySize": 1144,
-              "transferSize": 995,
-              "responseEnd": 180.40000000596046
+              "transferSize": 994,
+              "responseEnd": 174.90000000596046
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-JP5iS8f0.js",
-              "encodedBodySize": 21207,
-              "decodedBodySize": 63019,
-              "transferSize": 21507,
-              "responseEnd": 714.1000000238419
+              "name": "http://127.0.0.1:61972/game/assets/index-YNvli1gG.js",
+              "encodedBodySize": 22800,
+              "decodedBodySize": 67977,
+              "transferSize": 23100,
+              "responseEnd": 752.3000000119209
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-core-DV-7ZtLI.js",
-              "encodedBodySize": 51436,
-              "decodedBodySize": 191529,
-              "transferSize": 51736,
-              "responseEnd": 1016.1000000238419
+              "name": "http://127.0.0.1:61972/game/assets/three-core-DNJrnzan.js",
+              "encodedBodySize": 59503,
+              "decodedBodySize": 226385,
+              "transferSize": 59803,
+              "responseEnd": 1139.800000011921
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-renderer-Dxdc_CUg.js",
-              "encodedBodySize": 83730,
-              "decodedBodySize": 352584,
-              "transferSize": 84030,
-              "responseEnd": 1186.300000011921
+              "name": "http://127.0.0.1:61972/game/assets/three-renderer-CZo2U34P.js",
+              "encodedBodySize": 83724,
+              "decodedBodySize": 352631,
+              "transferSize": 84024,
+              "responseEnd": 1265.7000000178814
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-B3nO6ZQ9.css",
-              "encodedBodySize": 2796,
-              "decodedBodySize": 9725,
-              "transferSize": 3096,
-              "responseEnd": 431.2000000178814
+              "name": "http://127.0.0.1:61972/game/assets/index-CFEYj5Mq.css",
+              "encodedBodySize": 2865,
+              "decodedBodySize": 10134,
+              "transferSize": 3165,
+              "responseEnd": 485.59999999403954
             }
           ],
           "initialDialogs": 0
         },
         {
-          "firstFrameMs": 2867.800000011921,
-          "firstMovementMs": 3143.300000011921,
-          "firstCollectionMs": 4709.200000017881,
+          "firstFrameMs": 3302.7999999821186,
+          "firstMovementMs": 3620.699999988079,
+          "firstCollectionMs": 5426.5,
           "under3Seconds": {
-            "frame": true,
+            "frame": false,
             "movement": false,
             "collection": false
           },
-          "initialEncodedBytes": 159864,
-          "initialDecodedBytes": 618001,
-          "initialTransferBytes": 161364,
+          "initialEncodedBytes": 169586,
+          "initialDecodedBytes": 658271,
+          "initialTransferBytes": 171086,
           "longTaskCount": 3,
-          "longestTaskMs": 1331,
+          "longestTaskMs": 1551,
           "resources": [
             {
-              "name": "http://127.0.0.1:65135/game/index.html?diagnostics",
-              "encodedBodySize": 695,
+              "name": "http://127.0.0.1:61972/game/index.html?diagnostics",
+              "encodedBodySize": 694,
               "decodedBodySize": 1144,
-              "transferSize": 995,
-              "responseEnd": 183.40000000596046
+              "transferSize": 994,
+              "responseEnd": 178.90000000596046
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-JP5iS8f0.js",
-              "encodedBodySize": 21207,
-              "decodedBodySize": 63019,
-              "transferSize": 21507,
-              "responseEnd": 716.2000000178814
+              "name": "http://127.0.0.1:61972/game/assets/index-YNvli1gG.js",
+              "encodedBodySize": 22800,
+              "decodedBodySize": 67977,
+              "transferSize": 23100,
+              "responseEnd": 758.5
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-core-DV-7ZtLI.js",
-              "encodedBodySize": 51436,
-              "decodedBodySize": 191529,
-              "transferSize": 51736,
-              "responseEnd": 1032.0999999940395
+              "name": "http://127.0.0.1:61972/game/assets/three-core-DNJrnzan.js",
+              "encodedBodySize": 59503,
+              "decodedBodySize": 226385,
+              "transferSize": 59803,
+              "responseEnd": 1115.699999988079
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-renderer-Dxdc_CUg.js",
-              "encodedBodySize": 83730,
-              "decodedBodySize": 352584,
-              "transferSize": 84030,
-              "responseEnd": 1205.4000000059605
+              "name": "http://127.0.0.1:61972/game/assets/three-renderer-CZo2U34P.js",
+              "encodedBodySize": 83724,
+              "decodedBodySize": 352631,
+              "transferSize": 84024,
+              "responseEnd": 1255.5999999940395
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-B3nO6ZQ9.css",
-              "encodedBodySize": 2796,
-              "decodedBodySize": 9725,
-              "transferSize": 3096,
-              "responseEnd": 436.40000000596046
+              "name": "http://127.0.0.1:61972/game/assets/index-CFEYj5Mq.css",
+              "encodedBodySize": 2865,
+              "decodedBodySize": 10134,
+              "transferSize": 3165,
+              "responseEnd": 476.2999999821186
             }
           ],
           "initialDialogs": 0
         },
         {
-          "firstFrameMs": 2851.0999999940395,
-          "firstMovementMs": 3129.199999988079,
-          "firstCollectionMs": 4681.699999988079,
+          "firstFrameMs": 3318.100000023842,
+          "firstMovementMs": 3623.7000000178814,
+          "firstCollectionMs": 5493.4000000059605,
           "under3Seconds": {
-            "frame": true,
+            "frame": false,
             "movement": false,
             "collection": false
           },
-          "initialEncodedBytes": 159864,
-          "initialDecodedBytes": 618001,
-          "initialTransferBytes": 161364,
+          "initialEncodedBytes": 169586,
+          "initialDecodedBytes": 658271,
+          "initialTransferBytes": 171086,
           "longTaskCount": 3,
-          "longestTaskMs": 1301,
+          "longestTaskMs": 1558,
           "resources": [
             {
-              "name": "http://127.0.0.1:65135/game/index.html?diagnostics",
-              "encodedBodySize": 695,
+              "name": "http://127.0.0.1:61972/game/index.html?diagnostics",
+              "encodedBodySize": 694,
               "decodedBodySize": 1144,
-              "transferSize": 995,
-              "responseEnd": 177.30000001192093
+              "transferSize": 994,
+              "responseEnd": 175.60000002384186
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-JP5iS8f0.js",
-              "encodedBodySize": 21207,
-              "decodedBodySize": 63019,
-              "transferSize": 21507,
-              "responseEnd": 724
+              "name": "http://127.0.0.1:61972/game/assets/index-YNvli1gG.js",
+              "encodedBodySize": 22800,
+              "decodedBodySize": 67977,
+              "transferSize": 23100,
+              "responseEnd": 731.3000000119209
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-core-DV-7ZtLI.js",
-              "encodedBodySize": 51436,
-              "decodedBodySize": 191529,
-              "transferSize": 51736,
-              "responseEnd": 1033
+              "name": "http://127.0.0.1:61972/game/assets/three-core-DNJrnzan.js",
+              "encodedBodySize": 59503,
+              "decodedBodySize": 226385,
+              "transferSize": 59803,
+              "responseEnd": 1122
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-renderer-Dxdc_CUg.js",
-              "encodedBodySize": 83730,
-              "decodedBodySize": 352584,
-              "transferSize": 84030,
-              "responseEnd": 1188.0999999940395
+              "name": "http://127.0.0.1:61972/game/assets/three-renderer-CZo2U34P.js",
+              "encodedBodySize": 83724,
+              "decodedBodySize": 352631,
+              "transferSize": 84024,
+              "responseEnd": 1261.5
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-B3nO6ZQ9.css",
-              "encodedBodySize": 2796,
-              "decodedBodySize": 9725,
-              "transferSize": 3096,
-              "responseEnd": 443.09999999403954
+              "name": "http://127.0.0.1:61972/game/assets/index-CFEYj5Mq.css",
+              "encodedBodySize": 2865,
+              "decodedBodySize": 10134,
+              "transferSize": 3165,
+              "responseEnd": 484.60000002384186
             }
           ],
           "initialDialogs": 0
@@ -356,12 +398,12 @@
       ],
       "initialVisibleText": "Needle in a Haystack\n+\nСобрать соломинку\n✥\nДействие · E\nМОНЕТЫ\n0\nВ РУКАХ\n0 / 5\nВ СТОГЕ\n20000\nИНСТРУМЕНТ\nРуки\nПодойди к стогу · собери сено и найди иголку\nМагазин\n?\n⚙",
       "medians": {
-        "firstFrameMs": 2867.800000011921,
-        "firstMovementMs": 3143.300000011921,
-        "firstCollectionMs": 4709.200000017881
+        "firstFrameMs": 3318.100000023842,
+        "firstMovementMs": 3623.7000000178814,
+        "firstCollectionMs": 5493.4000000059605
       },
       "observedSub3Counts": {
-        "frame": 3,
+        "frame": 0,
         "movement": 0,
         "collection": 0
       }
@@ -374,160 +416,160 @@
       "cpu": 6,
       "runs": [
         {
-          "firstFrameMs": 6981.700000017881,
-          "firstMovementMs": 7536,
-          "firstCollectionMs": 9098.800000011921,
+          "firstFrameMs": 7647.799999982119,
+          "firstMovementMs": 8192.299999982119,
+          "firstCollectionMs": 9929.40000000596,
           "under3Seconds": {
             "frame": false,
             "movement": false,
             "collection": false
           },
-          "initialEncodedBytes": 159864,
-          "initialDecodedBytes": 618001,
-          "initialTransferBytes": 161364,
+          "initialEncodedBytes": 169586,
+          "initialDecodedBytes": 658271,
+          "initialTransferBytes": 171086,
+          "longTaskCount": 6,
+          "longestTaskMs": 2588,
+          "resources": [
+            {
+              "name": "http://127.0.0.1:61972/game/index.html?diagnostics",
+              "encodedBodySize": 694,
+              "decodedBodySize": 1144,
+              "transferSize": 994,
+              "responseEnd": 448.2999999821186
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/index-YNvli1gG.js",
+              "encodedBodySize": 22800,
+              "decodedBodySize": 67977,
+              "transferSize": 23100,
+              "responseEnd": 2380.0999999940395
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/three-core-DNJrnzan.js",
+              "encodedBodySize": 59503,
+              "decodedBodySize": 226385,
+              "transferSize": 59803,
+              "responseEnd": 3843.7999999821186
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/three-renderer-CZo2U34P.js",
+              "encodedBodySize": 83724,
+              "decodedBodySize": 352631,
+              "transferSize": 84024,
+              "responseEnd": 4355.299999982119
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/index-CFEYj5Mq.css",
+              "encodedBodySize": 2865,
+              "decodedBodySize": 10134,
+              "transferSize": 3165,
+              "responseEnd": 1260.2999999821186
+            }
+          ],
+          "initialDialogs": 0
+        },
+        {
+          "firstFrameMs": 7581.600000023842,
+          "firstMovementMs": 8193.90000000596,
+          "firstCollectionMs": 10029.200000017881,
+          "under3Seconds": {
+            "frame": false,
+            "movement": false,
+            "collection": false
+          },
+          "initialEncodedBytes": 169586,
+          "initialDecodedBytes": 658271,
+          "initialTransferBytes": 171086,
+          "longTaskCount": 6,
+          "longestTaskMs": 2539,
+          "resources": [
+            {
+              "name": "http://127.0.0.1:61972/game/index.html?diagnostics",
+              "encodedBodySize": 694,
+              "decodedBodySize": 1144,
+              "transferSize": 994,
+              "responseEnd": 422.90000000596046
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/index-YNvli1gG.js",
+              "encodedBodySize": 22800,
+              "decodedBodySize": 67977,
+              "transferSize": 23100,
+              "responseEnd": 2372.300000011921
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/three-core-DNJrnzan.js",
+              "encodedBodySize": 59503,
+              "decodedBodySize": 226385,
+              "transferSize": 59803,
+              "responseEnd": 3848.800000011921
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/three-renderer-CZo2U34P.js",
+              "encodedBodySize": 83724,
+              "decodedBodySize": 352631,
+              "transferSize": 84024,
+              "responseEnd": 4350
+            },
+            {
+              "name": "http://127.0.0.1:61972/game/assets/index-CFEYj5Mq.css",
+              "encodedBodySize": 2865,
+              "decodedBodySize": 10134,
+              "transferSize": 3165,
+              "responseEnd": 1264.2000000178814
+            }
+          ],
+          "initialDialogs": 0
+        },
+        {
+          "firstFrameMs": 7886.5,
+          "firstMovementMs": 8567.40000000596,
+          "firstCollectionMs": 10467.600000023842,
+          "under3Seconds": {
+            "frame": false,
+            "movement": false,
+            "collection": false
+          },
+          "initialEncodedBytes": 169586,
+          "initialDecodedBytes": 658271,
+          "initialTransferBytes": 171086,
           "longTaskCount": 7,
-          "longestTaskMs": 2298,
+          "longestTaskMs": 2735,
           "resources": [
             {
-              "name": "http://127.0.0.1:65135/game/index.html?diagnostics",
-              "encodedBodySize": 695,
+              "name": "http://127.0.0.1:61972/game/index.html?diagnostics",
+              "encodedBodySize": 694,
               "decodedBodySize": 1144,
-              "transferSize": 995,
-              "responseEnd": 444.7000000178814
+              "transferSize": 994,
+              "responseEnd": 441.40000000596046
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-JP5iS8f0.js",
-              "encodedBodySize": 21207,
-              "decodedBodySize": 63019,
-              "transferSize": 21507,
-              "responseEnd": 2245.5
+              "name": "http://127.0.0.1:61972/game/assets/index-YNvli1gG.js",
+              "encodedBodySize": 22800,
+              "decodedBodySize": 67977,
+              "transferSize": 23100,
+              "responseEnd": 2416.800000011921
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-core-DV-7ZtLI.js",
-              "encodedBodySize": 51436,
-              "decodedBodySize": 191529,
-              "transferSize": 51736,
-              "responseEnd": 3487.7000000178814
+              "name": "http://127.0.0.1:61972/game/assets/three-core-DNJrnzan.js",
+              "encodedBodySize": 59503,
+              "decodedBodySize": 226385,
+              "transferSize": 59803,
+              "responseEnd": 3890.100000023842
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/three-renderer-Dxdc_CUg.js",
-              "encodedBodySize": 83730,
-              "decodedBodySize": 352584,
-              "transferSize": 84030,
-              "responseEnd": 4141.9000000059605
+              "name": "http://127.0.0.1:61972/game/assets/three-renderer-CZo2U34P.js",
+              "encodedBodySize": 83724,
+              "decodedBodySize": 352631,
+              "transferSize": 84024,
+              "responseEnd": 4405.800000011921
             },
             {
-              "name": "http://127.0.0.1:65135/game/assets/index-B3nO6ZQ9.css",
-              "encodedBodySize": 2796,
-              "decodedBodySize": 9725,
-              "transferSize": 3096,
-              "responseEnd": 1139.5
-            }
-          ],
-          "initialDialogs": 0
-        },
-        {
-          "firstFrameMs": 6556.399999976158,
-          "firstMovementMs": 6977.199999988079,
-          "firstCollectionMs": 8539.699999988079,
-          "under3Seconds": {
-            "frame": false,
-            "movement": false,
-            "collection": false
-          },
-          "initialEncodedBytes": 159864,
-          "initialDecodedBytes": 618001,
-          "initialTransferBytes": 161364,
-          "longTaskCount": 3,
-          "longestTaskMs": 1960,
-          "resources": [
-            {
-              "name": "http://127.0.0.1:65135/game/index.html?diagnostics",
-              "encodedBodySize": 695,
-              "decodedBodySize": 1144,
-              "transferSize": 995,
-              "responseEnd": 428.59999999403954
-            },
-            {
-              "name": "http://127.0.0.1:65135/game/assets/index-JP5iS8f0.js",
-              "encodedBodySize": 21207,
-              "decodedBodySize": 63019,
-              "transferSize": 21507,
-              "responseEnd": 2221.399999976158
-            },
-            {
-              "name": "http://127.0.0.1:65135/game/assets/three-core-DV-7ZtLI.js",
-              "encodedBodySize": 51436,
-              "decodedBodySize": 191529,
-              "transferSize": 51736,
-              "responseEnd": 3449.399999976158
-            },
-            {
-              "name": "http://127.0.0.1:65135/game/assets/three-renderer-Dxdc_CUg.js",
-              "encodedBodySize": 83730,
-              "decodedBodySize": 352584,
-              "transferSize": 84030,
-              "responseEnd": 4119.5
-            },
-            {
-              "name": "http://127.0.0.1:65135/game/assets/index-B3nO6ZQ9.css",
-              "encodedBodySize": 2796,
-              "decodedBodySize": 9725,
-              "transferSize": 3096,
-              "responseEnd": 1115.5999999940395
-            }
-          ],
-          "initialDialogs": 0
-        },
-        {
-          "firstFrameMs": 6578.799999982119,
-          "firstMovementMs": 6998.699999988079,
-          "firstCollectionMs": 8551.40000000596,
-          "under3Seconds": {
-            "frame": false,
-            "movement": false,
-            "collection": false
-          },
-          "initialEncodedBytes": 159864,
-          "initialDecodedBytes": 618001,
-          "initialTransferBytes": 161364,
-          "longTaskCount": 3,
-          "longestTaskMs": 1955,
-          "resources": [
-            {
-              "name": "http://127.0.0.1:65135/game/index.html?diagnostics",
-              "encodedBodySize": 695,
-              "decodedBodySize": 1144,
-              "transferSize": 995,
-              "responseEnd": 446.5
-            },
-            {
-              "name": "http://127.0.0.1:65135/game/assets/index-JP5iS8f0.js",
-              "encodedBodySize": 21207,
-              "decodedBodySize": 63019,
-              "transferSize": 21507,
-              "responseEnd": 2259.2999999821186
-            },
-            {
-              "name": "http://127.0.0.1:65135/game/assets/three-core-DV-7ZtLI.js",
-              "encodedBodySize": 51436,
-              "decodedBodySize": 191529,
-              "transferSize": 51736,
-              "responseEnd": 3489.2999999821186
-            },
-            {
-              "name": "http://127.0.0.1:65135/game/assets/three-renderer-Dxdc_CUg.js",
-              "encodedBodySize": 83730,
-              "decodedBodySize": 352584,
-              "transferSize": 84030,
-              "responseEnd": 4143.4000000059605
-            },
-            {
-              "name": "http://127.0.0.1:65135/game/assets/index-B3nO6ZQ9.css",
-              "encodedBodySize": 2796,
-              "decodedBodySize": 9725,
-              "transferSize": 3096,
-              "responseEnd": 1145.4000000059605
+              "name": "http://127.0.0.1:61972/game/assets/index-CFEYj5Mq.css",
+              "encodedBodySize": 2865,
+              "decodedBodySize": 10134,
+              "transferSize": 3165,
+              "responseEnd": 1313.300000011921
             }
           ],
           "initialDialogs": 0
@@ -535,9 +577,9 @@
       ],
       "initialVisibleText": "Needle in a Haystack\n+\nСобрать соломинку\n✥\nДействие · E\nМОНЕТЫ\n0\nВ РУКАХ\n0 / 5\nВ СТОГЕ\n20000\nИНСТРУМЕНТ\nРуки\nПодойди к стогу · собери сено и найди иголку\nМагазин\n?\n⚙",
       "medians": {
-        "firstFrameMs": 6578.799999982119,
-        "firstMovementMs": 6998.699999988079,
-        "firstCollectionMs": 8551.40000000596
+        "firstFrameMs": 7647.799999982119,
+        "firstMovementMs": 8193.90000000596,
+        "firstCollectionMs": 10029.200000017881
       },
       "observedSub3Counts": {
         "frame": 0,
