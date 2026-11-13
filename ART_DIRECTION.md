@@ -1,0 +1,80 @@
+# ART_DIRECTION.md — Needle in a Haystack
+
+## Status and authority
+This is the **visual source of truth** for the Needle in a Haystack project. Read it before any work involving 3D models, colors, materials, textures, lighting, animation, particles, HUD, tutorial cues, screenshots, or promotional artwork. It describes the user's three supplied visual references, not permission to copy assets or characters from them.
+
+## Art identity: Vibrant Toybox 3D
+Create an immediately readable, cheerful, saturated 3D casual-game world with a Roblox-adjacent *visual vocabulary*: chunky simplified geometry, polished toy-like surfaces, bright primary and secondary colors, clear shapes, bold UI, strong object separation, and an instantly understandable objective. This is **not** claymation, paper craft, muted indie low-poly, gritty realism, or photorealism. Keep the game visually original.
+
+### What the three reference images communicate
+1. **Keyboard obby promotional image:** High-saturation pink/purple world, oversized chunky geometry, hard visual contrast, glossy highlights, energetic presentation and large outlined lettering. The typography is **thumbnail/marketing treatment**, not an instruction to fill the gameplay HUD with giant words. Do not reproduce its avatar, layout, text, or copyrighted elements.
+2. **Colorful obstacle-course gameplay:** A clean, open, toy-like 3D play space; cyan sky, flat bright platforms, vivid red/blue accents, simple readable geometry and large separation between interactive elements. Aim for similar instant visual comprehension, not a copy of the level or UI.
+3. **Haystack and needle image:** A single giant rounded golden hay mound on bright green ground against a clean blue sky; a readable metallic needle at its apex. This establishes the game's focal object and its recognizable silhouette. The visible hay-strand texture matters, but must be achieved economically. The oversized needle is appropriate for cover art, tutorials, and discovery moments; in normal gameplay, the hidden needle must remain a meaningful discovery.
+
+## Scene art direction
+- **Environment:** Bright sunny backyard / miniature farm playset, simple grass field, short fence, clear sky, sparse props. Do not bury the focal point in decorations.
+- **Haystack:** Dominant rounded mound, warm golden-yellow/orange, with an irregular silhouette and layered clumps. At gameplay scale, use low-poly clump geometry plus selective repeating strand detail, baked texture or sparse instanced accents. Never model every strand as a separate mesh.
+- **Player:** Original simplified toy-like character, readable silhouette and oversized hands/tools for clear animations. Avoid directly imitating recognizable Roblox avatar models or third-party characters.
+- **Cart:** Oversized, easily identified drop-off point, visually distinct from hay. A few large wheels, strong color blocking, readable fill state.
+- **Tools:** Each upgrade changes the visible tool silhouette (hands, rake/pitchfork, wheelbarrow, etc.). No tiny detailed assets that disappear on phones.
+- **Coins/rewards:** Large, legible golden coins and restrained pop effects; the player should instantly understand earnings.
+- **Needle:** Metallic silver, distinct against warm hay, subtle specular glint; hide until discovered or deliberately hinted.
+
+## Color system (starting palette, adjust after in-engine tests)
+- Sky: `#36C9FF` / deeper blue `#138EF2`
+- Grass: `#67D83D` / shaded `#38A92E`
+- Hay highlights: `#FFD83D`; base: `#F6AD22`; shadow: `#C77A19`
+- Wood/cart: `#B86B38` / dark `#6D3C24`
+- Coin/reward: `#FFE14A`
+- Primary action/UI: `#23B8FF`
+- Upgrade/positive: `#54D845`
+- Secondary accent: `#FF69BE` or `#9655F5` sparingly
+- Text: `#FFFFFF` with dark `#20212A` outline/shadow for contrast
+
+Do not use every accent everywhere. Maintain a consistent hierarchy: hay = warm focal mass, grass/sky = clean background, interactive UI = clearly contrasted.
+
+## Shape and material rules
+- Favor chunky rounded forms, slightly exaggerated proportions and clean silhouettes.
+- Use simple standard/lambert materials and a small shared material palette.
+- Gentle specular shine on coins, tools, plastic-like objects; rougher matte hay and grass.
+- Avoid realistic PBR texture sets, heavy normal maps, subsurface scattering, screen-space reflections, dense geometry, and expensive postprocessing.
+- Use a bright directional sun + hemisphere/ambient fill; optional low-cost shadows only if performance permits.
+- Make primary interactions readable from mobile viewing distances and on both portrait/landscape layouts.
+
+## Gameplay UI vs promotional artwork
+**In-game UI:** Large tap targets, minimal text, big icons, clear currency counters, single-action tutorial highlights, high contrast and uncluttered placement. Use short positive feedback, not huge permanent labels. Avoid excessive flashing, misleading prompts, or pressure tactics.
+
+**Thumbnail/cover:** May use oversized outlined text, a huge golden haystack, a prominent needle, a lively character pose, saturated sky/grass and a bold readable focal composition. Cover art is separate from gameplay rendering. Do not copy the typography/composition of the reference image.
+
+## Animation and onboarding
+- First interaction within seconds: animated pointer highlights the haystack; tap triggers immediate movement/collection response.
+- Then highlight cart, reward, and first upgrade **one step at a time**; advance on completed actions, not a fixed timer.
+- Hay visibly shrinks or changes silhouette; cart fills; coins bounce briefly; purchased tools visibly change.
+- Use limited pooled particles and short effects. Avoid overstimulation or persistent visual clutter.
+- No tutorial dependency on reading ability; provide replayable guidance and accessibility-minded contrast.
+
+## Performance and asset budget
+- Current target: **itch.io HTML5**; no YouTube SDK integration.
+- Prioritize first meaningful interaction, targeting under 3 seconds on representative mobile hardware/network where feasible; measure cold-cache production builds.
+- Adopt internal future-compatibility goals: initial transfer preferably <15 MiB (hard internal ceiling 30 MiB), JS heap peak <512 MB, whole build far below 250 MiB.
+- First-load only character, haystack, cart, minimal environment, camera/input and essential UI. Lazy-load future levels, optional audio, cosmetics, advanced tools and decorations.
+- Prefer procedural primitives, shared meshes/materials, texture atlases, instancing and pooled particles; avoid large per-object textures.
+- For hay detail, use small repeated/atlas textures or a few instanced tuft meshes, not millions of strands or individual mesh objects.
+- Optimize mobile draw calls, overdraw, texture memory, shadows and shader complexity.
+- Keep art assets original or licensed for commercial use; document third-party assets in `ASSET_LICENSES.md`.
+
+## Acceptance criteria for visual work
+- A player can identify haystack, cart, character, collectible and primary action at a glance.
+- Scene looks vivid and playful **without** resembling generic muted low-poly farm packs.
+- Main haystack reads as textured golden hay, not a smooth yellow sphere.
+- UI remains readable at small portrait mobile sizes.
+- Changes to models, colors and effects respect the same visual language.
+- Art enhancements do not delay the first interaction or materially degrade mobile performance.
+
+## Art task workflow for agents
+1. Read this file before editing visuals.
+2. Describe how proposed assets fit the references and this document.
+3. Favor a small original prototype over downloading a mismatched asset pack.
+4. Implement the smallest representative change and check desktop/mobile framing.
+5. Run the production build and report performance or asset-size changes when measurable.
+6. Ask for approval before changing the core art style or introducing expensive graphics techniques.

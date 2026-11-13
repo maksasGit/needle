@@ -1,0 +1,26 @@
+{
+  "name": "needle-in-a-haystack",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/check-navigation.mjs && node scripts/check-gameplay.mjs",
+    "test:browser": "node scripts/browser-check.mjs",
+    "audit:first-load": "node scripts/check-first-load.mjs",
+    "check:build": "node scripts/check-build.mjs",
+    "verify": "npm run typecheck && npm test && npm run build && npm run check:build && npm run test:browser",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/three": "^0.187.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  },
+  "dependencies": {
+    "three": "^0.187.0"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "totalBytes": 619092,
+  "fileCount": 6,
+  "files": [
+    {
+      "file": "assets/index-B3nO6ZQ9.css",
+      "bytes": 9725,
+      "gzipBytes": 2796,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/index-JP5iS8f0.js",
+      "bytes": 63019,
+      "gzipBytes": 21207,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/three-core-DV-7ZtLI.js",
+      "bytes": 191529,
+      "gzipBytes": 51436,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/three-renderer-Dxdc_CUg.js",
+      "bytes": 352584,
+      "gzipBytes": 83730,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "index.html",
+      "bytes": 1144,
+      "gzipBytes": 695,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "THIRD_PARTY_LICENSES.txt",
+      "bytes": 1091,
+      "gzipBytes": 671,
+      "preferredFileLimit": true
+    }
+  ],
+  "passed": true
+}

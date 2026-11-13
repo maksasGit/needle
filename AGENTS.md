@@ -1,0 +1,600 @@
+﻿# AGENTS.md — Browser Game Development Standards
+
+## 1. Project context
+
+We are developing small, polished HTML5 browser games for publication on **itch.io**.
+
+The long-term goal is to build games that can eventually be adapted for **YouTube Playables** with minimal architectural changes.
+
+The current development phase is **itch.io only**.
+
+**IMPORTANT: Do not implement YouTube-specific integrations unless explicitly requested.**
+
+This document defines the technical, performance, compatibility, quality, and content standards that all coding agents should follow.
+
+## 2. Current platform and technology
+
+**Current target:** itch.io (HTML5 browser games).
+
+**Potential future target:** YouTube Playables.
+
+Preferred technologies depend on the project:
+
+- **2D:** Phaser 3, JavaScript or TypeScript.
+- **3D:** Three.js, TypeScript.
+- **Build tooling:** Vite.
+- **UI:** HTML/CSS or an appropriate game-engine UI system.
+- **Rendering:** Canvas 2D or WebGL.
+
+Do not introduce unnecessary frameworks, dependencies, backends, or complex infrastructure.
+
+Prioritize simple, maintainable, modular architecture.
+
+## 3. YouTube integration — explicitly out of scope
+
+Until requested, agents MUST NOT:
+
+- Integrate the YouTube Playables SDK.
+- Import `https://www.youtube.com/game_api/v1`.
+- Implement `ytgame.game.firstFrameReady()` or `gameReady()`.
+- Implement YouTube cloud saves.
+- Implement YouTube-specific pause/audio APIs.
+- Implement YouTube advertising APIs.
+- Add YouTube Developer Portal configuration.
+- Prepare or submit YouTube certification packages.
+
+Use ordinary browser functionality during itch.io development:
+
+- `localStorage` for persistent progress where appropriate.
+- Browser visibility events for pausing, where appropriate.
+- Standard browser audio controls.
+- Normal browser input APIs.
+
+However, design these systems behind clear interfaces so they can later be replaced with YouTube-specific implementations.
+
+For example:
+
+- `SaveManager`
+- `AudioManager`
+- `LifecycleManager`
+- `InputManager`
+
+Do not build unnecessary abstraction layers solely for future integrations.
+
+## 4. Performance requirements
+
+Apply the following targets to all projects.
+
+| Metric | Target |
+|---|---|
+| Initial download | Under 15 MiB preferred; never exceed 30 MiB |
+| Total game bundle | Under 250 MiB; preferably much smaller |
+| Individual file | Under 512 KiB preferred; never exceed 30 MiB |
+| JavaScript heap | Stay below 512 MB peak |
+| Time to interactivity | Aim for under 5 seconds |
+| Saved game data | Under 500 KiB preferred; never exceed 3 MiB |
+| Bundle file count | No more than 8,000 |
+
+These limits are adopted from the YouTube Playables technical requirements as **internal project targets**. They are not itch.io publishing limits.
+
+For small casual games, aim substantially below these limits wherever practical.
+
+### Performance rules
+
+- Avoid unnecessary allocations inside the game loop.
+- Reuse temporary objects where appropriate.
+- Use object pooling for frequently spawned objects.
+- Dispose of unused geometries, materials, textures, render targets, and audio resources.
+- Remove obsolete event listeners and timers.
+- Avoid expensive per-frame DOM operations.
+- Minimize draw calls, excessive transparency, and unnecessary lighting calculations.
+- Use compressed and appropriately sized assets.
+- Lazy-load nonessential assets when beneficial.
+- Avoid large, blocking initialization tasks.
+- Do not introduce memory leaks during restarts or scene transitions.
+
+For Three.js, pay special attention to:
+
+- `geometry.dispose()`
+- `material.dispose()`
+- `texture.dispose()`
+- GPU resource lifecycle
+- Instanced meshes for repeated objects
+- Reusing geometries and materials
+- Avoiding unnecessary shadow-casting objects
+
+For Phaser, pay special attention to:
+
+- Scene lifecycle cleanup
+- Destroying obsolete game objects
+- Texture management
+- Timers and event listeners
+- Particle and physics object pooling
+
+## 5. Mobile-first design
+
+Every game MUST be fully playable on both desktop and mobile.
+
+### Input
+
+- Support mouse and touch input.
+- Prefer unified pointer input where possible.
+- Use appropriately sized interactive targets.
+- Avoid relying on hover.
+- Avoid keyboard-only mechanics.
+- Prevent accidental browser scrolling during gameplay.
+- Ensure input remains accurate after resizing.
+- Do not require precise taps on tiny objects.
+
+Keyboard input may be added as an optional desktop enhancement.
+
+### Responsive layout
+
+Support portrait, landscape, and unusual aspect ratios, including:
+
+- 9:16
+- 3:4
+- 1:1
+- 4:3
+- 16:9
+- 21:9
+
+Requirements:
+
+- Do not lock device orientation.
+- Adapt the camera and interface to the available viewport.
+- Preserve game progress during resizing.
+- Keep important gameplay objects visible.
+- Respect safe areas and screen cutouts.
+- Keep text and controls readable.
+- Avoid stretching the game scene incorrectly.
+
+When appropriate, use a responsive camera with a stable gameplay area and adaptive framing.
+
+## 6. Stability and crash prevention
+
+Stability is a high priority.
+
+Internal crash-rate targets for future production releases:
+
+- Below 1%: maximum acceptable target.
+- Below 0.5%: preferred.
+- Below 0.1%: ideal.
+
+These are operational targets taken from the supplied Crash Rate handbook, not measurements available automatically during local development.
+
+### Required practices
+
+- Handle asset-loading failures.
+- Avoid unhandled promise rejections.
+- Avoid unhandled exceptions in the game loop.
+- Validate object references before use.
+- Prevent infinite loops.
+- Avoid uncontrolled object spawning.
+- Clean up resources when restarting.
+- Handle WebGL context loss and restoration where supported.
+- Ensure the game can recover from interrupted loading when practical.
+- Avoid blank screens and permanent loading states.
+
+### Testing
+
+Before declaring a milestone complete:
+
+1. Run the game on desktop.
+2. Test on a real mobile device.
+3. Test portrait and landscape orientations.
+4. Resize the browser repeatedly.
+5. Restart the game at least 10 times.
+6. Check the browser console.
+7. Verify that memory usage does not grow indefinitely.
+8. Test pausing and resuming.
+9. Test saved-game loading.
+10. Verify that the production build works.
+
+Do not treat a successful Vite development-server run as proof that the production build is valid.
+
+## 7. Game loop and rendering
+
+- Use frame-rate-independent movement and animations.
+- Base movement on delta time.
+- Avoid coupling game logic to rendering FPS.
+- Avoid unnecessary work when the game is paused.
+- Prevent large delta-time spikes after resuming.
+- Use a clear game state model.
+- Separate rendering, input, and gameplay logic where practical.
+
+For 3D games:
+
+- Keep geometry and shaders reasonably lightweight.
+- Prefer simple lighting solutions.
+- Optimize for mid-range mobile hardware.
+- Avoid excessive real-time shadows and postprocessing.
+- Monitor draw calls, triangle counts, GPU memory, and frame time.
+
+## 8. Game design and user experience
+
+Games should be:
+
+- Easy to understand.
+- Quick to start.
+- Comfortable on mobile.
+- Visually readable.
+- Responsive to input.
+- Satisfying during short sessions.
+- Clear about objectives and progress.
+
+Recommended practices:
+
+- Introduce the main mechanic immediately.
+- Avoid long mandatory tutorials.
+- Provide immediate visual feedback for interactions.
+- Use sound and animation to reinforce actions.
+- Keep menus simple.
+- Provide clear success and failure states.
+- Make restarting easy.
+- Avoid unnecessary interruptions.
+
+These are design goals, not strict YouTube certification requirements.
+
+## 9. Copyright and intellectual property
+
+All published games must use original, authorized, or properly licensed content.
+
+Agents MUST NOT:
+
+- Copy copyrighted characters, artwork, music, or models without permission.
+- Reproduce recognizable franchise-specific visual designs.
+- Assume recoloring an asset makes it legally original.
+- Copy another game's distinctive visual presentation.
+- Use assets with unknown licensing terms.
+- Assume AI-generated assets are automatically free of intellectual-property concerns.
+
+Before adding external assets:
+
+1. Identify the source.
+2. Check the license.
+3. Confirm commercial-use permission where necessary.
+4. Check attribution requirements.
+5. Keep a record of the asset's origin.
+
+Maintain an `ASSET_LICENSES.md` file when external assets are used.
+
+General gameplay mechanics and ideas can inspire a project, but the final implementation should have its own identifiable presentation.
+
+## 10. Privacy and external dependencies
+
+For current itch.io builds:
+
+- Avoid collecting unnecessary personal data.
+- Do not embed trackers without a clear reason.
+- Prefer local assets over runtime CDN dependencies.
+- Avoid unnecessary network requests.
+- Keep the game functional without a custom backend where possible.
+
+Future YouTube Playables builds will require stricter restrictions on external calls and user data.
+
+Do not enforce those platform-specific restrictions prematurely if they would interfere with legitimate itch.io functionality, but flag potential migration issues.
+
+## 11. Packaging and builds
+
+Use production builds for final validation.
+
+For Vite projects:
+
+- Run `npm run build`.
+- Validate the output inside `dist/`.
+- Ensure asset references resolve correctly.
+- Prefer relative asset paths.
+- Avoid absolute development-only paths.
+- Check for missing assets and console errors.
+- Verify the build on mobile.
+
+For itch.io:
+
+- Package the web build according to itch.io's HTML5 requirements.
+- Ensure `index.html` is at the appropriate archive root.
+- Verify that the uploaded game works inside itch.io's embedded environment.
+
+Keep filenames simple and portable.
+
+Minification is allowed. Avoid unnecessary code obfuscation.
+
+## 12. Accessibility and localization
+
+- English must be available as a game language.
+- Additional languages are optional unless requested.
+- Keep UI text readable.
+- Do not communicate important information only through color.
+- Provide clear visual feedback for interactions.
+- Avoid unnecessarily small interactive elements.
+- Consider reduced motion and audio accessibility where practical.
+
+## 13. Coding agent workflow
+
+When implementing a feature:
+
+1. Inspect the existing project architecture.
+2. Understand the current gameplay loop.
+3. Propose the smallest reasonable implementation.
+4. Preserve existing working functionality.
+5. Follow the mobile-first requirements.
+6. Consider memory and performance impact.
+7. Implement the feature.
+8. Run the available build and validation commands.
+9. Fix introduced errors.
+10. Summarize what changed and what still needs testing.
+
+Do not claim to have tested something that was not actually tested.
+
+Avoid broad refactoring unless necessary.
+
+Prefer incremental, testable changes over rewriting entire systems.
+
+## 14. Definition of Done
+
+A feature is complete when:
+
+- It works as intended.
+- It does not break existing mechanics.
+- It supports the relevant mobile and desktop interactions.
+- It behaves correctly after resizing.
+- It does not introduce obvious memory leaks.
+- It handles expected errors.
+- The production build succeeds.
+- Its behavior is understandable to the player.
+
+A game is ready for itch.io release when the complete gameplay loop works, the production build is verified, and the relevant stability, usability, and asset-rights checks are satisfied.
+
+## 15. Future YouTube migration
+
+When YouTube Playables integration is explicitly requested, revisit:
+
+- Playables SDK initialization
+- `firstFrameReady()` / `gameReady()`
+- SDK pause/resume
+- SDK audio settings
+- Cloud saves
+- Localization APIs
+- External network restrictions
+- Monetization APIs
+- McPlay validation
+- YouTube certification and metadata requirements
+
+Do not implement these features before they are requested.
+
+---
+
+**Priority order for current development:**
+
+1. Fun and functional gameplay.
+2. Mobile and desktop usability.
+3. Stability.
+4. Performance.
+5. Responsive design.
+6. Maintainable code.
+7. Copyright compliance.
+8. Small and portable production builds.
+9. Future YouTube compatibility without premature integration.
+
+**Current mission: Build excellent itch.io games that are technically ready to evolve into YouTube Playables later.**
+
+## 16. Needle in a Haystack — project-specific instructions
+
+These project-specific decisions supplement the standards above. Preserve them unless the user requests a change.
+
+### Workspace and communication
+
+- The repository/application is in `needle-in-a-haystack/`; run npm commands there.
+- Communicate with the user in Russian. English must also be available in the game under section 12; Russian communication does not replace that requirement.
+- Explain the intended change before editing, work in small iterations, and preserve working features.
+- Do not advance to the next milestone without the user's confirmation. Fixes and refinements to the current feature remain within the authorized scope.
+- Do not create a separate reusable skill unless the user requests one; this AGENTS.md is the persistent source of project instructions.
+
+### Accepted gameplay and technology
+
+- Three.js + TypeScript + Vite + HTML/CSS, without React or a heavyweight physics engine unless necessary and authorized.
+- The current view is first person with a PerspectiveCamera. This supersedes the original orthographic/isometric camera requirement.
+- Mouse and touch remain fully supported. Per user instruction on 2026-11-13, tap-to-approach is removed: desktop movement uses WASD/arrows with mouse look; mobile uses an analog virtual joystick plus touch look/actions. Ground taps never move the player; object taps only interact within range. No keyboard is required on mobile.
+- One tap starts one collection action. No hold-to-collect or automatic repeating collection. Taps during collection do not queue actions.
+- Collect only within interaction range. Manual movement cancels the route and unfinished collection.
+- Cart interaction unloads the entire inventory and awards coins immediately. Presentation animations must not delay payment or duplicate a transaction.
+- Upgrades affect capacity, movement speed, collection duration, and amount per action. Keep prices, limits, and effects in configuration.
+- The haystack initially contains 20,000 individual straws. One unit of hay corresponds to one straw. Tools can collect multiple straws per action, limited by inventory capacity and remaining hay.
+- Use instancing and bounded local settling rather than simulating 20,000 full rigid bodies. Preserve sleeping inactive straws and accelerated picking.
+- Highlight the individual straw under the crosshair; collect that exact straw first. Keep stable identity across instance-index swaps and settling.
+- At tool level zero, show block-style hands. Once any tool is purchased, hide both hands completely and show only the tool and carried hay.
+- Visible carried straw count must match inventory. Sold straws animate into neat rows/layers in the cart and persist there for the current session.
+- The visual direction is original, colorful, block-style farm art inspired by broad sandbox-game aesthetics. Do not copy Roblox branding, characters, UI assets, or a reference game's distinctive presentation.
+- Geometry is procedural. External assets require explicit user agreement and documented licensing.
+
+### Milestones and validation
+
+- Milestone 01: scene and controls; 02: collection and sales; 03: upgrades; 04: needle and victory; 05: polish, saves, and release.
+- On 2026-11-12 the user authorized executing the entire eight-stage requirements plan ("погнали прогоняй все сам"), including saves, localization, needle/victory, stability, verification and local packaging. This does not authorize publishing, YouTube integration, or unrelated future milestones.
+- Saves, English localization and needle/victory now have implementations. Consult `needle-in-a-haystack/verification/AUDIT.md` for actual validation and remaining device/hosting checks. Do not claim release readiness until relevant requirements are verified.
+- After gameplay/code changes, run `npm run typecheck`, `npm test`, and `npm run build` as appropriate. `build` also runs the TypeScript check.
+- Report actual validation, limitations, and pending desktop/mobile checks. Automated tests are not proof of visual quality, device FPS, memory stability, or a production-device test.
+- For documentation-only edits, check the document instead of running unrelated gameplay tests.
+- Retain `base: './'` and validate emitted asset paths for itch.io. Never publish or submit externally without authorization.
+- The production build splits Three.js core and renderer chunks to meet the preferred 512 KiB individual-file target. Measure the actual current build rather than treating historical sizes as current.
+
+### Local development reliability
+
+- The stylesheet is linked from index.html. Keep a reliable stylesheet loading path in both development and production.
+- Vite's file watcher waits for writes to finish: preserve this protection against caching temporarily empty files.
+- Prefer patch-based or atomic edits over repeatedly truncating files while the development server is watching.
+
+## 17. Visual Identity, First-Load Performance & Onboarding
+
+Added by the user on 2026-11-13. This section refines the earlier standards. Its development-priority order and 3-second initial-interactivity target take precedence over the earlier general priority list and 5-second aim for this game. Existing technical size, safety, licensing, and platform-scope requirements still apply.
+
+### Product Direction
+
+Needle in a Haystack is a bright, playful, mobile-first 3D casual game designed to be immediately understandable and engaging.
+
+The game should be accessible to younger players, approximately ages 5–12, while remaining enjoyable for a broader audience.
+
+Prioritize clarity, fast interaction, positive feedback, and age-appropriate design. Do not use manipulative engagement mechanics, artificial urgency, or pressure-based monetization.
+
+### Visual Requirements
+
+- Bright, colorful, friendly 3D art direction.
+- Simple, readable silhouettes and recognizable objects.
+- Large interactive targets.
+- Minimal text and icon-first communication.
+- Smooth, expressive animations.
+- Lightweight materials and optimized geometry.
+- Consistent visual hierarchy.
+- Clear contrast between interactive and decorative objects.
+- Avoid unnecessary visual clutter.
+- Maintain visual consistency across all levels.
+
+### Performance: Playable First
+
+The highest technical priority is minimizing time to first meaningful interaction.
+
+Target initial interactivity within 3 seconds on representative mobile hardware and network conditions, where feasible.
+
+This is an internal performance target, not a guaranteed result.
+
+#### Critical Loading
+
+Load only assets required for the first playable interaction:
+
+- Player character
+- Initial haystack
+- Cart
+- Camera
+- Input controls
+- Minimal environment
+- Essential UI
+
+Do not block the first interaction on:
+
+- Future levels
+- Unused tools
+- Decorative assets
+- Optional sounds
+- Nonessential effects
+- Advanced upgrade content
+
+#### Lazy Loading
+
+Implement three loading phases:
+
+1. Critical assets before gameplay.
+2. Noncritical assets after the game becomes interactive.
+3. Level-specific assets on demand.
+
+Prefetch upcoming content when appropriate.
+
+Do not cause visible freezes during background loading.
+
+Measure actual startup time and initial transfer size.
+
+Avoid downloading all future-level assets at startup.
+
+### Guided Onboarding
+
+The first session must teach the game through interaction rather than lengthy explanations.
+
+#### Tutorial Sequence
+
+1. Highlight the haystack.
+2. Guide the player to tap the haystack.
+3. Show the character collecting hay.
+4. Highlight the cart.
+5. Guide the player to deliver hay.
+6. Show the coin reward.
+7. Highlight the first affordable upgrade.
+8. Guide the player to purchase it.
+9. Demonstrate the improvement.
+10. Introduce the objective of finding the hidden needle.
+
+Control clarification: preserve manual-only movement from section 16. Before an interaction, visually guide the player to move into range with the mobile joystick or desktop movement keys. Tapping the haystack or cart performs an action only within range; tutorial guidance must not restore tap-to-approach or automatic walking.
+
+#### Tutorial Rules
+
+- One instruction at a time.
+- Use animated pointers, arrows, highlights, and simple visual cues.
+- Do not depend on reading ability.
+- Never require a long text explanation.
+- Keep tutorial interactions immediately responsive.
+- Advance only when the required player action is completed.
+- Do not repeatedly block normal gameplay with popups.
+- Allow replaying tutorial guidance.
+- Save tutorial completion locally.
+- Ensure the tutorial works with touch and mouse.
+- Respect reduced-motion preferences where practical.
+
+### Feedback and Engagement
+
+Every meaningful interaction should provide clear feedback.
+
+Examples:
+
+- Hay visually decreases after collection.
+- The character visibly carries collected hay.
+- Coins animate when delivered.
+- Upgrades produce immediate observable changes.
+- New tools have distinct appearances or animations.
+- Major milestones introduce new visual elements.
+
+Avoid excessive flashing, screen shaking, or overwhelming effects.
+
+### Development Priority
+
+When tradeoffs are necessary, prioritize:
+
+1. Fast first interaction.
+2. Clear onboarding.
+3. Responsive mobile controls.
+4. Stable gameplay.
+5. Readable, attractive visuals.
+6. Meaningful progression.
+7. Optional visual polish.
+
+Do not sacrifice startup performance for decorative improvements.
+
+### Validation
+
+Before release:
+
+- Test first interaction on real mobile hardware.
+- Measure startup time with a cold cache.
+- Test under slower network conditions.
+- Verify that the first interaction does not wait for optional assets.
+- Confirm that tutorial steps work without reading.
+- Test portrait and landscape orientations.
+- Confirm that lazy-loaded assets do not interrupt gameplay.
+- Check memory use and resource cleanup.
+- Verify that the production build works on itch.io.
+
+### Platform Scope
+
+The current release target remains itch.io.
+
+Do not integrate YouTube SDK, YouTube ads, YouTube cloud saves, or YouTube-specific lifecycle APIs unless explicitly requested.
+
+Maintain architecture that can support future platform adaptation.
+
+### Adoption and Current Implementation
+
+These are requirements for subsequent development, not claims that the current prototype already meets them. Adding this section does not authorize unrelated feature implementation or a broad rewrite in the documentation task.
+
+- The new bright, friendly art direction supersedes the earlier twilight-atmosphere preference as the product direction. Apply it in subsequent visual work while preserving clear hay contrast and selected-straw readability.
+- Three-phase loading and the guided first-session tutorial still require implementation and validation. Existing help dialogs do not substitute for interactive onboarding.
+- Local headless Chrome measurements do not prove the 3-second target on representative mobile hardware or slower networks.
+
+## 18. Visual source of truth: ART_DIRECTION.md
+
+- Read [ART_DIRECTION.md](ART_DIRECTION.md) before any work on models, colors, materials, textures, lighting, animations, particles, HUD, onboarding cues, screenshots, or promotional artwork.
+- It is the authoritative visual direction for this project: **Vibrant Toybox 3D** — a sunny, cheerful, saturated, original toy-like farm with chunky readable silhouettes, golden textured hay, clean blue sky/green grass, and a distinct cart. Earlier twilight styling is not the current art target.
+- Follow its palette, shape/material rules, mobile framing, performance constraints, and visual acceptance criteria. Promotional typography and oversized cover-art needles are not instructions to clutter the gameplay HUD or expose the hidden needle at startup.
+- Use references for visual vocabulary only. Do not copy third-party characters, branding, assets, or distinctive compositions.
+- Apply visual changes incrementally. Check portrait/landscape framing and production build; report measured transfer/performance changes where available. Do not introduce expensive graphics techniques or depart from the established core style without the user's approval.
+- Preserve the explicit manual-control decision: desktop keys/mouse, mobile joystick/touch. The art document's immediate interaction response does not restore automatic walking on taps. Onboarding must guide manual movement into range before collection/delivery.
+- Preserve the current 20,000-unit hay economy, selected-straw identity and visible collection feedback while optimizing representation. Instanced/shared geometry is compatible with the ban on one independent mesh object per straw; do not silently replace gameplay counts or remove selection mechanics during art work.
+- Adding this reference records the design standard; it does not mean the current prototype already satisfies the art acceptance criteria or authorize implementing all visual/onboarding changes at once.
+
+

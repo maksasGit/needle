@@ -1,0 +1,241 @@
+{
+  "browser": "Installed Chrome, headless; synthetic desktop/touch viewports, not a real phone",
+  "tests": [
+    "Production build starts from a nested URL with CSS and one canvas",
+    "English and reduced-motion settings persist after reload",
+    "Clicks never move the player; keyboard walking enables a single range-limited collection",
+    "Optional keyboard movement still works after clicking a UI button",
+    "Menu pauses input; exact inventory and remaining hay survive reload",
+    "WebGL loss/restoration resumes rendering and collection",
+    "Real sale, reload during unload, exact restored cart cargo, no duplicate payment",
+    "Responsive layout covers all six aspect ratios, both orientations, and 320px width",
+    "Ten restarts: one canvas, clean economy, bounded post-GC JS heap",
+    "Local iframe host loads production game and menus",
+    "Corrupt save recovers to a playable fresh game with a visible message",
+    "Legacy unfinished 10,000-straw run expands once, preserving inventory, coins and cart cargo",
+    "Legacy victory stays completed; a new game starts with 20,000 straws",
+    "Controlled late save: upgrade, final straw, needle pickup, victory persistence, new game",
+    "All 15 capacity and 10 collection upgrades can be purchased; max levels and 80-unit carry survive victory reload",
+    "Focus loss pauses and resets input, focus restores safely",
+    "Emulated touch action works; rotation preserves progress",
+    "Joystick dead zone, two-finger move/look, release, touch cancellation and menu reset",
+    "Denied/quota-limited storage shows warning and gameplay remains usable"
+  ],
+  "errors": [],
+  "network": [],
+  "samples": [
+    {
+      "viewport": "360x640",
+      "metrics": {
+        "samples": 2,
+        "frameMs": 6.943333333333336,
+        "calls": 51,
+        "triangles": 240773,
+        "geometries": 34,
+        "textures": 3,
+        "readyMs": 149.7000000178814,
+        "remaining": 19998,
+        "inventory": 0,
+        "coins": 2,
+        "cargo": 2,
+        "won": false,
+        "paused": false,
+        "position": [
+          2.5991150628923236,
+          2.371381344741342
+        ],
+        "yaw": -0.05689122551687964,
+        "pitch": -0.2746853332519531
+      }
+    },
+    {
+      "viewport": "600x800",
+      "metrics": {
+        "samples": 4,
+        "frameMs": 6.945000000000001,
+        "calls": 55,
+        "triangles": 240821,
+        "geometries": 34,
+        "textures": 3,
+        "readyMs": 149.7000000178814,
+        "remaining": 19998,
+        "inventory": 0,
+        "coins": 2,
+        "cargo": 2,
+        "won": false,
+        "paused": false,
+        "position": [
+          2.5991150628923236,
+          2.371381344741342
+        ],
+        "yaw": -0.05689122551687964,
+        "pitch": -0.2746853332519531
+      }
+    },
+    {
+      "viewport": "720x720",
+      "metrics": {
+        "samples": 6,
+        "frameMs": 6.941666666666666,
+        "calls": 55,
+        "triangles": 240821,
+        "geometries": 34,
+        "textures": 3,
+        "readyMs": 149.7000000178814,
+        "remaining": 19998,
+        "inventory": 0,
+        "coins": 2,
+        "cargo": 2,
+        "won": false,
+        "paused": false,
+        "position": [
+          2.5991150628923236,
+          2.371381344741342
+        ],
+        "yaw": -0.05689122551687964,
+        "pitch": -0.2746853332519531
+      }
+    },
+    {
+      "viewport": "800x600",
+      "metrics": {
+        "samples": 8,
+        "frameMs": 6.939999999999994,
+        "calls": 67,
+        "triangles": 240965,
+        "geometries": 34,
+        "textures": 3,
+        "readyMs": 149.7000000178814,
+        "remaining": 19998,
+        "inventory": 0,
+        "coins": 2,
+        "cargo": 2,
+        "won": false,
+        "paused": false,
+        "position": [
+          2.5991150628923236,
+          2.371381344741342
+        ],
+        "yaw": -0.05689122551687964,
+        "pitch": -0.2746853332519531
+      }
+    },
+    {
+      "viewport": "1280x720",
+      "metrics": {
+        "samples": 10,
+        "frameMs": 13.076666666666657,
+        "calls": 73,
+        "triangles": 241037,
+        "geometries": 34,
+        "textures": 3,
+        "readyMs": 149.7000000178814,
+        "remaining": 19998,
+        "inventory": 0,
+        "coins": 2,
+        "cargo": 2,
+        "won": false,
+        "paused": false,
+        "position": [
+          2.5991150628923236,
+          2.371381344741342
+        ],
+        "yaw": -0.05689122551687964,
+        "pitch": -0.2746853332519531
+      }
+    },
+    {
+      "viewport": "1680x720",
+      "metrics": {
+        "samples": 12,
+        "frameMs": 17.125,
+        "calls": 80,
+        "triangles": 241121,
+        "geometries": 34,
+        "textures": 3,
+        "readyMs": 149.7000000178814,
+        "remaining": 19998,
+        "inventory": 0,
+        "coins": 2,
+        "cargo": 2,
+        "won": false,
+        "paused": false,
+        "position": [
+          2.5991150628923236,
+          2.371381344741342
+        ],
+        "yaw": -0.05689122551687964,
+        "pitch": -0.2746853332519531
+      }
+    },
+    {
+      "viewport": "844x390",
+      "metrics": {
+        "samples": 14,
+        "frameMs": 6.9433333333333245,
+        "calls": 79,
+        "triangles": 241109,
+        "geometries": 34,
+        "textures": 3,
+        "readyMs": 149.7000000178814,
+        "remaining": 19998,
+        "inventory": 0,
+        "coins": 2,
+        "cargo": 2,
+        "won": false,
+        "paused": false,
+        "position": [
+          2.5991150628923236,
+          2.371381344741342
+        ],
+        "yaw": -0.05689122551687964,
+        "pitch": -0.2746853332519531
+      }
+    },
+    {
+      "viewport": "320x568",
+      "metrics": {
+        "samples": 16,
+        "frameMs": 6.94333333333334,
+        "calls": 51,
+        "triangles": 240773,
+        "geometries": 34,
+        "textures": 3,
+        "readyMs": 149.7000000178814,
+        "remaining": 19998,
+        "inventory": 0,
+        "coins": 2,
+        "cargo": 2,
+        "won": false,
+        "paused": false,
+        "position": [
+          2.5991150628923236,
+          2.371381344741342
+        ],
+        "yaw": -0.05689122551687964,
+        "pitch": -0.2746853332519531
+      }
+    }
+  ],
+  "screenshots": [
+    "desktop.png",
+    "target-outline.png",
+    "portrait.png",
+    "touch-landscape.png"
+  ],
+  "firstLoadMs": 916.6092000000001,
+  "saveBytes": 426914,
+  "restartHeapBytes": [
+    13193324,
+    12965352,
+    13128024,
+    13263240,
+    13280192,
+    13295068,
+    13342932,
+    13645396,
+    13668768,
+    13669620
+  ],
+  "passed": true
+}
