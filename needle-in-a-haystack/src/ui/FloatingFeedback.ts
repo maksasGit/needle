@@ -1,6 +1,6 @@
 import { t } from './i18n';
 
-type Kind = 'hay' | 'coins' | 'full';
+type Kind = 'hay' | 'coins' | 'full' | 'notice';
 const paths = {
   hay: 'M3 21 12 3l9 18H3 M7 20l5-13 5 13 M9 17h6',
   coins: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M14 8h-3a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-3 M12 6v12',
@@ -21,18 +21,19 @@ export class FloatingFeedback {
       host.append(node); this.items.push({ node, icon: node.querySelector('svg')!, path: node.querySelector('path')!, label: node.querySelector('span')! });
     }
   }
-  show(kind: Kind, amount = 0) {
+  notice(text: string) { this.show('notice', 0, text); }
+  show(kind: Kind, amount = 0, text = '') {
     const now = performance.now();
     if (kind === 'full') {
       if (now - this.lastFull < 450) return;
       this.lastFull = now;
-    } else if (amount <= 0) return;
+    } else if (kind !== 'notice' && amount <= 0) return;
     const slot = this.cursor++ % this.items.length, item = this.items[slot];
     item.animation?.cancel(); item.node.dataset.kind = kind;
-    item.icon.style.display = kind === 'full' ? 'none' : '';
-    if (kind !== 'full') item.path.setAttribute('d', paths[kind]);
-    item.label.textContent = kind === 'full' ? t('inventoryFull') : `+${amount}`;
-    const x = kind === 'full' ? 0 : (slot - 1.5) * 24;
+    item.icon.style.display = kind === 'full' || kind === 'notice' ? 'none' : '';
+    if (kind === 'hay' || kind === 'coins') item.path.setAttribute('d', paths[kind]);
+    item.label.textContent = kind === 'full' ? t('inventoryFull') : kind === 'notice' ? text : `+${amount}`;
+    const x = kind === 'full' || kind === 'notice' ? 0 : (slot - 1.5) * 24;
     const y = kind === 'hay' ? 24 : kind === 'coins' ? -20 : 0;
     const reduced = this.reducedMotion || this.motion.matches;
     item.animation = item.node.animate([

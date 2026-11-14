@@ -27,6 +27,16 @@ export class Haystack {
   private supportHeight = config.hayVisual.layerHeight * config.hayVisual.contactScale;
   get count() { return this.pieces.length; }
   get activeCount() { return this.active.size; }
+  feedingPoint(point: THREE.Vector2) {
+    let nearest: Piece | undefined, best = Infinity;
+    const x = point.x - this.group.position.x, z = point.y - this.group.position.z;
+    for (const column of this.columns) {
+      const top = column.pieces.at(-1); if (!top) continue;
+      const score = (top.position.x - x) ** 2 + (top.position.z - z) ** 2;
+      if (score < best) { nearest = top; best = score; }
+    }
+    return nearest?.position.clone().add(this.group.position);
+  }
   surfaceHeight(x: number, z: number) {
     x -= this.group.position.x; z -= this.group.position.z;
     if (Math.hypot(x, z) > config.hay.radius + config.playerRadius) return 0;
@@ -206,7 +216,7 @@ export class Haystack {
       this.outlineBack.rotation.copy(this.highlighted.rotation);
     }
   }
-  remove(amount: number, worldPoint: THREE.Vector3, receiver: THREE.Vector3, selectedId?: number) {
+  remove(amount: number, worldPoint: THREE.Vector3, receiver: THREE.Vector3, selectedId?: number, discoveryMultiplier = 1) {
     let bonus = 0, rareCount = 0, highest = strawRarity();
     const local = worldPoint.clone().sub(this.group.position);
     const end = receiver.clone().sub(this.group.position); end.y = receiver.y || 0.8;
@@ -222,7 +232,7 @@ export class Haystack {
       // Keep a stable identity across dense instance-slot swaps and settling.
       const removed = (n === 0 && selectedId !== undefined ? this.byId.get(selectedId) : undefined) ?? this.columns[selected].pieces.at(-1)!;
       const rarity = strawRarity(removed.id);
-      if (rarity.bonus) { bonus += rarity.bonus; rareCount++; if (rarity.bonus > highest.bonus) highest = rarity; }
+      if (rarity.bonus) { bonus += Math.ceil(rarity.bonus * discoveryMultiplier); rareCount++; if (rarity.bonus > highest.bonus) highest = rarity; }
       selected = removed.column;
       const column = this.columns[selected];
       const index = column.pieces.indexOf(removed);

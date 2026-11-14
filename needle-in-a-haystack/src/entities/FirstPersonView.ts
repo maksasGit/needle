@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { config, upgrades } from '../config/balance';
 import { createStrawGeometry } from '../world/strawGeometry';
+import { ToolAssets } from '../world/ToolAssets';
 import { disposeTree } from '../core/dispose';
 
 /** Small camera-local scene: hands/tools stay readable without clipping into the pile. */
@@ -22,7 +23,7 @@ export class FirstPersonView {
   reducedMotion = false;
   get count() { return this.straws.count; }
   get toolLevel() { return this.level; }
-  constructor() {
+  constructor(assets = new ToolAssets()) {
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0xc9b28a, 1.8));
     const light = new THREE.DirectionalLight(0xfff3ce, 2.3); light.position.set(-2, 3, 1); this.scene.add(light);
     this.scene.add(this.root);
@@ -31,16 +32,8 @@ export class FirstPersonView {
       this.box(hand, [0.13, 0.23, 0.13], [0, -0.13, 0.03], 0x278bdf);
       this.box(hand, [0.135, 0.16, 0.12], [0, 0.055, 0], 0xffcf8b);
     }
-    this.box(this.tool, [0.05, 0.8, 0.05], [0, 0.05, 0], 0xba7e34);
     for (let level = 1; level <= upgrades.tools.maxLevel; level++) {
-      const head = new THREE.Group(); this.heads.push(head); this.tool.add(head);
-      const rake = level === 1, count = rake ? 7 : level === 2 ? 3 : 5;
-      const width = level === 3 ? 0.36 : 0.25;
-      this.box(head, [width, 0.045, 0.05], [0, 0.45, 0], 0x237fce);
-      for (let i = 0; i < count; i++) {
-        const tine = this.box(head, [0.024, rake ? 0.11 : 0.25, 0.025], [-width / 2 + i * width / (count - 1), rake ? 0.46 : 0.57, rake ? -0.045 : 0], 0xb4d8ed);
-        if (rake) tine.rotation.x = -Math.PI / 2;
-      }
+      const model = assets.tool(level); this.heads.push(model); this.tool.add(model);
     }
     const max = config.capacity + upgrades.capacity.step * upgrades.capacity.maxLevel;
     this.straws = new THREE.InstancedMesh(createStrawGeometry(), new THREE.MeshStandardMaterial({ color: 0xffd83d, roughness: 1 }), max);
@@ -60,7 +53,7 @@ export class FirstPersonView {
     this.tool.visible = toolLevel > 0;
     this.left.visible = this.right.visible = toolLevel === 0;
     this.heads.forEach((head, i) => { head.visible = i === toolLevel - 1; });
-    this.carry.position.set(toolLevel ? 0.12 : 0, toolLevel ? -0.08 : -0.24, toolLevel ? -0.82 : -0.55);
+    this.carry.position.set(toolLevel === 4 ? .2 : toolLevel ? 0.12 : 0, toolLevel ? -0.08 : -0.24, toolLevel === 4 ? -1 : toolLevel ? -0.82 : -0.55);
     for (let i = 0; i < amount; i++) {
       const col = i % 8, row = Math.floor(i / 8) % 5, layer = Math.floor(i / 40);
       this.dummy.position.set((col - 3.5) * 0.022, layer * 0.022, (row - 2) * 0.035);
@@ -82,12 +75,12 @@ export class FirstPersonView {
     const reach = collectionRemaining > 0 ? Math.sin(Math.min(1, Math.max(0, t)) * Math.PI) : 0;
     const pickup = Math.sin(this.feedback / config.presentation.pickupFeedback * Math.PI);
     const unload = Math.sin(this.unloading / config.presentation.unloadSeconds * Math.PI);
-    this.root.position.set(0, -reach * 0.025 + pickup * 0.035 + unload * 0.06, -reach * 0.18 - unload * 0.15);
-    this.root.rotation.x = -reach * 0.12 + unload * 0.22;
+    this.root.position.set(0, -reach * 0.025 + pickup * 0.035 + unload * 0.06, -reach * (this.level === 4 ? .04 : .18) - unload * 0.15);
+    this.root.rotation.x = -reach * (this.level === 4 ? .02 : .12) + unload * 0.22;
     if (this.reducedMotion) { this.root.position.set(0, 0, 0); this.root.rotation.x = 0; }
     this.left.position.set(-0.15, -0.29, -0.55); this.left.rotation.set(-0.85, 0, -0.25);
     this.right.position.set(this.level ? 0.22 : 0.16, -0.32, -0.51); this.right.rotation.set(-0.7 - reach * 0.4, 0, 0.25);
-    this.tool.position.set(0.2, -0.35, -0.58); this.tool.rotation.set(-0.85 - reach * 0.35, 0, -0.18);
+    this.tool.position.set(0.2, -0.35, -0.58); this.tool.rotation.set(-0.85 - reach * (this.level === 4 ? .04 : .35), 0, -0.18);
     this.left.visible = this.right.visible = this.level === 0;
   }
   render(renderer: THREE.WebGLRenderer, worldCamera: THREE.PerspectiveCamera) {

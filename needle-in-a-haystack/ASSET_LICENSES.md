@@ -14,6 +14,8 @@ The environment, interface, hands/tools, hay, procedural fallback cart, barn, ne
 
 System font fallbacks are used; no font files are distributed. Audio is not implemented.
 
+The reachable barn, hanging tools (including the vacuum), backpack, price-sign atlas, book avatar and pig helpers are original procedural project assets in `ToolAssets.ts`, `Barn.ts`, `PigHerd.ts` and `Shop.ts`. They use local primitive geometry, Canvas text and inline SVG, with no new third-party models, images, fonts or sounds. Displayed/held tools and pig instances share resources; the user-supplied textured cart remains the only imported art model.
+
 Runtime dependency: Three.js, MIT license. Its license is copied from the installed package into `dist/THIRD_PARTY_LICENSES.txt` during release preparation. The exact installed version is recorded in `package-lock.json`.
 
 Development-only tools: Vite (MIT), TypeScript (Apache-2.0), @types/three (MIT), Playwright (Apache-2.0). These packages are not copied wholesale into the web build. Their own license files remain in the dependency tree. Build output retains the bundler's legal comments.

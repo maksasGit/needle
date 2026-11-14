@@ -1,7 +1,7 @@
 import { Vector2 } from 'three';
 import { config } from '../config/balance';
 
-export type Obstacle = { x: number; z: number; radius: number };
+export type Obstacle = { x: number; z: number; radius: number } | { x: number; z: number; halfX: number; halfZ: number };
 
 // A small eight-neighbour navigation grid. Inflated obstacles leave space for the body.
 export class MovementSystem {
@@ -13,7 +13,9 @@ export class MovementSystem {
 
   walkable(p: Vector2): boolean {
     return Math.abs(p.x) <= this.limit && Math.abs(p.y) <= this.limit &&
-      this.obstacles.every(o => Math.hypot(p.x - o.x, p.y - o.z) > o.radius + config.playerRadius);
+      this.obstacles.every(o => 'radius' in o
+        ? Math.hypot(p.x - o.x, p.y - o.z) > o.radius + config.playerRadius
+        : Math.hypot(Math.max(0, Math.abs(p.x - o.x) - o.halfX), Math.max(0, Math.abs(p.y - o.z) - o.halfZ)) > config.playerRadius);
   }
 
   clear(a: Vector2, b: Vector2): boolean {
@@ -78,7 +80,7 @@ export class MovementSystem {
     return [];
   }
 
-  approach(start: Vector2, obstacle: Obstacle): Vector2[] {
+  approach(start: Vector2, obstacle: Extract<Obstacle, { radius: number }>): Vector2[] {
     let best: Vector2[] = [], shortest = Infinity;
     for (let i = 0; i < 16; i++) {
       const angle = i * Math.PI / 8;

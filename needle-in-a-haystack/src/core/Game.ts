@@ -9,6 +9,8 @@ import { config } from '../config/balance';
 import { CameraController } from './CameraController';
 import { InputManager } from './InputManager';
 import { Shop } from '../ui/Shop';
+import type { ShopAction } from '../ui/Shop';
+import { barnItems, barnWalls, isBarnTarget, pigBalance } from '../config/progression';
 import type { UpgradeId } from '../config/balance';
 import { FirstPersonView } from '../entities/FirstPersonView';
 import { disposeTree } from './dispose';
@@ -25,9 +27,9 @@ export class Game {
   private player = new Player();
   private camera = new CameraController();
   private economy = new EconomySystem();
-  private movement = new MovementSystem([config.cart]);
+  private movement = new MovementSystem([config.cart, ...barnWalls]);
   private locomotion = new Locomotion();
-  private destination: Target = 'ground';
+  private destination: 'ground' | 'hay' | 'cart' | 'needle' = 'ground';
   private collectionTimer = 0;
   private collectionDuration = 0;
   private shop?: Shop;
@@ -76,7 +78,7 @@ export class Game {
       this.renderer.domElement.setAttribute('aria-label', t('world'));
       this.renderer.domElement.tabIndex = 0;
       host.append(this.renderer.domElement);
-      this.viewModel = new FirstPersonView();
+      this.viewModel = new FirstPersonView(this.world.toolAssets);
       const feedbackHost = document.querySelector<HTMLElement>('#action-feedback');
       if (feedbackHost) { this.feedback = new FloatingFeedback(feedbackHost); this.feedback.reducedMotion = !!options.settings?.reducedMotion; }
       this.world.reducedMotion = this.viewModel.reducedMotion = !!options.settings?.reducedMotion;
@@ -85,16 +87,23 @@ export class Game {
         try {
           const remaining = decodeHay(saved.hay).length / 8;
           const sourceTotal = saved.totalHay ?? 10000;
-          const restoredRemaining = this.world.restore(saved.hay, sourceTotal - remaining - saved.inventory, saved.won, saved.hayContactScale ?? 1, sourceTotal, saved.hayProfile ?? 0);
+          const restoredRemaining = this.world.restore(saved.hay, sourceTotal - remaining - saved.inventory - (saved.pigEaten ?? 0), saved.won, saved.hayContactScale ?? 1, sourceTotal, saved.hayProfile ?? 0);
           this.runTotal = saved.won ? sourceTotal : config.totalHay;
-          this.dirty = saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
+          this.dirty = saved.version !== 2 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
           Object.assign(this.economy.levels, saved.levels);
           this.economy.remaining = restoredRemaining; this.economy.inventory = saved.inventory; this.economy.coins = saved.coins;
           this.economy.discoveryCoins = saved.discoveryCoins ?? 0;
+          this.economy.saleRevenue = saved.saleRevenue ?? (sourceTotal - remaining - saved.inventory) * config.salePrice;
+          this.economy.pigCount = saved.pigCount ?? 0; this.economy.pigEaten = saved.pigEaten ?? 0;
+          this.economy.activeTool = saved.activeTool ?? saved.levels.tools;
+          for (let i = 0; i < 4; i++) {
+            this.economy.toolVolumes[i] = saved.toolVolumes?.[i] ?? 0;
+            this.economy.toolSpecials[i] = saved.toolSpecials?.[i] ?? 0;
+          }
           this.player.group.position.set(saved.position[0], 0, saved.position[1]);
           this.player.movementSpeed = this.economy.movementSpeed;
           this.camera.yaw = saved.yaw; this.camera.pitch = saved.pitch; this.won = saved.won;
-          if (!restoredRemaining) this.movement = new MovementSystem([config.cart]);
+          if (!restoredRemaining) this.movement = new MovementSystem([config.cart, ...barnWalls]);
           if (!this.movement.walkable(this.player.position)) this.player.group.position.set(0, 0, 3.3);
         } catch { this.saveSystem!.invalid = true; }
       }
@@ -156,7 +165,8 @@ export class Game {
     if (this.paused && !this.needsRender) return;
     try {
       if (!this.paused) {
-        this.moveManually(dt); this.updateGameplay(dt); this.world.updateHay(dt);
+        this.moveManually(dt); this.updateGameplay(dt);
+        this.world.updatePigs(dt, this.economy.pigCount, this.onPigEat); this.world.updateHay(dt);
         this.player.group.position.y = this.locomotion.height;
         this.viewModel?.update(dt, this.collectionTimer, this.collectionDuration || this.economy.collectionSeconds);
         this.saveAge += dt;
@@ -191,7 +201,7 @@ export class Game {
   private inRange(target: 'hay' | 'cart' | 'needle') {
     const object = config[target];
     if (target !== 'hay' && this.player.group.position.y > (target === 'cart' ? 1.8 : 1)) return false;
-    return this.player.position.distanceTo(this.step ? this.step.set(object.x, object.z) : new THREE.Vector2(object.x, object.z)) <= object.radius + config.playerRadius + config.interactionGap + config.interactionTolerance;
+    return this.player.position.distanceTo(this.step ? this.step.set(object.x, object.z) : new THREE.Vector2(object.x, object.z)) <= object.radius + config.playerRadius + config.interactionGap + config.interactionTolerance + (target === 'hay' ? this.economy.collectionReach : 0);
   }
   private jump() {
     if (this.paused || !this.locomotion.jump()) return;
@@ -220,6 +230,16 @@ export class Game {
   }
   private command(target: Target, point: THREE.Vector3, instanceId?: number) {
     if (target === 'ground') return;
+    if (isBarnTarget(target)) {
+      const item = barnItems[target];
+      if (Math.hypot(this.player.group.position.x - item.x, this.player.group.position.z - item.z) > 1.9 || this.player.group.position.y > 1) { this.message('closer'); return; }
+      const offer = this.economy.barnOffer(target);
+      if (!this.economy.buyAtBarn(target)) { this.feedback?.notice(offer.price === null ? t('max') : t('buyBlocked')); return; }
+      this.collectionTimer = 0; this.player.command([]); this.destination = 'ground'; this.dirty = true;
+      this.feedback?.notice(offer.owned ? `${t('equipped')}: ${offer.name}` : t('boughtItem', { name: offer.name }));
+      this.message(offer.owned ? 'equipped' : 'boughtItem', { name: offer.name });
+      this.refreshHUD(); this.saveNow(); return;
+    }
     if (this.won || (target === 'needle' && this.economy.remaining > 0)) return;
     if (!this.inRange(target)) { this.message('closer'); return; }
     if (target === 'hay' && this.collectionTimer > 0) return;
@@ -259,23 +279,40 @@ export class Game {
       if (this.collectionTimer === 0 && this.inRange('hay')) {
         const amount = this.economy.collect();
         const receiver = this.viewModel ? this.viewModel.releasePoint(this.camera.camera) : this.player.group.position;
-        const discovery = this.world.collectHay(amount, this.harvestPoint, receiver, this.harvestId);
+        const discovery = this.world.collectHay(amount, this.harvestPoint, receiver, this.harvestId, this.economy.discoveryMultiplier);
         this.feedback?.show('hay', amount);
-        if (discovery?.bonus) this.economy.creditDiscovery(discovery.bonus);
-        if (discovery?.bonus) this.feedback?.show('coins', discovery.bonus);
+        const discoveryBonus = discovery?.bonus ?? 0;
+        if (discoveryBonus) this.economy.creditDiscovery(discoveryBonus);
+        if (discoveryBonus) this.feedback?.show('coins', discoveryBonus);
         this.message(this.economy.remaining === 0 ? 'discovered' : this.economy.inventory === this.economy.capacity ? 'collectedFull' : 'collected', { n: amount });
-        if (discovery?.bonus) this.message('rareFound', { amount, n: discovery.bonus, rarity: `${discovery.highest.badge} ${t(discovery.highest.id)}` });
-        if (this.economy.remaining === 0) this.movement = new MovementSystem([config.cart]);
+        if (discovery?.bonus) this.message('rareFound', { amount, n: discoveryBonus, rarity: `${discovery.highest.badge} ${t(discovery.highest.id)}` });
+        if (this.economy.remaining === 0) this.movement = new MovementSystem([config.cart, ...barnWalls]);
         this.dirty = true; this.refreshHUD();
       }
     }
     this.player.update(dt);
   }
-  private buy(id: UpgradeId) {
-    if (!this.economy.buy(id)) return;
+  private onPigEat = (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => {
+    if (!this.economy.remaining) return;
+    const payout = this.economy.feedPig(pigBalance.portions[index]);
+    const discovery = this.world.collectHay(payout.amount, point, mouth);
+    if (discovery.bonus) this.economy.creditDiscovery(discovery.bonus);
+    this.feedback?.show('coins', payout.earned + discovery.bonus);
+    if (!this.economy.remaining) this.message('discovered');
+    this.dirty = true; this.refreshHUD();
+  };
+  private buy(action: ShopAction) {
+    let success = false;
+    if (action.kind === 'character') {
+      success = this.economy.buy(action.id); this.lastBought = action.id;
+    } else if (action.kind === 'equip') success = this.economy.equip(action.tool);
+    else success = this.economy.upgradeTool(action.tool, action.kind);
+    if (!success) { this.feedback?.notice(t('buyBlocked')); return; }
+    this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
     this.player.movementSpeed = this.economy.movementSpeed; this.dirty = true;
-    this.lastBought = id;
-    this.message('bought', { effect: this.economy.effect(id) }); this.refreshHUD();
+    if (action.kind === 'character') this.message('bought', { effect: this.economy.effect(action.id) });
+    else this.message(action.kind === 'equip' ? 'equipped' : 'boughtItem', { name: t(action.kind === 'volume' ? 'volumeUpgrade' : 'specialization') });
+    this.refreshHUD(); this.saveNow();
   }
   private refreshHUD() {
     document.querySelector('#coins')!.textContent = String(this.economy.coins);
@@ -284,7 +321,7 @@ export class Game {
     const hayProgress = document.querySelector<HTMLProgressElement>('#hay-progress');
     if (hayProgress) { hayProgress.max = this.runTotal; hayProgress.value = this.economy.remaining; }
     this.player.setInventory(this.economy.inventory, this.economy.capacity);
-    this.viewModel?.setInventory(this.economy.inventory, this.economy.levels.tools); this.shop?.render();
+    this.viewModel?.setInventory(this.economy.inventory, this.economy.activeTool); this.world.updateBarn(this.economy); this.shop?.render(); this.updateAimLabel();
   }
   private updateSaveNotice() {
     const node = document.querySelector<HTMLElement>('#save-notice');
@@ -292,15 +329,20 @@ export class Game {
   }
   saveNow() {
     if (!this.dirty || !this.saveSystem || this.disposed) return;
-    const data = { version: 1 as const, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
+    const data = { version: 2 as const, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
     if (this.saveSystem.write(data)) this.dirty = false;
     this.updateSaveNotice();
   }
   private updateAimLabel() {
     const node = document.querySelector('#aim-label');
+    if (node && this.aimTarget && isBarnTarget(this.aimTarget)) {
+      const offer = this.economy.barnOffer(this.aimTarget);
+      node.textContent = t(offer.owned ? 'barnOwnedAim' : offer.price === null ? 'barnMaxAim' : 'barnAim', { name: offer.name, price: offer.price ?? 0 }) + (offer.locked ? ` / ${t('previousTool')}` : '');
+      return;
+    }
     if (node) node.textContent = this.aimTarget === 'hay' ? t('aimHay') : this.aimTarget === 'cart' ? t('aimCart') : this.aimTarget === 'needle' ? t('needle') : '';
-    if (node && this.aimTarget === 'hay' && this.aimRarity.bonus) node.textContent = t('aimRare', { rarity: `${this.aimRarity.badge} ${t(this.aimRarity.id)}`, n: this.aimRarity.bonus });
+    if (node && this.aimTarget === 'hay' && this.aimRarity.bonus) node.textContent = t('aimRare', { rarity: `${this.aimRarity.badge} ${t(this.aimRarity.id)}`, n: Math.ceil(this.aimRarity.bonus * this.economy.discoveryMultiplier) });
   }
   refreshLanguage() {
     this.refreshHUD();
@@ -309,7 +351,7 @@ export class Game {
     this.renderer.domElement.setAttribute('aria-label', t('world'));
   }
   setReducedMotion(reduced: boolean) { this.world.reducedMotion = reduced; if (this.viewModel) this.viewModel.reducedMotion = reduced; if (this.feedback) this.feedback.reducedMotion = reduced; }
-  diagnostics() { return { ...this.metrics, remaining: this.economy.remaining, inventory: this.economy.inventory, coins: this.economy.coins, cargo: this.world.cargoCount, won: this.won, paused: this.paused, position: [this.player.group.position.x, this.player.group.position.z], yaw: this.camera.yaw, pitch: this.camera.pitch, height: this.locomotion.height, grounded: this.locomotion.grounded, cartModelStatus: this.world.cartModelStatus }; }
+  diagnostics() { return { ...this.metrics, remaining: this.economy.remaining, inventory: this.economy.inventory, coins: this.economy.coins, cargo: this.world.cargoCount, activeTool: this.economy.activeTool, pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, salePrice: this.economy.salePrice, won: this.won, paused: this.paused, position: [this.player.group.position.x, this.player.group.position.z], yaw: this.camera.yaw, pitch: this.camera.pitch, height: this.locomotion.height, grounded: this.locomotion.grounded, cartModelStatus: this.world.cartModelStatus }; }
   dispose(save = true) {
     if (this.disposed) return;
     if (save) this.saveNow();

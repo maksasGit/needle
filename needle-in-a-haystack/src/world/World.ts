@@ -3,8 +3,13 @@ import { Haystack } from './Haystack';
 import { config } from '../config/balance';
 import { CartCargo } from './CartCargo';
 import { Needle } from './Needle';
+import { Barn } from './Barn';
+import { PigHerd } from './PigHerd';
+import { ToolAssets } from './ToolAssets';
+import type { BarnTarget } from '../config/progression';
+import type { EconomySystem } from '../systems/EconomySystem';
 import { disposeTree } from '../core/dispose';
-export type Target = 'ground' | 'hay' | 'cart' | 'needle';
+export type Target = 'ground' | 'hay' | 'cart' | 'needle' | BarnTarget;
 export class World {
   readonly scene = new THREE.Scene();
   readonly pickables: THREE.Object3D[] = [];
@@ -21,6 +26,11 @@ export class World {
   private cartFallback = new THREE.Group();
   private materials = new Map<number, THREE.MeshStandardMaterial>();
   private geometries = new Map<string, THREE.BoxGeometry>();
+  readonly toolAssets = new ToolAssets();
+  private barn = new Barn(this.toolAssets);
+  private pigs = new PigHerd(this.toolAssets);
+  private pigSurface = (x: number, z: number) => this.surfaceHeight(x, z);
+  private pigFeed = (point: THREE.Vector2) => this.hay.feedingPoint(point);
 
   constructor() {
     this.scene.background = new THREE.Color(0x36c9ff);
@@ -70,18 +80,8 @@ export class World {
     // Background scenery stays outside the playable boundaries.
     const landscape = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshStandardMaterial({ color: 0x67d83d, roughness: 0.8 }));
     landscape.rotation.x = -Math.PI / 2; landscape.position.y = -0.56; this.scene.add(landscape);
-    this.box(this.scene, [5, 3, 3], [1.8, 1.2, -10], 0xef5341);
-    for (const side of [-1, 1]) {
-      const roof = this.box(this.scene, [5.5, 0.22, 2.05], [1.8, 3.05, -10 + side * 0.8], 0x237fce);
-      roof.rotation.x = side * 0.55;
-    }
-    this.box(this.scene, [1.8, 2.2, 0.12], [1.8, 0.82, -8.44], 0xc63532);
-    for (const x of [0.85, 1.8, 2.75]) this.box(this.scene, [0.12, 2.35, 0.16], [x, 0.88, -8.34], 0xfff2cd);
-    this.box(this.scene, [2.02, 0.13, 0.16], [1.8, 2, -8.34], 0xfff2cd);
-    for (const side of [-1, 1]) {
-      const brace = this.box(this.scene, [0.12, 2.3, 0.16], [1.8, 0.88, -8.3], 0xfff2cd);
-      brace.rotation.z = side * 0.66;
-    }
+    this.scene.add(this.barn.group, this.pigs.group);
+    this.pickables.push(...this.barn.pickables);
     for (const [x, z] of [[-12, -16], [10, -20], [16, 6]]) {
       this.box(this.scene, [4.5, 0.7, 2], [x, 9, z], 0xffffff);
       this.box(this.scene, [2.5, 0.8, 1.9], [x + 0.5, 9.5, z], 0xffffff);
@@ -101,6 +101,10 @@ export class World {
     if (!material) { material = new THREE.MeshStandardMaterial({ color, roughness: 0.58 }); this.materials.set(color, material); }
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
+  }
+  updateBarn(economy: EconomySystem) { this.barn.update(economy); }
+  updatePigs(dt: number, count: number, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void) {
+    this.pigs.update(dt, count, this.pigSurface, this.pigFeed, onEat);
   }
   hayIdAt(slot?: number) { return this.hay.idAt(slot); }
   loadNoncriticalAssets() {
@@ -145,9 +149,9 @@ export class World {
     if (index >= 0) this.pickables.splice(index, 1);
   }
   highlightHay(id?: number) { this.hay.highlight(id); }
-  collectHay(amount: number, point: THREE.Vector3, receiver: THREE.Vector3, selectedId?: number) {
+  collectHay(amount: number, point: THREE.Vector3, receiver: THREE.Vector3, selectedId?: number, discoveryMultiplier = 1) {
     this.shadowDirty = true;
-    const result = this.hay.remove(amount, point, receiver, selectedId);
+    const result = this.hay.remove(amount, point, receiver, selectedId, discoveryMultiplier);
     if (this.hay.count === 0) {
       this.revealNeedle();
     }
