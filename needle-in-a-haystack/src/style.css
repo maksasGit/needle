@@ -219,6 +219,7 @@ footer { border-radius:18px; background:#ffffffed; }
 .character-summary { display:flex; align-items:center; gap:15px; }
 .character-summary p { margin:5px 0; }
 .book-avatar { width:66px; height:82px; flex-shrink:0; filter:drop-shadow(0 3px 0 #20212a25); }
+.music-range { width:50%; max-width:190px; min-width:100px; min-height:44px; margin-left:auto; accent-color:#9655f5; cursor:pointer; }
 @media(max-width:600px) {
   #shop-dialog { padding:18px 14px 18px 20px; border-left-width:9px; }
   #shop-dialog h2 { font-size:21px; }

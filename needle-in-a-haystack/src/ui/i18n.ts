@@ -1,5 +1,6 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  music: 'Фоновая музыка', musicVolume: 'Громкость музыки',
   sale: 'Цена продажи сена', character: 'Персонаж',
   characterHint: 'Скорость, сбор и выручка. Инструменты, рюкзак и свинки покупаются у амбара.',
   tool4: 'Пылесос', backpack: 'Рюкзак', pig: 'Свинка', pigs: 'Свинки',
@@ -50,6 +51,7 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  music: 'Background music', musicVolume: 'Music volume',
   sale: 'Hay sale price', character: 'Character',
   characterHint: 'Speed, collecting and earnings. Buy tools, backpack upgrades and pigs at the barn.',
   tool4: 'Vacuum', backpack: 'Backpack', pig: 'Pig', pigs: 'Pigs',

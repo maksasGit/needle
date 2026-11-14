@@ -12,7 +12,14 @@ The environment, interface, hands/tools, hay, procedural fallback cart, barn, ne
 - Budget: this user-requested self-contained art asset exceeds the preferred 512 KiB per-file target but stays below the hard 30 MiB ceiling. It loads after the first frame, with a functional procedural fallback. Build validation reports this specific asset as a preferred-target exception; JavaScript and other files retain their size checks.
 - No separate redistribution license has been declared; this is not a public-domain or permissively licensed asset pack.
 
-System font fallbacks are used; no font files are distributed. Audio is not implemented.
+System font fallbacks are used; no font files are distributed. Background music is supplied by the user; action sound effects are not implemented.
+
+## Background music
+
+- Source: `public/audio/needlebackground_2.mp3`, 1,759,581 bytes, supplied on 2026-11-15.
+- Authorship: the project owner stated that they made the ambient/background music and explicitly requested its inclusion in the game.
+- Permission: user-provided original project audio, integrated without editing. No separate public redistribution license or attribution requirement was supplied; do not describe it as a public-domain asset.
+- Playback: a single local HTMLAudioElement, requested after user interaction, looping with saved music preferences. No external service, audio CDN, conversion or additional recording was used.
 
 The reachable barn, hanging tools (including the vacuum), backpack, price-sign atlas, book avatar and pig helpers are original procedural project assets in `ToolAssets.ts`, `Barn.ts`, `PigHerd.ts` and `Shop.ts`. They use local primitive geometry, Canvas text and inline SVG, with no new third-party models, images, fonts or sounds. Displayed/held tools and pig instances share resources; the user-supplied textured cart remains the only imported art model.
 

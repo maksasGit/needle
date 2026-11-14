@@ -3,6 +3,7 @@ import { SaveSystem, SAVE_KEY } from './systems/SaveSystem';
 import { t, setLanguage } from './ui/i18n';
 import type { Language } from './ui/i18n';
 import { config } from './config/balance';
+import { AudioManager } from './core/AudioManager';
 
 const saves = new SaveSystem();
 const settings = saves.readSettings();
@@ -22,10 +23,11 @@ ${text('action', 'button', 'id="interact" aria-describedby="aim-label"')}
 <div id="save-notice" role="status"></div>
 <dialog id="help-dialog" aria-labelledby="help-title">${text('helpTitle', 'h2', 'id="help-title"')}${['help1','help2','help3','help4'].map(key => text(key as 'help1', 'p')).join('')}${text('close', 'button', 'data-close')}</dialog>
 <dialog id="shop-dialog" aria-labelledby="shop-title">${text('shopTitle', 'h2', 'id="shop-title"')}<p data-wallet></p><nav class="book-tabs" data-book-tabs role="tablist"></nav><div class="book-page" data-upgrades></div>${text('close', 'button', 'data-close')}</dialog>
-<dialog id="settings-dialog" aria-labelledby="settings-title">${text('settings', 'h2', 'id="settings-title"')}<label class="setting-row">${text('language')}<select id="language"><option value="ru">Русский</option><option value="en">English</option></select></label><label class="setting-row"><input type="checkbox" id="reduced-motion">${text('reduced')}</label>${text('newGame', 'button', 'id="new-game"')}${text('close', 'button', 'data-close')}</dialog>
+<dialog id="settings-dialog" aria-labelledby="settings-title">${text('settings', 'h2', 'id="settings-title"')}<label class="setting-row">${text('language')}<select id="language"><option value="ru">Русский</option><option value="en">English</option></select></label><label class="setting-row"><input type="checkbox" id="reduced-motion">${text('reduced')}</label><label class="setting-row"><input type="checkbox" id="music-enabled">${text('music')}</label><label class="setting-row">${text('musicVolume')}<input id="music-volume" class="music-range" type="range" min="0" max="100" step="1" data-label="musicVolume"></label>${text('newGame', 'button', 'id="new-game"')}${text('close', 'button', 'data-close')}</dialog>
 <dialog id="reset-dialog" aria-labelledby="reset-title">${text('newGame', 'h2', 'id="reset-title"')}${text('confirmReset', 'p')}${text('yes', 'button', 'id="confirm-reset"')}${text('cancel', 'button', 'data-close')}</dialog>
 <dialog id="win-dialog" aria-labelledby="win-title">${text('wonTitle', 'h2', 'id="win-title"')}${text('wonBody', 'p')}${text('newGame', 'button', 'id="win-new-game"')}${text('close', 'button', 'data-close')}</dialog>
 <dialog id="error-dialog" aria-labelledby="error-title">${text('error', 'h2', 'id="error-title"')}<p id="error-message"></p>${text('retry', 'button', 'id="retry"')}</dialog>`;
+const music = new AudioManager(settings);
 let game: Game | undefined;
 const dialog = (id: string) => document.querySelector<HTMLDialogElement>(id)!;
 function show(id: string) { const element = dialog(id); if (!element.open) element.showModal(); }
@@ -56,8 +58,15 @@ language.onchange = () => { settings.language = language.value as Language; setL
 const reduced = document.querySelector<HTMLInputElement>('#reduced-motion')!;
 reduced.checked = settings.reducedMotion;
 reduced.onchange = () => { settings.reducedMotion = reduced.checked; saves.writeSettings(settings); game?.setReducedMotion(reduced.checked); };
+const musicEnabled = document.querySelector<HTMLInputElement>('#music-enabled')!;
+musicEnabled.checked = settings.musicEnabled;
+musicEnabled.onchange = () => { music.setEnabled(musicEnabled.checked); saves.writeSettings(settings); };
+const musicVolume = document.querySelector<HTMLInputElement>('#music-volume')!;
+musicVolume.value = String(Math.round(settings.musicVolume * 100));
+musicVolume.oninput = () => music.setVolume(Number(musicVolume.value) / 100);
+musicVolume.onchange = () => saves.writeSettings(settings);
 translate(); start();
 // Opt-in read-only diagnostics. No test commands or cheat hooks in production.
 if (new URLSearchParams(location.search).has('diagnostics')) Object.defineProperty(window, 'needleDiagnostics', { value: () => game?.diagnostics(), configurable: true });
-if (import.meta.hot) import.meta.hot.dispose(() => game?.dispose());
+if (import.meta.hot) import.meta.hot.dispose(() => { game?.dispose(); music.dispose(); });
 

@@ -19,7 +19,7 @@ export type SaveData = {
   pigCount?: number;
   pigEaten?: number;
 };
-export type Settings = { language: Language; reducedMotion: boolean };
+export type Settings = { language: Language; reducedMotion: boolean; musicEnabled: boolean; musicVolume: number };
 const MAX_BYTES = 500 * 1024;
 const integer = (v: unknown, min: number, max: number): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= min && v <= max;
 export function decodeHay(value: string): Int16Array {
@@ -107,8 +107,10 @@ export class SaveSystem {
   readSettings(): Settings {
     try {
       const s = JSON.parse(localStorage.getItem('needle.settings.v1') || 'null');
-      return { language: s?.language === 'en' ? 'en' : 'ru', reducedMotion: typeof s?.reducedMotion === 'boolean' ? s.reducedMotion : matchMedia('(prefers-reduced-motion: reduce)').matches };
-    } catch { return { language: 'ru', reducedMotion: false }; }
+      return { language: s?.language === 'en' ? 'en' : 'ru', reducedMotion: typeof s?.reducedMotion === 'boolean' ? s.reducedMotion : matchMedia('(prefers-reduced-motion: reduce)').matches,
+        musicEnabled: typeof s?.musicEnabled === 'boolean' ? s.musicEnabled : true,
+        musicVolume: typeof s?.musicVolume === 'number' && Number.isFinite(s.musicVolume) ? Math.max(0, Math.min(1, s.musicVolume)) : .25 };
+    } catch { return { language: 'ru', reducedMotion: false, musicEnabled: true, musicVolume: .25 }; }
   }
   writeSettings(s: Settings) { try { localStorage.setItem('needle.settings.v1', JSON.stringify(s)); } catch { this.available = false; } }
 }
