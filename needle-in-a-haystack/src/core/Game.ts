@@ -19,8 +19,9 @@ import type { Settings } from '../systems/SaveSystem';
 import { t } from '../ui/i18n';
 import { strawRarity, rarityVersion } from '../config/rarity';
 import { FloatingFeedback } from '../ui/FloatingFeedback';
+import type { AudioManager } from './AudioManager';
 
-type Options = { settings?: Settings; onWin?: () => void; onError?: (message: string) => void };
+type Options = { audio?: AudioManager; settings?: Settings; onWin?: () => void; onError?: (message: string) => void };
 export class Game {
   private renderer!: THREE.WebGLRenderer;
   private world = new World();
@@ -61,6 +62,7 @@ export class Game {
   private manual = new THREE.Vector2();
   private delta = new THREE.Vector2();
   private step = new THREE.Vector2();
+  private stepSoundStart = new THREE.Vector2();
   private previous = performance.now();
   private frameSamples = 0;
   private frameTotal = 0;
@@ -128,7 +130,7 @@ export class Game {
       });
       this.resizeObserver.observe(host);
       const { width, height } = host.getBoundingClientRect(); this.camera.resize(width, height); this.renderer.setSize(width, height);
-      this.refreshHUD(); this.shop = new Shop(this.economy, id => this.buy(id));
+      this.refreshHUD(); this.shop = new Shop(this.economy, id => this.buy(id), () => this.options.audio?.effect('deny'));
       const signal = this.controller.signal;
       const syncPause = () => {
         this.menuOpen = !!document.querySelector('dialog[open]');
@@ -161,13 +163,15 @@ export class Game {
     if (this.disposed) return;
     const elapsed = Math.max(0, now - this.previous);
     const dt = Math.min(elapsed / 1000, 0.05); this.previous = now;
-    if (this.background || this.contextLost || this.failed) return;
-    if (this.paused && !this.needsRender) return;
+    if (this.background || this.contextLost || this.failed) { this.options.audio?.setWalking(false); return; }
+    if (this.paused) { this.options.audio?.setWalking(false); if (!this.needsRender) return; }
     try {
       if (!this.paused) {
+        this.stepSoundStart.copy(this.player.position);
         this.moveManually(dt); this.updateGameplay(dt);
         this.world.updatePigs(dt, this.economy.pigCount, this.onPigEat); this.world.updateHay(dt);
         this.player.group.position.y = this.locomotion.height;
+        this.options.audio?.setWalking(this.locomotion.grounded && this.stepSoundStart.distanceToSquared(this.player.position) > .000001, this.economy.movementSpeed / config.movementSpeed);
         this.viewModel?.update(dt, this.collectionTimer, this.collectionDuration || this.economy.collectionSeconds);
         this.saveAge += dt;
         if (this.saveAge >= 5) { this.saveAge = 0; this.saveNow(); }
@@ -204,7 +208,9 @@ export class Game {
     return this.player.position.distanceTo(this.step ? this.step.set(object.x, object.z) : new THREE.Vector2(object.x, object.z)) <= object.radius + config.playerRadius + config.interactionGap + config.interactionTolerance + (target === 'hay' ? this.economy.collectionReach : 0);
   }
   private jump() {
-    if (this.paused || !this.locomotion.jump()) return;
+    if (this.paused) return;
+    if (!this.locomotion.jump()) { this.options.audio?.effect('deny'); return; }
+    this.options.audio?.setWalking(false);
     this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
   }
   private moveManually(dt: number) {
@@ -232,17 +238,17 @@ export class Game {
     if (target === 'ground') return;
     if (isBarnTarget(target)) {
       const item = barnItems[target];
-      if (Math.hypot(this.player.group.position.x - item.x, this.player.group.position.z - item.z) > 1.9 || this.player.group.position.y > 1) { this.message('closer'); return; }
+      if (Math.hypot(this.player.group.position.x - item.x, this.player.group.position.z - item.z) > 1.9 || this.player.group.position.y > 1) { this.message('closer'); this.options.audio?.effect('deny'); return; }
       const offer = this.economy.barnOffer(target);
-      if (!this.economy.buyAtBarn(target)) { this.feedback?.notice(offer.price === null ? t('max') : t('buyBlocked')); return; }
+      if (!this.economy.buyAtBarn(target)) { this.options.audio?.effect('deny'); this.feedback?.notice(offer.price === null ? t('max') : t('buyBlocked')); return; }
       this.collectionTimer = 0; this.player.command([]); this.destination = 'ground'; this.dirty = true;
       this.feedback?.notice(offer.owned ? `${t('equipped')}: ${offer.name}` : t('boughtItem', { name: offer.name }));
       this.message(offer.owned ? 'equipped' : 'boughtItem', { name: offer.name });
       this.refreshHUD(); this.saveNow(); return;
     }
     if (this.won || (target === 'needle' && this.economy.remaining > 0)) return;
-    if (!this.inRange(target)) { this.message('closer'); return; }
-    if (target === 'hay' && this.collectionTimer > 0) return;
+    if (!this.inRange(target)) { this.message('closer'); this.options.audio?.effect('deny'); return; }
+    if (target === 'hay' && this.collectionTimer > 0) { this.options.audio?.effect('deny'); return; }
     if (target === 'hay') { this.harvestPoint = point.clone(); this.harvestId = this.world.hayIdAt(instanceId); }
     this.collectionTimer = 0; this.player.command([]); this.destination = target;
     this.interact();
@@ -256,8 +262,8 @@ export class Game {
       this.dirty = true; this.saveNow(); this.options?.onWin?.(); return;
     }
     if (target === 'hay' && this.economy.remaining === 0) { this.message('discovered'); return; }
-    if (target === 'hay' && this.economy.inventory >= this.economy.capacity) { this.message('full'); this.feedback?.show('full'); return; }
-    if (!this.inRange(target)) { this.message('closer'); return; }
+    if (target === 'hay' && this.economy.inventory >= this.economy.capacity) { this.message('full'); this.options.audio?.effect('deny'); this.feedback?.show('full'); return; }
+    if (!this.inRange(target)) { this.message('closer'); this.options.audio?.effect('deny'); return; }
     const object = config[target];
     this.player.group.rotation.y = Math.atan2(object.x - this.player.group.position.x, object.z - this.player.group.position.z);
     if (target === 'hay') {
@@ -266,6 +272,7 @@ export class Game {
     } else {
       const sold = this.economy.inventory;
       const earned = this.economy.unload();
+      this.options.audio?.effect(earned > 0 ? 'sell' : 'deny');
       this.feedback?.show('coins', earned);
       if (sold > 0) { this.world.depositHay(sold); this.dirty = true; }
       this.message(earned ? 'sold' : 'empty', { n: earned });
@@ -277,6 +284,7 @@ export class Game {
       this.collectionTimer = Math.max(0, this.collectionTimer - dt);
       if (this.collectionTimer === 0 && this.inRange('hay')) {
         const amount = this.economy.collect();
+        if (amount > 0) this.options.audio?.effect('collect');
         const receiver = this.viewModel ? this.viewModel.releasePoint(this.camera.camera) : this.player.group.position;
         const discovery = this.world.collectHay(amount, this.harvestPoint, receiver, this.harvestId, this.economy.discoveryMultiplier);
         this.feedback?.show('hay', amount);
@@ -306,7 +314,7 @@ export class Game {
       success = this.economy.buy(action.id); this.lastBought = action.id;
     } else if (action.kind === 'equip') success = this.economy.equip(action.tool);
     else success = this.economy.upgradeTool(action.tool, action.kind);
-    if (!success) { this.feedback?.notice(t('buyBlocked')); return; }
+    if (!success) { this.options.audio?.effect('deny'); this.feedback?.notice(t('buyBlocked')); return; }
     this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
     this.player.movementSpeed = this.economy.movementSpeed; this.dirty = true;
     if (action.kind === 'character') this.message('bought', { effect: this.economy.effect(action.id) });
@@ -354,6 +362,7 @@ export class Game {
   dispose(save = true) {
     if (this.disposed) return;
     if (save) this.saveNow();
+    this.options.audio?.stopEffects();
     this.disposed = true; this.controller.abort(); this.resizeObserver?.disconnect(); this.observer?.disconnect();
     this.input?.dispose(); this.shop?.dispose(); this.renderer?.setAnimationLoop(null);
     this.world.dispose(); this.viewModel?.dispose(); this.feedback?.dispose(); disposeTree(this.player.group);

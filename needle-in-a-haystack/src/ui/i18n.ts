@@ -1,5 +1,6 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  effects: 'Звуки действий', effectsVolume: 'Громкость звуков',
   aimCartCount: 'Продать сено · в телеге: {n}',
   music: 'Фоновая музыка', musicVolume: 'Громкость музыки',
   sale: 'Цена продажи сена', character: 'Персонаж',
@@ -52,6 +53,7 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  effects: 'Sound effects', effectsVolume: 'Effects volume',
   aimCartCount: 'Sell hay · cart: {n}',
   music: 'Background music', musicVolume: 'Music volume',
   sale: 'Hay sale price', character: 'Character',

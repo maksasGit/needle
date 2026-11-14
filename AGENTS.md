@@ -622,3 +622,11 @@ These are requirements for subsequent development, not claims that the current p
 - Background music uses the user's `public/audio/needlebackground_2.mp3` through one app-level AudioManager/HTMLAudioElement, not a full decoded AudioBuffer or one player per game restart. Start/download only after a user gesture; loop, pause for dialogs/hidden or unfocused pages, preserve playback position and saved music-enabled/volume settings (default 25%). Keep local Vite asset URLs and graceful audio failures. No automatic listening/browser tests or screenshots without the user's request.
 
 
+
+### Action audio (2026-11-15)
+
+- Keep collection/sale sounds attached to actual completed transactions, not individual straws or coins.
+- Reuse inventory_is_full.mp3 for unavailable actions with the 450 ms cooldown.
+- Footsteps follow actual grounded displacement and stop in menus/background/air; reuse a single loop.
+- Preserve the bounded four-voice effect pool, lazy audio sources and separate saved music/effects preferences.
+- Current user instruction remains: do not run automated tests, typechecks/builds, browser checks or screenshots unless requested; ask the user to verify gameplay manually.

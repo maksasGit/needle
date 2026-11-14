@@ -216,6 +216,8 @@ footer { border-radius:18px; background:#ffffffed; }
 .book-tabs button[aria-selected="true"] { color:white; background:#9655f5; }
 .book-page { min-height:220px; }
 .book-page .upgrade { background:#fffef8; border-color:#d8bf8f; }
+.book-page button[aria-disabled="true"] { opacity:.55; cursor:not-allowed; box-shadow:0 2px 0 #243650; }
+.book-page button[aria-disabled="true"]:hover { filter:none; }
 .character-summary { display:flex; align-items:center; gap:15px; }
 .character-summary p { margin:5px 0; }
 .book-avatar { width:66px; height:82px; flex-shrink:0; filter:drop-shadow(0 3px 0 #20212a25); }

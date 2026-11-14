@@ -30,3 +30,14 @@ Development-only tools: Vite (MIT), TypeScript (Apache-2.0), @types/three (MIT),
 Old Vite template assets in `src/assets/` and `public/` are not used by the game. `publicDir: false` excludes the old public template files from the production build. Do not add them to the release ZIP.
 
 Any future external asset must have its source, license, commercial-use terms and required attribution recorded here before being included.
+
+### Action sound effects — 2026-11-15
+
+Source: four local MP3 files supplied by the project owner for integration, named for their intended actions. No external download, conversion or additional recording was used. No separate public redistribution license was supplied; do not describe these files as public domain.
+
+- public/audio/collect_hay.mp3 — 25,389 bytes, successful collection.
+- public/audio/inventory_is_full.mp3 — 25,389 bytes, shared unavailable-action feedback, as explicitly requested by the owner.
+- public/audio/sell_sound.mp3 — 25,389 bytes, successful player sale.
+- public/audio/steps_loop.mp3 — 55,341 bytes, grounded movement loop.
+
+The earlier description of music as the only integrated audio is superseded by this entry. Manual playback acceptance is pending.

@@ -9,12 +9,13 @@ export class Shop {
   private controller = new AbortController();
   private dialog = document.querySelector<HTMLDialogElement>('#shop-dialog')!;
   private tab = 'character';
-  constructor(private economy: EconomySystem, private onBuy: (action: ShopAction) => void) {
+  constructor(private economy: EconomySystem, private onBuy: (action: ShopAction) => void, private onReject: () => void = () => {}) {
     document.querySelector<HTMLButtonElement>('#shop')!.onclick = () => { this.render(true); if (!this.dialog.open) this.dialog.showModal(); };
     this.dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = () => this.dialog.close();
     this.dialog.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
       if (!button || button.disabled) return;
+      if (button.dataset.unavailable === 'true') { this.onReject(); return; }
       if (button.dataset.tab) { this.tab = button.dataset.tab; this.render(); return; }
       const kind = button.dataset.action;
       if (kind === 'character') {
@@ -25,7 +26,7 @@ export class Shop {
   }
   private buyButton(price: number | null, attrs: string) {
     const disabled = price === null || this.economy.coins < price;
-    return `<button ${attrs} ${disabled ? 'disabled' : ''}>${price === null ? t('max') : `${t('buy')} &middot; ${price} ${t('money')}`}</button>`;
+    return `<button ${attrs} aria-disabled="${disabled}" data-unavailable="${disabled}">${price === null ? t('max') : `${t('buy')} &middot; ${price} ${t('money')}`}</button>`;
   }
   private characterPage() {
     const avatar = '<svg class="book-avatar" viewBox="0 0 64 80" aria-hidden="true"><rect x="20" y="4" width="24" height="24" rx="7" fill="#ffcf8b"/><rect x="14" y="31" width="36" height="30" rx="7" fill="#23b8ff"/><rect x="5" y="34" width="8" height="25" rx="4" fill="#ffcf8b"/><rect x="51" y="34" width="8" height="25" rx="4" fill="#ffcf8b"/><path d="M19 65h11v13H19zM34 65h11v13H34z" fill="#526985"/></svg>';
