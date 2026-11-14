@@ -600,4 +600,12 @@ These are requirements for subsequent development, not claims that the current p
 - Preserve the current 20,000-unit hay economy, selected-straw identity and visible collection feedback while optimizing representation. Instanced/shared geometry is compatible with the ban on one independent mesh object per straw; do not silently replace gameplay counts or remove selection mechanics during art work.
 - Adding this reference records the design standard; it does not mean the current prototype already satisfies the art acceptance criteria or authorize implementing all visual/onboarding changes at once.
 
+## 19. Living asset checklists
+
+- Maintain three project-root Markdown inventories: [ASSETS_3D.md](ASSETS_3D.md) for models, terrain, sky, materials and 3D animations; [ASSETS_2D.md](ASSETS_2D.md) for UI, icons, typography, wording/localization, 2D effects and publishing artwork; [AUDIO_ASSETS.md](AUDIO_ASSETS.md) for music, ambience, sound effects and their integration needs.
+- Whenever development adds, changes, replaces or removes an asset, a UI element/text group, an animation or an audio event, update the relevant checklist in the same task and commit. Add newly discovered needs rather than leaving them only in conversation. Update multiple lists when a feature affects multiple disciplines; cross-reference shared items instead of duplicating work.
+- Use stable IDs, Markdown todo checkboxes, a concise description, priority and current implementation status. Record the actual path and basic validation once integrated. Distinguish existing procedural prototypes from missing final artwork; never mark an asset complete merely because it is planned or generated.
+- Preserve descriptions/history when assets are replaced: identify the current source and remove stale active requirements. Record author/source/license in `needle-in-a-haystack/ASSET_LICENSES.md` for imported files, fonts, music and sounds.
+- Check these inventories when scoping relevant work and include their updates in the completion check. A checklist entry alone does not authorize implementing a new mechanic, generating all assets, adding dependencies or publishing. Preserve ART_DIRECTION.md, gameplay decisions, mobile readability and loading/resource budgets.
+
 
