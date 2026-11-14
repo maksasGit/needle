@@ -51,7 +51,7 @@ export class World {
     let seed = 42;
     const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
     this.cart.position.set(config.cart.x, 0, config.cart.z);
-    this.cart.add(this.cargo.mesh, this.cartFallback);
+    this.cart.add(this.cargo.group, this.cartFallback);
     const cart = this.cartFallback;
     this.box(cart, [1.6, 0.15, 1.55], [0, 0.64, 0], 0x6d3c24);
     for (let i = 0; i < 3; i++) {
@@ -119,8 +119,8 @@ export class World {
         if (this.pickables[i].parent === this.cartFallback) this.pickables.splice(i, 1);
       }
       this.cart.add(model); this.tag(model, 'cart');
-      this.cargo.mesh.scale.set(0.67, 1, 0.98);
-      this.cargo.mesh.position.y = 0.2;
+      this.cargo.group.scale.set(0.67, 1, 0.98);
+      this.cargo.group.position.y = 0.2;
       this.cartModelStatus = 'ready';
       this.shadowDirty = true;
     }).catch(() => {
@@ -158,15 +158,12 @@ export class World {
     if (this.reducedMotion) this.hay.settleImmediately();
     return result;
   }
-  depositHay(amount: number, origin: THREE.Vector3) {
-    this.shadowDirty = true;
-    this.scene.updateMatrixWorld(true);
-    this.cargo.deposit(amount, origin);
-    if (this.reducedMotion) this.cargo.update(10);
+  depositHay(amount: number) {
+    this.shadowDirty = true; this.cargo.deposit(amount);
   }
   updateHay(dt: number) {
-    if (this.hay.activeCount || this.cargo.activeCount) this.shadowDirty = true;
-    this.hay.update(dt); this.cargo.update(dt); this.needle.update(dt, this.reducedMotion);
+    if (this.hay.activeCount) this.shadowDirty = true;
+    this.hay.update(dt); this.needle.update(dt, this.reducedMotion);
   }
   takeShadowUpdate() { const dirty = this.shadowDirty; this.shadowDirty = false; return dirty; }
   dispose() { this.disposed = true; disposeTree(this.scene); this.pickables.length = 0; this.materials.clear(); this.geometries.clear(); }

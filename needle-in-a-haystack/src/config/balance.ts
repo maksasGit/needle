@@ -15,10 +15,9 @@
   interactionTolerance: 0.08,
   actionFeedbackSeconds: 0.18,
   presentation: {
-    pickupFeedback: 0.22, unloadSeconds: 0.6, unloadStagger: 0.012, unloadArc: 0.35,
-    cartColumns: 5, cartRows: 36, cartColumnStep: 0.27, cartRowStep: 0.035,
-    cartFloor: 0.735, cartLayerHeight: 0.022,
+    pickupFeedback: 0.22, cartFloor: 0.735,
   },
+  cartCargo: { segments: 12, rings: 4, radius: 0.72, minHeight: 0.055, maxHeight: 0.95, minFootprint: 0.3 },
   hayVisual: {
     profileVersion: 1,
     radius: 2.12, spacing: 0.15, rings: 17, layerHeight: 0.04, floor: 0.045, slope: 0.33,

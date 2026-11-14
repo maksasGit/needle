@@ -1,5 +1,6 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  aimCartCount: 'Продать сено · в телеге: {n}',
   music: 'Фоновая музыка', musicVolume: 'Громкость музыки',
   sale: 'Цена продажи сена', character: 'Персонаж',
   characterHint: 'Скорость, сбор и выручка. Инструменты, рюкзак и свинки покупаются у амбара.',
@@ -27,7 +28,7 @@ const ru = {
   confirmReset: 'Начать заново? Текущий прогресс будет удалён.', yes: 'Начать заново', cancel: 'Отмена',
   helpTitle: 'Найди иголку в стоге',
   help1: 'Подойди к стогу и нажми на соломинку или кнопку действия, чтобы собрать одну порцию. Повторяй нажатия — удерживать кнопку не нужно. Соломинка с мятным контуром под прицелом будет собрана первой.',
-  help2: 'Сначала помещается 5 соломинок. Нажми на телегу, чтобы продать всё. У амбара покупай инструменты, улучшай рюкзак и нанимай до трёх свинок. Свинки едят сено и приносят монеты.',
+  help2: 'Сначала помещается 5 соломинок. Нажми на телегу: сено сразу исчезнет из рук, монеты начислятся, куча в кузове увеличится. У амбара покупай инструменты, улучшай рюкзак и нанимай до трёх свинок. Свинки едят сено и приносят монеты.',
   help3: 'На компьютере ходи клавишами WASD или стрелками, перетаскивай мышью для обзора. На телефоне отклоняй джойстик слева для ходьбы и веди вторым пальцем по сцене для обзора. Нажатия не перемещают персонажа. Ходьба отменяет незавершённый сбор.',
   help4: 'Покупай улучшения. Разбери стог и подбери открывшуюся иголку! Прогресс сохраняется автоматически. В меню и при смене вкладки игра приостанавливается.',
   shopTitle: 'Книга улучшений', shopHint: 'Персонаж и купленные предметы — на отдельных вкладках.',
@@ -51,6 +52,7 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  aimCartCount: 'Sell hay · cart: {n}',
   music: 'Background music', musicVolume: 'Music volume',
   sale: 'Hay sale price', character: 'Character',
   characterHint: 'Speed, collecting and earnings. Buy tools, backpack upgrades and pigs at the barn.',
@@ -77,7 +79,7 @@ const en: Record<Key, string> = {
   shop: 'Shop', help: 'How to play', settings: 'Settings', close: 'Back to farm', newGame: 'New game', confirmReset: 'Start over? Your current progress will be deleted.', yes: 'Start over', cancel: 'Cancel',
   helpTitle: 'Find the needle in the haystack',
   help1: 'Walk up to the pile and tap a straw or Interact to collect one portion. Tap again for each action; holding does not collect. The mint-outlined straw under the crosshair is collected first.',
-  help2: 'You initially carry 5 straws. Tap the cart to sell everything. Buy tools, upgrade the backpack and hire up to three pigs at the barn. Pigs eat hay and earn coins.',
+  help2: 'You initially carry 5 straws. Tap the cart: hay disappears from your hands, coins arrive immediately and the cargo pile grows. Buy tools, upgrade the backpack and hire up to three pigs at the barn. Pigs eat hay and earn coins.',
   help3: 'Desktop: walk with WASD or arrow keys, and drag the mouse to look. Mobile: use the left joystick to walk and drag the scene with a second finger to look. Taps never move the player. Walking cancels unfinished collection. Jump with Space or the arrow button; you can climb onto the hay.',
   help4: 'Buy upgrades, clear the pile, then pick up the revealed needle! Progress saves automatically. Menus and background tabs pause the game.',
   shopTitle: 'Upgrade book', shopHint: 'Character and owned items have separate tabs.',

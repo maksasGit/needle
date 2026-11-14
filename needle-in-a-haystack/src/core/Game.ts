@@ -265,10 +265,9 @@ export class Game {
       this.player.action('Collecting', this.collectionTimer); this.message('collecting');
     } else {
       const sold = this.economy.inventory;
-      const origin = this.viewModel ? this.viewModel.releasePoint(this.camera.camera) : this.player.group.position.clone().setY(config.firstPerson.eyeHeight - 0.3);
       const earned = this.economy.unload();
       this.feedback?.show('coins', earned);
-      if (sold > 0) { this.player.action('Unloading'); this.viewModel?.sell(); this.world.depositHay(sold, origin); this.dirty = true; }
+      if (sold > 0) { this.world.depositHay(sold); this.dirty = true; }
       this.message(earned ? 'sold' : 'empty', { n: earned });
     }
     this.refreshHUD();
@@ -341,7 +340,7 @@ export class Game {
       node.textContent = t(offer.owned ? 'barnOwnedAim' : offer.price === null ? 'barnMaxAim' : 'barnAim', { name: offer.name, price: offer.price ?? 0 }) + (offer.locked ? ` / ${t('previousTool')}` : '');
       return;
     }
-    if (node) node.textContent = this.aimTarget === 'hay' ? t('aimHay') : this.aimTarget === 'cart' ? t('aimCart') : this.aimTarget === 'needle' ? t('needle') : '';
+    if (node) node.textContent = this.aimTarget === 'hay' ? t('aimHay') : this.aimTarget === 'cart' ? t('aimCartCount', { n: this.world.cargoCount }) : this.aimTarget === 'needle' ? t('needle') : '';
     if (node && this.aimTarget === 'hay' && this.aimRarity.bonus) node.textContent = t('aimRare', { rarity: `${this.aimRarity.badge} ${t(this.aimRarity.id)}`, n: Math.ceil(this.aimRarity.bonus * this.economy.discoveryMultiplier) });
   }
   refreshLanguage() {

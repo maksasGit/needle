@@ -17,7 +17,6 @@ export class FirstPersonView {
   private straws: THREE.InstancedMesh;
   private level = -1;
   private feedback = 0;
-  private unloading = 0;
   private amount = 0;
   private dummy = new THREE.Object3D();
   reducedMotion = false;
@@ -48,6 +47,7 @@ export class FirstPersonView {
   }
   setInventory(amount: number, toolLevel: number) {
     if (amount > this.amount) this.feedback = config.presentation.pickupFeedback;
+    if (amount < this.amount) this.feedback = 0;
     const changed = this.level !== toolLevel;
     this.amount = amount; this.straws.count = amount; this.level = toolLevel;
     this.tool.visible = toolLevel > 0;
@@ -62,7 +62,6 @@ export class FirstPersonView {
     }
     if (amount > 0 || changed) this.straws.instanceMatrix.needsUpdate = true;
   }
-  sell() { this.unloading = config.presentation.unloadSeconds; }
   releasePoint(camera: THREE.Camera) {
     this.root.updateMatrixWorld(true);
     const point = this.carry.getWorldPosition(new THREE.Vector3());
@@ -70,13 +69,11 @@ export class FirstPersonView {
   }
   update(dt: number, collectionRemaining: number, collectionDuration: number) {
     this.feedback = Math.max(0, this.feedback - dt);
-    this.unloading = Math.max(0, this.unloading - dt);
     const t = collectionRemaining > 0 ? 1 - collectionRemaining / collectionDuration : 0;
     const reach = collectionRemaining > 0 ? Math.sin(Math.min(1, Math.max(0, t)) * Math.PI) : 0;
     const pickup = Math.sin(this.feedback / config.presentation.pickupFeedback * Math.PI);
-    const unload = Math.sin(this.unloading / config.presentation.unloadSeconds * Math.PI);
-    this.root.position.set(0, -reach * 0.025 + pickup * 0.035 + unload * 0.06, -reach * (this.level === 4 ? .04 : .18) - unload * 0.15);
-    this.root.rotation.x = -reach * (this.level === 4 ? .02 : .12) + unload * 0.22;
+    this.root.position.set(0, -reach * 0.025 + pickup * 0.035, -reach * (this.level === 4 ? .04 : .18));
+    this.root.rotation.x = -reach * (this.level === 4 ? .02 : .12);
     if (this.reducedMotion) { this.root.position.set(0, 0, 0); this.root.rotation.x = 0; }
     this.left.position.set(-0.15, -0.29, -0.55); this.left.rotation.set(-0.85, 0, -0.25);
     this.right.position.set(this.level ? 0.22 : 0.16, -0.32, -0.51); this.right.rotation.set(-0.7 - reach * 0.4, 0, 0.25);

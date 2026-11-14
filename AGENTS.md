@@ -407,7 +407,7 @@ These project-specific decisions supplement the standards above. Preserve them u
 - Use instancing and bounded local settling rather than simulating 20,000 full rigid bodies. Preserve sleeping inactive straws and accelerated picking.
 - Highlight the individual straw under the crosshair; collect that exact straw first. Keep stable identity across instance-index swaps and settling.
 - At tool level zero, show block-style hands. Once any tool is purchased, hide both hands completely and show only the tool and carried hay.
-- Visible carried straw count must match inventory. Sold straws animate into neat rows/layers in the cart and persist there for the current session.
+- Visible carried straw count must match inventory. Per user update on 2026-11-15, sale is instant with no unload hand animation or per-straw flights into the cart. Cart cargo is one fixed-cost static mound scaled from the exact sold-unit counter, not one rendered straw per sold unit. Preserve sale amounts, saved cargo counts and pigEaten separation; do not restore the former 20,000-slot cart instance buffer.
 - The visual direction is original, colorful, block-style farm art inspired by broad sandbox-game aesthetics. Do not copy Roblox branding, characters, UI assets, or a reference game's distinctive presentation.
 - Geometry is procedural. External assets require explicit user agreement and documented licensing.
 
