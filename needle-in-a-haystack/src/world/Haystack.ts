@@ -3,9 +3,10 @@ import { config } from '../config/balance';
 import { createStrawGeometry } from './strawGeometry';
 import { decodeHay } from '../systems/SaveSystem';
 import { createStrawOutline } from './strawOutline';
+import { strawRarity } from '../config/rarity';
 
 type Piece = { id: number; position: THREE.Vector3; target: THREE.Vector3; rotation: THREE.Euler; velocity: number; slot: number; column: number; color: THREE.Color };
-type Column = { x: number; z: number; phase: number; pieces: Piece[]; neighbours: number[] };
+type Column = { x: number; z: number; phase: number; bias: number; pieces: Piece[]; neighbours: number[] };
 
 /** Granular approximation: stable column supports + a bounded local avalanche. */
 export class Haystack {
@@ -68,7 +69,10 @@ export class Haystack {
     for (let z = -settings.rings; z <= settings.rings; z++) for (let x = -settings.rings; x <= settings.rings; x++) {
       const px = (x + (Math.abs(z) % 2) * 0.5) * settings.spacing;
       const pz = z * settings.spacing * 0.866;
-      if (Math.hypot(px, pz) <= settings.radius) this.columns.push({ x: px, z: pz, phase: this.random() * this.supportHeight, pieces: [], neighbours: [] });
+      if (Math.hypot(px, pz) <= settings.radius) {
+        const phase = this.random() * this.supportHeight;
+        this.columns.push({ x: px, z: pz, phase, bias: phase + (px * px + pz * pz) * settings.slope, pieces: [], neighbours: [] });
+      }
     }
     this.columns.forEach((column, i) => this.columns.forEach((other, j) => {
       if (i !== j && Math.hypot(column.x - other.x, column.z - other.z) < settings.spacing * 1.12) column.neighbours.push(j);
@@ -77,12 +81,14 @@ export class Haystack {
     for (let i = 0; i < config.totalHay; i++) {
       let selected = 0, score = Infinity;
       this.columns.forEach((c, index) => {
-        const value = c.phase + c.pieces.length * this.supportHeight + Math.hypot(c.x, c.z) ** 2 * settings.slope;
+        const value = c.bias + c.pieces.length * this.supportHeight;
         if (value < score) { score = value; selected = index; }
       });
       const c = this.columns[selected];
       const target = this.target(c, c.pieces.length);
       const piece: Piece = { id: i, position: target.clone(), target, rotation: new THREE.Euler((this.random() - 0.5) * 1.4, this.random() * Math.PI * 2, (this.random() - 0.5) * 1.2), velocity: 0, slot: i, column: selected, color: new THREE.Color().setHSL(0.085 + this.random() * 0.035, 0.85 + this.random() * 0.15, 0.46 + this.random() * 0.16) };
+      const rarity = strawRarity(piece.id);
+      if (rarity.bonus) piece.color.setHex(rarity.color);
       c.pieces.push(piece); this.pieces.push(piece); this.byId.set(piece.id, piece); this.write(piece);
     }
     this.mesh.instanceMatrix.needsUpdate = true;
@@ -144,9 +150,10 @@ export class Haystack {
     for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
     return btoa(binary);
   }
-  restore(encoded: string, sourceContactScale: number = config.hayVisual.contactScale, sourceTotal: number = config.totalHay) {
+  restore(encoded: string, sourceContactScale: number = config.hayVisual.contactScale, sourceTotal: number = config.totalHay, sourceProfile: number = config.hayVisual.profileVersion) {
     if (!Number.isFinite(sourceContactScale) || sourceContactScale < 0.25 || sourceContactScale > 1) throw new Error('Invalid hay contact scale');
     if (!Number.isSafeInteger(sourceTotal) || sourceTotal < 1 || sourceTotal > config.totalHay) throw new Error('Invalid source hay total');
+    if (!Number.isInteger(sourceProfile) || sourceProfile < 0 || sourceProfile > config.hayVisual.profileVersion) throw new Error('Invalid hay profile');
     const data = decodeHay(encoded), original = new Map(this.byId);
     for (let i = 0; i < data.length; i += 8) if (data[i + 1] >= this.columns.length) throw new Error('Invalid hay column');
     this.pieces = []; this.byId.clear(); this.active.clear(); this.flights.length = 0; this.highlight();
@@ -154,9 +161,17 @@ export class Haystack {
     for (let i = 0; i < data.length; i += 8) {
       const piece = original.get(data[i])!;
       if (!piece) throw new Error('Unknown straw');
-      piece.column = data[i + 1]; piece.slot = this.pieces.length;
-      piece.target.set(data[i + 2] / 1000, data[i + 3] / 1000, data[i + 4] / 1000);
-      if (sourceContactScale !== config.hayVisual.contactScale) {
+      piece.slot = this.pieces.length;
+      if (sourceProfile !== config.hayVisual.profileVersion) {
+        // Repack only surviving stable ids onto the new profile. This changes
+        // layout, never inventory, earned coins or already harvested identities.
+        const column = this.columns[piece.column];
+        piece.target.y = config.hayVisual.floor + column.phase + column.pieces.length * this.supportHeight;
+      } else {
+        piece.column = data[i + 1];
+        piece.target.set(data[i + 2] / 1000, data[i + 3] / 1000, data[i + 4] / 1000);
+      }
+      if (sourceProfile === config.hayVisual.profileVersion && sourceContactScale !== config.hayVisual.contactScale) {
         const floor = config.hayVisual.floor;
         piece.target.y = floor + (piece.target.y - floor) * config.hayVisual.contactScale / sourceContactScale;
       }
@@ -192,6 +207,7 @@ export class Haystack {
     }
   }
   remove(amount: number, worldPoint: THREE.Vector3, receiver: THREE.Vector3, selectedId?: number) {
+    let bonus = 0, rareCount = 0, highest = strawRarity();
     const local = worldPoint.clone().sub(this.group.position);
     const end = receiver.clone().sub(this.group.position); end.y = receiver.y || 0.8;
     const affected = new Set<number>();
@@ -205,6 +221,8 @@ export class Haystack {
       });
       // Keep a stable identity across dense instance-slot swaps and settling.
       const removed = (n === 0 && selectedId !== undefined ? this.byId.get(selectedId) : undefined) ?? this.columns[selected].pieces.at(-1)!;
+      const rarity = strawRarity(removed.id);
+      if (rarity.bonus) { bonus += rarity.bonus; rareCount++; if (rarity.bonus > highest.bonus) highest = rarity; }
       selected = removed.column;
       const column = this.columns[selected];
       const index = column.pieces.indexOf(removed);
@@ -240,6 +258,7 @@ export class Haystack {
     this.mesh.count = this.count;
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+    return { bonus, rareCount, highest };
   }
   update(dt: number) {
     dt = Math.min(Math.max(dt, 0), 0.05);

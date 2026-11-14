@@ -127,8 +127,8 @@ export class World {
   surfaceHeight(x: number, z: number) { return this.hay.surfaceHeight(x, z); }
   get cargoCount() { return this.cargo.count; }
   snapshotHay() { return this.hay.snapshot(); }
-  restore(hay: string, sold: number, won: boolean, sourceContactScale: number = config.hayVisual.contactScale, sourceTotal: number = config.totalHay) {
-    this.hay.restore(hay, sourceContactScale, won ? config.totalHay : sourceTotal); this.cargo.restore(sold);
+  restore(hay: string, sold: number, won: boolean, sourceContactScale: number = config.hayVisual.contactScale, sourceTotal: number = config.totalHay, sourceProfile: number = config.hayVisual.profileVersion) {
+    this.hay.restore(hay, sourceContactScale, won ? config.totalHay : sourceTotal, sourceProfile); this.cargo.restore(sold);
     if (this.hay.count === 0) this.revealNeedle();
     if (won) this.hideNeedle();
     return this.hay.count;
@@ -147,11 +147,12 @@ export class World {
   highlightHay(id?: number) { this.hay.highlight(id); }
   collectHay(amount: number, point: THREE.Vector3, receiver: THREE.Vector3, selectedId?: number) {
     this.shadowDirty = true;
-    this.hay.remove(amount, point, receiver, selectedId);
+    const result = this.hay.remove(amount, point, receiver, selectedId);
     if (this.hay.count === 0) {
       this.revealNeedle();
     }
     if (this.reducedMotion) this.hay.settleImmediately();
+    return result;
   }
   depositHay(amount: number, origin: THREE.Vector3) {
     this.shadowDirty = true;

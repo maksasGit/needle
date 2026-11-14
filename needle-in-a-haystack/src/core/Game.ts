@@ -15,6 +15,7 @@ import { disposeTree } from './dispose';
 import { SaveSystem, decodeHay } from '../systems/SaveSystem';
 import type { Settings } from '../systems/SaveSystem';
 import { t } from '../ui/i18n';
+import { strawRarity, rarityVersion } from '../config/rarity';
 
 type Options = { settings?: Settings; onWin?: () => void; onError?: (message: string) => void };
 export class Game {
@@ -33,6 +34,7 @@ export class Game {
   private harvestPoint = new THREE.Vector3(config.hay.x, 1, config.hay.z);
   private harvestId?: number;
   private aimTarget?: Target;
+  private aimRarity = strawRarity();
   private lastBought?: UpgradeId;
   private viewModel?: FirstPersonView;
   private saveSystem?: SaveSystem = new SaveSystem();
@@ -79,11 +81,12 @@ export class Game {
         try {
           const remaining = decodeHay(saved.hay).length / 8;
           const sourceTotal = saved.totalHay ?? 10000;
-          const restoredRemaining = this.world.restore(saved.hay, sourceTotal - remaining - saved.inventory, saved.won, saved.hayContactScale ?? 1, sourceTotal);
+          const restoredRemaining = this.world.restore(saved.hay, sourceTotal - remaining - saved.inventory, saved.won, saved.hayContactScale ?? 1, sourceTotal, saved.hayProfile ?? 0);
           this.runTotal = saved.won ? sourceTotal : config.totalHay;
-          this.dirty = saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
+          this.dirty = saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
           Object.assign(this.economy.levels, saved.levels);
           this.economy.remaining = restoredRemaining; this.economy.inventory = saved.inventory; this.economy.coins = saved.coins;
+          this.economy.discoveryCoins = saved.discoveryCoins ?? 0;
           this.player.group.position.set(saved.position[0], 0, saved.position[1]);
           this.player.movementSpeed = this.economy.movementSpeed;
           this.camera.yaw = saved.yaw; this.camera.pitch = saved.pitch; this.won = saved.won;
@@ -100,7 +103,8 @@ export class Game {
         (instanceId, target) => {
           this.world.highlightHay(this.paused ? undefined : this.collectionTimer > 0 ? this.harvestId : this.world.hayIdAt(instanceId));
           const next = this.paused ? undefined : target;
-          if (this.aimTarget !== next) { this.aimTarget = next; this.updateAimLabel(); }
+          const rarity = next === 'hay' ? strawRarity(this.world.hayIdAt(instanceId)) : strawRarity();
+          if (this.aimTarget !== next || this.aimRarity.id !== rarity.id) { this.aimTarget = next; this.aimRarity = rarity; this.updateAimLabel(); }
         },
         () => this.paused, () => this.jump());
       this.resizeObserver = new ResizeObserver(() => {
@@ -250,8 +254,10 @@ export class Game {
       if (this.collectionTimer === 0 && this.inRange('hay')) {
         const amount = this.economy.collect();
         const receiver = this.viewModel ? this.viewModel.releasePoint(this.camera.camera) : this.player.group.position;
-        this.world.collectHay(amount, this.harvestPoint, receiver, this.harvestId);
+        const discovery = this.world.collectHay(amount, this.harvestPoint, receiver, this.harvestId);
+        if (discovery?.bonus) this.economy.creditDiscovery(discovery.bonus);
         this.message(this.economy.remaining === 0 ? 'discovered' : this.economy.inventory === this.economy.capacity ? 'collectedFull' : 'collected', { n: amount });
+        if (discovery?.bonus) this.message('rareFound', { amount, n: discovery.bonus, rarity: `${discovery.highest.badge} ${t(discovery.highest.id)}` });
         if (this.economy.remaining === 0) this.movement = new MovementSystem([config.cart]);
         this.dirty = true; this.refreshHUD();
       }
@@ -268,7 +274,8 @@ export class Game {
     document.querySelector('#coins')!.textContent = String(this.economy.coins);
     document.querySelector('#inventory')!.textContent = `${this.economy.inventory} / ${this.economy.capacity}`;
     document.querySelector('#remaining')!.textContent = String(this.economy.remaining);
-    document.querySelector('#tool')!.textContent = this.economy.toolName;
+    const hayProgress = document.querySelector<HTMLProgressElement>('#hay-progress');
+    if (hayProgress) { hayProgress.max = this.runTotal; hayProgress.value = this.economy.remaining; }
     this.player.setInventory(this.economy.inventory, this.economy.capacity);
     this.viewModel?.setInventory(this.economy.inventory, this.economy.levels.tools); this.shop?.render();
   }
@@ -278,7 +285,7 @@ export class Game {
   }
   saveNow() {
     if (!this.dirty || !this.saveSystem || this.disposed) return;
-    const data = { version: 1 as const, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
+    const data = { version: 1 as const, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
     if (this.saveSystem.write(data)) this.dirty = false;
     this.updateSaveNotice();
@@ -286,6 +293,7 @@ export class Game {
   private updateAimLabel() {
     const node = document.querySelector('#aim-label');
     if (node) node.textContent = this.aimTarget === 'hay' ? t('aimHay') : this.aimTarget === 'cart' ? t('aimCart') : this.aimTarget === 'needle' ? t('needle') : '';
+    if (node && this.aimTarget === 'hay' && this.aimRarity.bonus) node.textContent = t('aimRare', { rarity: `${this.aimRarity.badge} ${t(this.aimRarity.id)}`, n: this.aimRarity.bonus });
   }
   refreshLanguage() {
     this.refreshHUD();

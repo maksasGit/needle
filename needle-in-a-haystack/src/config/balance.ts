@@ -20,14 +20,15 @@
     cartFloor: 0.735, cartLayerHeight: 0.022,
   },
   hayVisual: {
-    radius: 1.42, spacing: 0.12, rings: 14, layerHeight: 0.06, floor: 0.085, slope: 0.7,
+    profileVersion: 1,
+    radius: 2.12, spacing: 0.15, rings: 17, layerHeight: 0.04, floor: 0.045, slope: 0.33,
     contactScale: 0.75,
     horizontalJitter: 0.04, verticalJitter: 0.009,
     stalkWidth: 0.0255, stalkLength: 0.25875,
     gravity: 5, rollSpeed: 8, stableLayers: 2, maxTransfers: 24, maxActive: 96,
     maxFlights: 24, flightSeconds: 0.35,
   },
-  hay: { x: -1.6, z: -0.8, radius: 1.65 },
+  hay: { x: -1.6, z: -0.8, radius: 2.32 },
   needle: { x: -1.6, z: -0.8, radius: 0.25 },
   cart: { x: 2.7, z: 0.6, radius: 1.35 },
 } as const;

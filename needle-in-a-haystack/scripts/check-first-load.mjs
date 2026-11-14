@@ -82,6 +82,15 @@ try {
       const firstMovementMs=await page.evaluate(()=>performance.now());
       await page.waitForFunction(()=>{const p=window.needleDiagnostics().position;return Math.hypot(p[0]+1.6,p[1]+0.8)<2.15;},null,{timeout:15000});
       await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+      // A lower mound needs a deliberate downward look after walking onto its skirt.
+      // Exercise real touch-look rather than assuming the old tall pile fills the aim.
+      const state=await page.evaluate(()=>window.needleDiagnostics());
+      const distance=Math.hypot(state.position[0]+1.6,state.position[1]+0.8);
+      const desiredPitch=Math.atan2(.9-1.55-(state.height ?? 0),distance);
+      const lookPoint={x:260,y:300,id:2};
+      await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[lookPoint]});
+      await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...lookPoint,y:300+(state.pitch-desiredPitch)/.004}]});
+      await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       await page.locator('#interact').tap();
       await page.waitForFunction(()=>window.needleDiagnostics().inventory===1,null,{timeout:15000});
       const firstCollectionMs=await page.evaluate(()=>performance.now());

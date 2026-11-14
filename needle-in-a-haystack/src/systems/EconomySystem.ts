@@ -7,6 +7,7 @@ export class EconomySystem {
   remaining: number = config.totalHay;
   inventory = 0;
   coins = 0;
+  discoveryCoins = 0;
   readonly levels: Record<UpgradeId, number> = { capacity: 0, movement: 0, collection: 0, tools: 0 };
   get capacity() { return config.capacity + this.levels.capacity * upgrades.capacity.step; }
   get movementSpeed() { return config.movementSpeed * (1 + this.levels.movement * upgrades.movement.step); }
@@ -46,5 +47,9 @@ export class EconomySystem {
     this.coins += earned;
     this.inventory = 0;
     return earned;
+  }
+  creditDiscovery(bonus: number) {
+    if (!Number.isSafeInteger(bonus) || bonus < 0) throw new Error('Invalid discovery reward');
+    this.discoveryCoins += bonus; this.coins += bonus;
   }
 }

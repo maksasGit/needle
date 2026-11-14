@@ -1,12 +1,16 @@
 import { config, upgrades, upgradePrice } from '../config/balance';
 import type { UpgradeId } from '../config/balance';
 import type { Language } from '../ui/i18n';
+import { maxDiscoveryBonus, rarityVersion } from '../config/rarity';
 export const SAVE_KEY = 'needle.save.v1';
 export type SaveData = {
   version: 1; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
   position: [number, number]; yaw: number; pitch: number; won: boolean;
   hayContactScale?: number;
   totalHay?: number;
+  hayProfile?: number;
+  discoveryCoins?: number;
+  rarityVersion?: number;
 };
 export type Settings = { language: Language; reducedMotion: boolean };
 const MAX_BYTES = 500 * 1024;
@@ -24,7 +28,8 @@ export function decodeHay(value: string): Int16Array {
   for (let i = 0; i < result.length; i += 8) {
     if (!integer(result[i], 0, config.totalHay - 1) || seen.has(result[i]) || !integer(result[i + 1], 0, 2000)) throw new Error('Invalid straw identity');
     seen.add(result[i]);
-    if (Math.abs(result[i + 2]) > 1600 || result[i + 3] < 0 || result[i + 3] > 5000 || Math.abs(result[i + 4]) > 1600) throw new Error('Invalid straw position');
+    const horizontalLimit = Math.max(1600, Math.ceil((config.hayVisual.radius + config.hayVisual.horizontalJitter) * 1000));
+    if (Math.abs(result[i + 2]) > horizontalLimit || result[i + 3] < 0 || result[i + 3] > 5000 || Math.abs(result[i + 4]) > horizontalLimit) throw new Error('Invalid straw position');
     for (let j = 5; j < 8; j++) if (Math.abs(result[i + j]) > 3142) throw new Error('Invalid straw rotation');
   }
   return result;
@@ -33,6 +38,8 @@ export function validateSave(value: unknown): SaveData {
   if (!value || typeof value !== 'object') throw new Error('Invalid save');
   const s = value as SaveData;
   if (s.version !== 1 || typeof s.hay !== 'string' || !s.levels) throw new Error('Unsupported save');
+  if (s.rarityVersion !== undefined && s.rarityVersion !== rarityVersion) throw new Error('Unsupported rarity version');
+  if (s.hayProfile !== undefined && !integer(s.hayProfile, 0, config.hayVisual.profileVersion)) throw new Error('Invalid hay profile');
   if (s.hayContactScale !== undefined && (!Number.isFinite(s.hayContactScale) || s.hayContactScale < 0.25 || s.hayContactScale > 1)) throw new Error('Invalid hay contact scale');
   for (const id of Object.keys(upgrades) as UpgradeId[]) if (!integer(s.levels[id], 0, upgrades[id].maxLevel)) throw new Error('Invalid level');
   const total = s.totalHay ?? 10000;
@@ -41,10 +48,12 @@ export function validateSave(value: unknown): SaveData {
   for (let i = 0; i < hay.length; i += 8) if (hay[i] >= total) throw new Error('Straw outside saved hay total');
   const remaining = hay.length / 8;
   const capacity = config.capacity + s.levels.capacity * upgrades.capacity.step;
-  if (!integer(s.inventory, 0, capacity) || !integer(s.coins, 0, total * config.salePrice) || remaining + s.inventory > total) throw new Error('Invalid economy');
+  const discoveryCoins = s.discoveryCoins ?? 0;
+  if (!integer(discoveryCoins, 0, (total - remaining) * maxDiscoveryBonus)) throw new Error('Invalid discovery ledger');
+  if (!integer(s.inventory, 0, capacity) || !integer(s.coins, 0, total * config.salePrice + discoveryCoins) || remaining + s.inventory > total) throw new Error('Invalid economy');
   let spent = 0;
   for (const id of Object.keys(upgrades) as UpgradeId[]) for (let level = 0; level < s.levels[id]; level++) spent += upgradePrice(id, level);
-  if (s.coins + spent !== (total - remaining - s.inventory) * config.salePrice) throw new Error('Unbalanced economy');
+  if (s.coins + spent !== (total - remaining - s.inventory) * config.salePrice + discoveryCoins) throw new Error('Unbalanced economy');
   if (!Array.isArray(s.position) || s.position.length !== 2 || s.position.some(v => !Number.isFinite(v) || Math.abs(v) > config.worldHalfSize)) throw new Error('Invalid position');
   if (!Number.isFinite(s.yaw) || !Number.isFinite(s.pitch) || Math.abs(s.pitch) > 1.25 || typeof s.won !== 'boolean' || (s.won && remaining > 0)) throw new Error('Invalid camera/progress');
   return s;

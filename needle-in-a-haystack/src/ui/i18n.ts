@@ -1,5 +1,8 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  common: 'Обычная', uncommon: 'Необычная', rare: 'Редкая', legendary: 'Легендарная',
+  aimRare: '{rarity} соломинка · +{n} монет',
+  rareFound: '+{amount} сена · {rarity}: +{n} монет',
   tagline: 'МАЛЕНЬКАЯ ФЕРМА · БОЛЬШИЕ ПОИСКИ', subtitle: 'Иголка в стоге сена', stage: 'Найди иголку!',
   action: 'Действие · E', coins: 'МОНЕТЫ', inventory: 'В РУКАХ', remaining: 'В СТОГЕ', tool: 'ИНСТРУМЕНТ',
   shop: 'Магазин', help: 'Как играть', settings: 'Настройки', close: 'На ферму', newGame: 'Новая игра',
@@ -30,6 +33,9 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  common: 'Common', uncommon: 'Uncommon', rare: 'Rare', legendary: 'Legendary',
+  aimRare: '{rarity} straw · +{n} coins',
+  rareFound: '+{amount} hay · {rarity}: +{n} coins',
   tagline: 'SMALL FARM · BIG SEARCH', subtitle: 'Find the needle in the haystack', stage: 'Find the needle!',
   action: 'Interact · E', coins: 'COINS', inventory: 'CARRYING', remaining: 'HAY LEFT', tool: 'TOOL',
   shop: 'Shop', help: 'How to play', settings: 'Settings', close: 'Back to farm', newGame: 'New game', confirmReset: 'Start over? Your current progress will be deleted.', yes: 'Start over', cancel: 'Cancel',

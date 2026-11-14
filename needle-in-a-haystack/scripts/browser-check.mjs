@@ -17,13 +17,13 @@ const fixturePile=new Haystack();
 const allBytes=Buffer.from(fixturePile.snapshot(),'base64');
 const lastStraw=allBytes.subarray(0,16);
 const x=lastStraw.readInt16LE(4)/1000, y=lastStraw.readInt16LE(6)/1000, z=lastStraw.readInt16LE(8)/1000;
-const nearEnd={version:1,totalHay:config.totalHay,hay:lastStraw.toString('base64'),hayContactScale:0.75,inventory:0,coins:config.totalHay-1,levels:{capacity:0,movement:0,collection:0,tools:0},position:[-1.6+x,-0.8+z+2.2],yaw:0,pitch:Math.atan2(y-1.55,2.2),won:false};
+const nearEnd={version:1,hayProfile:config.hayVisual.profileVersion,totalHay:config.totalHay,hay:lastStraw.toString('base64'),hayContactScale:0.75,inventory:0,coins:config.totalHay-1,levels:{capacity:0,movement:0,collection:0,tools:0},position:[-1.6+x,-0.8+z+2.2],yaw:0,pitch:Math.atan2(y-1.55,2.2),won:false};
 const legacyRun={version:1,hay:allBytes.subarray(5*16,10000*16).toString('base64'),hayContactScale:0.75,inventory:2,coins:3,levels:{capacity:0,movement:0,collection:0,tools:0},position:[0,3.3],yaw:0,pitch:0,won:false};
 
 const root = path.resolve('dist');
 const output = path.resolve('verification');
 await mkdir(output, { recursive: true });
-const report = { browser: 'Installed Chrome, headless; synthetic desktop/touch viewports, not a real phone', tests: [], errors: [], network: [], samples: [], screenshots: [] };
+const report = { browser: 'Installed Chrome, headless; synthetic desktop/touch viewports, not a real phone', tests: [], errors: [], network: [], cancelledOptionalLoads: [], samples: [], screenshots: [] };
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
@@ -41,7 +41,7 @@ let browser;
 async function lookAt(page,x,y,z) {
   const state=await page.evaluate(()=>window.needleDiagnostics());
   const dx=x-state.position[0],dz=z-state.position[1];
-  const desiredYaw=Math.atan2(-dx,-dz),desiredPitch=Math.atan2(y-1.55,Math.hypot(dx,dz));
+  const desiredYaw=Math.atan2(-dx,-dz),desiredPitch=Math.atan2(y-1.55-(state.height ?? 0),Math.hypot(dx,dz));
   const angle=Math.atan2(Math.sin(state.yaw-desiredYaw),Math.cos(state.yaw-desiredYaw));
   const shiftX=angle/0.004,shiftY=(state.pitch-desiredPitch)/0.004;
   const viewport=page.viewportSize();
@@ -73,7 +73,9 @@ try {
   page.on('pageerror', error => report.errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') report.errors.push(message.text()); });
   page.on('requestfailed', request => {
-    if (request.failure()?.errorText === 'net::ERR_ABORTED' && /cart(?:_colored)?-|cartModel-|model-loader-/.test(request.url())) return; // Intentional reload can cancel optional loading.
+    if (request.failure()?.errorText === 'net::ERR_ABORTED' && (request.url().startsWith('blob:') || /cart(?:_colored)?-|cartModel-|model-loader-/.test(request.url()))) {
+      report.cancelledOptionalLoads.push({url:request.url(),reason:'Reload/restart cancelled optional model or embedded-image transfer'}); return;
+    }
     report.network.push({url:request.url(),failure:request.failure()});
   });
   page.on('response', response => { if (response.status() >= 400) report.network.push({url:response.url(),status:response.status()}); });
@@ -212,7 +214,8 @@ try {
   await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
   await page.reload(); await page.waitForFunction(()=>window.needleDiagnostics?.().readyMs>0);
   assert.equal(await page.locator('#remaining').textContent(),'19995');
-  report.tests.push('Legacy unfinished 10,000-straw run expands once, preserving inventory, coins and cart cargo');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('needle.save.v1')).hayProfile),config.hayVisual.profileVersion);
+  report.tests.push('Legacy unfinished 10,000-straw run expands once and migrates mound profile, preserving inventory, coins and cart cargo');
   await page.evaluate(save=>localStorage.setItem('needle.save.v1',JSON.stringify(save)),nearEnd);
   await page.reload(); await page.waitForFunction(()=>window.needleDiagnostics?.().readyMs > 0);
   assert.equal(await page.locator('#remaining').textContent(),'1');
@@ -268,6 +271,7 @@ try {
   await touch.goto(`${base}/embedded/index.html?diagnostics`);
   await touch.waitForFunction(()=>window.needleDiagnostics?.().readyMs > 0);
   await walkTouchToHay(touch,touchContext);
+  await lookAt(touch,config.hay.x,0.9,config.hay.z);
   await touch.locator('#interact').tap();
   await touch.waitForFunction(()=>window.needleDiagnostics().inventory===1,{timeout:15000});
   await touch.setViewportSize({width:844,height:390});
@@ -342,11 +346,11 @@ try {
   assert.equal(await climb.evaluate(()=>window.needleDiagnostics().height),0,'Held Space does not repeat jumps');
   await climb.keyboard.up('Space');
   await climb.keyboard.down('KeyW');
-  try { await climb.waitForFunction(()=>window.needleDiagnostics().height>1.8,{timeout:10000}); }
+  try { await climb.waitForFunction(()=>window.needleDiagnostics().height>1.3,{timeout:10000}); }
   finally { await climb.keyboard.up('KeyW'); }
   await climb.waitForTimeout(100);
   const summitHeight=await climb.evaluate(()=>window.needleDiagnostics().height);
-  assert.ok(summitHeight>1.8);
+  assert.ok(summitHeight>1.3);
   await climb.keyboard.press('Space');
   await climb.waitForFunction(h=>window.needleDiagnostics().height>h+0.5,summitHeight);
   await climb.waitForFunction(()=>window.needleDiagnostics().grounded);

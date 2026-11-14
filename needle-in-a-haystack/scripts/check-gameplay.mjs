@@ -485,3 +485,30 @@ for(let i=0;i<60;i++)motion.update(1/60,0);
 assert.equal(motion.height,0);
 firstPerson.follow(game.player.position,2);assert.equal(firstPerson.camera.position.y,3.55);
 console.log('Jump/climb checks passed: FPS-independent arc, no double jump, low-FPS hay climbing, depletion fall and elevated camera.');
+
+// Silhouette and migration are independent of old profile coordinates/columns.
+const broadPile=new Haystack();
+const heights=[0,.5,1,1.5,1.9,2.1,2.3].map(r=>broadPile.surfaceHeight(config.hay.x+r,config.hay.z));
+assert.ok(heights[0]>1.45 && heights[0]<1.75,'Lower summit is still climbable');
+assert.ok(heights[4]<.6 && heights[5]<.25 && heights[6]===0,'Broad skirt meets the ground');
+for(let i=1;i<heights.length;i++)assert.ok(heights[i]<=heights[i-1]+.06,'Sampled shoulder slopes towards the ground');
+assert.equal(broadPile.count,20000);
+const oldProfileData=new Int16Array([
+  1,42,200,500,100,100,200,300,
+  87,86,-1300,150,200,-100,400,500,
+  19999,127,400,1800,-300,200,-100,700,
+]);
+const oldProfileEncoded=Buffer.from(oldProfileData.buffer).toString('base64');
+const oldProfileSave={...save,totalHay:20000,hay:oldProfileEncoded,hayContactScale:.75,inventory:0,coins:19997};
+assert.doesNotThrow(()=>validateSave(oldProfileSave));
+assert.throws(()=>validateSave({...oldProfileSave,hayProfile:999}));
+const repacked=new Haystack();repacked.restore(oldProfileEncoded,.75,20000,0);
+assert.equal(repacked.count,3,'Profile migration does not regrow harvested hay');
+assert.deepEqual([...repacked.byId.keys()].sort((a,b)=>a-b),[1,87,19999]);
+for(const piece of repacked.pieces)assert.ok(piece.position.y<.12,'Sparse legacy survivors rest on the ground');
+const migratedProfileSave={...oldProfileSave,hay:repacked.snapshot(),hayProfile:config.hayVisual.profileVersion};
+assert.doesNotThrow(()=>validateSave(migratedProfileSave));
+const reloadedProfile=new Haystack();reloadedProfile.restore(migratedProfileSave.hay,.75,20000,config.hayVisual.profileVersion);
+assert.equal(reloadedProfile.snapshot(),migratedProfileSave.hay,'New profile is not reshaped again on reload');
+assert.throws(()=>reloadedProfile.restore(oldProfileEncoded,.75,20000,999));
+console.log('Broad mound checks passed: lower summit, tapered skirt, exact count, stable legacy ids and idempotent profile migration.');
