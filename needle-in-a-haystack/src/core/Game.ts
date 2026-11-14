@@ -16,6 +16,7 @@ import { SaveSystem, decodeHay } from '../systems/SaveSystem';
 import type { Settings } from '../systems/SaveSystem';
 import { t } from '../ui/i18n';
 import { strawRarity, rarityVersion } from '../config/rarity';
+import { FloatingFeedback } from '../ui/FloatingFeedback';
 
 type Options = { settings?: Settings; onWin?: () => void; onError?: (message: string) => void };
 export class Game {
@@ -37,6 +38,7 @@ export class Game {
   private aimRarity = strawRarity();
   private lastBought?: UpgradeId;
   private viewModel?: FirstPersonView;
+  private feedback?: FloatingFeedback;
   private saveSystem?: SaveSystem = new SaveSystem();
   private dirty = false;
   private saveAge = 0;
@@ -75,6 +77,8 @@ export class Game {
       this.renderer.domElement.tabIndex = 0;
       host.append(this.renderer.domElement);
       this.viewModel = new FirstPersonView();
+      const feedbackHost = document.querySelector<HTMLElement>('#action-feedback');
+      if (feedbackHost) { this.feedback = new FloatingFeedback(feedbackHost); this.feedback.reducedMotion = !!options.settings?.reducedMotion; }
       this.world.reducedMotion = this.viewModel.reducedMotion = !!options.settings?.reducedMotion;
       const saved = this.saveSystem!.read();
       if (saved) {
@@ -232,7 +236,7 @@ export class Game {
       this.dirty = true; this.saveNow(); this.options?.onWin?.(); return;
     }
     if (target === 'hay' && this.economy.remaining === 0) { this.message('discovered'); return; }
-    if (target === 'hay' && this.economy.inventory >= this.economy.capacity) { this.message('full'); return; }
+    if (target === 'hay' && this.economy.inventory >= this.economy.capacity) { this.message('full'); this.feedback?.show('full'); return; }
     if (!this.inRange(target)) { this.message('closer'); return; }
     const object = config[target];
     this.player.group.rotation.y = Math.atan2(object.x - this.player.group.position.x, object.z - this.player.group.position.z);
@@ -243,6 +247,7 @@ export class Game {
       const sold = this.economy.inventory;
       const origin = this.viewModel ? this.viewModel.releasePoint(this.camera.camera) : this.player.group.position.clone().setY(config.firstPerson.eyeHeight - 0.3);
       const earned = this.economy.unload();
+      this.feedback?.show('coins', earned);
       if (sold > 0) { this.player.action('Unloading'); this.viewModel?.sell(); this.world.depositHay(sold, origin); this.dirty = true; }
       this.message(earned ? 'sold' : 'empty', { n: earned });
     }
@@ -255,7 +260,9 @@ export class Game {
         const amount = this.economy.collect();
         const receiver = this.viewModel ? this.viewModel.releasePoint(this.camera.camera) : this.player.group.position;
         const discovery = this.world.collectHay(amount, this.harvestPoint, receiver, this.harvestId);
+        this.feedback?.show('hay', amount);
         if (discovery?.bonus) this.economy.creditDiscovery(discovery.bonus);
+        if (discovery?.bonus) this.feedback?.show('coins', discovery.bonus);
         this.message(this.economy.remaining === 0 ? 'discovered' : this.economy.inventory === this.economy.capacity ? 'collectedFull' : 'collected', { n: amount });
         if (discovery?.bonus) this.message('rareFound', { amount, n: discovery.bonus, rarity: `${discovery.highest.badge} ${t(discovery.highest.id)}` });
         if (this.economy.remaining === 0) this.movement = new MovementSystem([config.cart]);
@@ -301,14 +308,14 @@ export class Game {
     this.status.textContent = t(this.statusKey, this.statusVars); this.updateSaveNotice(); this.updateAimLabel();
     this.renderer.domElement.setAttribute('aria-label', t('world'));
   }
-  setReducedMotion(reduced: boolean) { this.world.reducedMotion = reduced; if (this.viewModel) this.viewModel.reducedMotion = reduced; }
+  setReducedMotion(reduced: boolean) { this.world.reducedMotion = reduced; if (this.viewModel) this.viewModel.reducedMotion = reduced; if (this.feedback) this.feedback.reducedMotion = reduced; }
   diagnostics() { return { ...this.metrics, remaining: this.economy.remaining, inventory: this.economy.inventory, coins: this.economy.coins, cargo: this.world.cargoCount, won: this.won, paused: this.paused, position: [this.player.group.position.x, this.player.group.position.z], yaw: this.camera.yaw, pitch: this.camera.pitch, height: this.locomotion.height, grounded: this.locomotion.grounded, cartModelStatus: this.world.cartModelStatus }; }
   dispose(save = true) {
     if (this.disposed) return;
     if (save) this.saveNow();
     this.disposed = true; this.controller.abort(); this.resizeObserver?.disconnect(); this.observer?.disconnect();
     this.input?.dispose(); this.shop?.dispose(); this.renderer?.setAnimationLoop(null);
-    this.world.dispose(); this.viewModel?.dispose(); disposeTree(this.player.group);
+    this.world.dispose(); this.viewModel?.dispose(); this.feedback?.dispose(); disposeTree(this.player.group);
     this.renderer?.renderLists.dispose(); this.renderer?.forceContextLoss(); this.renderer?.dispose(); this.renderer?.domElement.remove();
   }
 }

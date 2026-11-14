@@ -201,6 +201,13 @@ footer { border-radius:18px; background:#ffffffed; }
 .hay-progress progress::-moz-progress-bar { background:linear-gradient(#ffe974,#f6ad22); border-radius:10px; }
 .hay-progress-caption { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:10px; padding:0 8px; color:#20212a; font-size:12px; font-weight:900; text-shadow:0 1px 0 #ffffffb0; }
 .hay-progress-caption strong { font-size:17px; font-variant-numeric:tabular-nums; }
+.hay-progress-caption .counter-icon { position:static; transform:none; width:23px; height:23px; flex-shrink:0; }
+#action-feedback { position:absolute; top:calc(50% - 22px); left:0; right:0; pointer-events:none; z-index:3; }
+.floating-feedback { position:absolute; left:50%; display:flex; align-items:center; gap:7px; opacity:0; color:#fff3a6; font-size:30px; font-weight:900; white-space:nowrap; text-shadow:2px 2px 0 #20212a,-1px -1px 0 #20212a,1px -1px 0 #20212a,-1px 1px 0 #20212a; }
+.floating-feedback svg { width:29px; height:29px; fill:#ffd83d; stroke:#20212a; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.floating-feedback[data-kind="coins"] { color:#ffe14a; }
+.floating-feedback[data-kind="full"] { padding:7px 13px; border:2px solid #20212a; border-radius:12px; background:#fff0cded; color:#20212a; text-shadow:none; font-size:17px; }
+@media(max-width:600px) { .floating-feedback { font-size:26px; } .floating-feedback[data-kind="full"] { font-size:15px; } }
 #aim-label { max-width:calc(100vw - 28px); white-space:normal; text-align:center; }
 #save-notice { top:max(78px,calc(env(safe-area-inset-top) + 62px)); right:max(16px,env(safe-area-inset-right)); left:auto; max-width:calc(100% - 180px); }
 @media(max-width:600px) {

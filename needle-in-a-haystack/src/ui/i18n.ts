@@ -1,5 +1,6 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  inventoryFull: 'Инвентарь полон',
   common: 'Обычная', uncommon: 'Необычная', rare: 'Редкая', legendary: 'Легендарная',
   aimRare: '{rarity} соломинка · +{n} монет',
   rareFound: '+{amount} сена · {rarity}: +{n} монет',
@@ -33,6 +34,7 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  inventoryFull: 'Inventory full',
   common: 'Common', uncommon: 'Uncommon', rare: 'Rare', legendary: 'Legendary',
   aimRare: '{rarity} straw · +{n} coins',
   rareFound: '+{amount} hay · {rarity}: +{n} coins',
