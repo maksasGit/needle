@@ -3,7 +3,7 @@ import type { UpgradeId } from '../config/balance';
 import { t, toolName } from '../ui/i18n';
 import { pigBalance, pigUpgrades, pigUpgradePrice, toolSpecs, toolUpgradePrice, toolUpgradeLimits } from '../config/progression';
 import type { PigUpgrade } from '../config/progression';
-import type { LegacyProgress } from './SaveSystem';
+import type { LegacyProgress, PriceBaseline } from './SaveSystem';
 import type { ToolUpgrade, BarnTarget } from '../config/progression';
 import { barnItems } from '../config/progression';
 
@@ -20,6 +20,7 @@ export class EconomySystem {
   pigSpeedLevel = 0;
   saleRemainder = 0;
   legacyProgress?: LegacyProgress;
+  priceBaseline?: PriceBaseline;
   activeTool = 0;
   readonly toolVolumes = [0, 0, 0, 0];
   readonly toolSpecials = [0, 0, 0, 0];
@@ -62,7 +63,7 @@ export class EconomySystem {
       case 'movement': return `${(config.movementSpeed * (1 + level * upgrades.movement.step)).toFixed(2)} ${t('speedUnit')}`;
       case 'collection': return `${(config.collectionSeconds * upgrades.collection.multiplier ** level).toFixed(2)} ${t('seconds')}`;
       case 'tools': return `${toolName(level)} · ${upgrades.tools.amounts[level]} ${t('perTap')}`;
-      case 'sale': return `×${(1 + level * upgrades.sale.step).toFixed(1)} (+${level * 10}%)`;
+      case 'sale': return `×${(1 + level * upgrades.sale.step).toFixed(2)} (+${level * 25}%)`;
     }
   }
 
@@ -81,10 +82,10 @@ export class EconomySystem {
     return earned;
   }
   private salePayout(amount: number) {
-    // Integer tenths retain fractional rewards across deliveries and pig bites.
-    const tenths = amount * (10 + this.levels.sale) + this.saleRemainder;
-    this.saleRemainder = tenths % 10;
-    return Math.floor(tenths / 10);
+    // Integer hundredths retain fractional rewards across deliveries and pig bites.
+    const hundredths = amount * (100 + this.levels.sale * 25) + this.saleRemainder;
+    this.saleRemainder = hundredths % 100;
+    return Math.floor(hundredths / 100);
   }
   creditDiscovery(bonus: number) {
     if (!Number.isSafeInteger(bonus) || bonus < 0) throw new Error('Invalid discovery reward');

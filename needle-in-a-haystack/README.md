@@ -175,3 +175,7 @@ The vacuum repeats hay collection while E, Interact or a hay pointer is held; re
 ### Expanded farm layout
 
 The field is now 26×26, hay upper left, a rotated barn upper right and cart lower left. Barn visuals, interaction points and rotated wall obstacles share the same transform. Old-layout saves retain progress and move the player to the new spawn once. Manual desktop/mobile acceptance is pending; no automatic tests/build/screenshots were run.
+
+### Lower prices and stronger sale upgrades
+
+All purchase prices are reduced by at least 30%; sale upgrades by 72% (first 700), now +25% base value per level. Save v4 preserves historical purchase costs and converts fractional rewards to hundredths. Cart and cargo rotate together by 30°. Manual acceptance pending; no build/tests/screenshots run.

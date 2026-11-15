@@ -51,6 +51,7 @@ export class World {
     let seed = 42;
     const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
     this.cart.position.set(config.cart.x, 0, config.cart.z);
+    this.cart.rotation.y = config.cart.yaw;
     this.cart.add(this.cargo.group, this.cartFallback);
     const cart = this.cartFallback;
     this.box(cart, [1.6, 0.15, 1.55], [0, 0.64, 0], 0x6d3c24);

@@ -644,3 +644,9 @@ These are requirements for subsequent development, not claims that the current p
 - Playable map is 26×26 (twice each former side), hay upper left, cart lower left, barn upper right rotated -30° around Y. Keep layout coordinates in balance.ts/progression.ts and use barnWorld for world-space interaction points; barn geometry uses local coordinates.
 - Preserve rotated-wall collision support and expanded pig roaming bounds. Do not move visuals without their interaction/collision data.
 - Save layoutVersion and relocate only legacy-layout or obstructed player positions to the configured spawn; retain all economy, hay and upgrade progress. See GAME_REQUIREMENTS.md section 19 for manual acceptance.
+
+### Price reduction override (2026-11-15)
+
+- All purchases use floor(previous level price × 0.7), except sale upgrades use ×0.28 (first 700). Keep the historical price functions unchanged for save validation.
+- Sale effect now adds 25% of base price per level, not 10%; carry fractional payouts in integer hundredths. Save v4 migrates old tenths and keeps priceBaseline plus legacyProgress to preserve historical spending without resetting progress.
+- Cart group yaw is +30°, including its cargo/model. Follow GAME_REQUIREMENTS.md section 20 for current values; manual validation remains pending.
