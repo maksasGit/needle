@@ -1,11 +1,13 @@
 import { config, upgrades, upgradePrice } from '../config/balance';
 import type { UpgradeId } from '../config/balance';
 import { t, toolName } from '../ui/i18n';
-import { pigBalance, toolSpecs, toolUpgradePrice, toolUpgradeLimits } from '../config/progression';
+import { pigBalance, pigUpgrades, pigUpgradePrice, toolSpecs, toolUpgradePrice, toolUpgradeLimits } from '../config/progression';
+import type { PigUpgrade } from '../config/progression';
+import type { LegacyProgress } from './SaveSystem';
 import type { ToolUpgrade, BarnTarget } from '../config/progression';
 import { barnItems } from '../config/progression';
 
-/** Only explicit commands mutate the inventory; no automatic collection loop. */
+/** Collection is command-driven; only an actively held vacuum repeats commands. */
 export class EconomySystem {
   remaining: number = config.totalHay;
   inventory = 0;
@@ -14,6 +16,10 @@ export class EconomySystem {
   saleRevenue = 0;
   pigCount = 0;
   pigEaten = 0;
+  pigPortionLevel = 0;
+  pigSpeedLevel = 0;
+  saleRemainder = 0;
+  legacyProgress?: LegacyProgress;
   activeTool = 0;
   readonly toolVolumes = [0, 0, 0, 0];
   readonly toolSpecials = [0, 0, 0, 0];
@@ -23,7 +29,18 @@ export class EconomySystem {
   get collectionSeconds() { return config.collectionSeconds * upgrades.collection.multiplier ** this.levels.collection * (toolSpecs[this.activeTool - 1]?.duration ?? 1) * (this.activeTool === 3 ? 0.9 ** this.toolSpecials[2] : 1); }
   get collectionAmount() { return upgrades.tools.amounts[this.activeTool] + (this.activeTool ? this.toolVolumes[this.activeTool - 1] * toolSpecs[this.activeTool - 1].volumeStep : 0); }
   get toolName() { return toolName(this.activeTool); }
-  get salePrice() { return config.salePrice + this.levels.sale * upgrades.sale.step; }
+  get salePrice() { return config.salePrice * (1 + this.levels.sale * upgrades.sale.step); }
+  pigPortion(index: number) { return pigBalance.portions[index] + this.pigPortionLevel * pigUpgrades.portionStep; }
+  get pigIntervalMultiplier() { return pigUpgrades.intervalMultiplier ** this.pigSpeedLevel; }
+  upgradePig(kind: PigUpgrade) {
+    const level = kind === 'portion' ? this.pigPortionLevel : this.pigSpeedLevel;
+    if (!this.pigCount || level >= pigUpgrades.maxLevel) return false;
+    const price = pigUpgradePrice(kind, level);
+    if (this.coins < price) return false;
+    this.coins -= price;
+    if (kind === 'portion') this.pigPortionLevel++; else this.pigSpeedLevel++;
+    return true;
+  }
   get collectionReach() { return this.activeTool === 4 ? 1.8 + this.toolSpecials[3] * 0.35 : this.activeTool === 2 ? 0.25 + this.toolSpecials[1] * 0.18 : 0; }
   get discoveryMultiplier() { return this.activeTool === 1 ? 1 + this.toolSpecials[0] * 0.1 : 1; }
   price(id: UpgradeId): number | null {
@@ -45,7 +62,7 @@ export class EconomySystem {
       case 'movement': return `${(config.movementSpeed * (1 + level * upgrades.movement.step)).toFixed(2)} ${t('speedUnit')}`;
       case 'collection': return `${(config.collectionSeconds * upgrades.collection.multiplier ** level).toFixed(2)} ${t('seconds')}`;
       case 'tools': return `${toolName(level)} · ${upgrades.tools.amounts[level]} ${t('perTap')}`;
-      case 'sale': return `${config.salePrice + level * upgrades.sale.step} ${t('money')} / ${t('unit')}`;
+      case 'sale': return `×${(1 + level * upgrades.sale.step).toFixed(1)} (+${level * 10}%)`;
     }
   }
 
@@ -57,11 +74,17 @@ export class EconomySystem {
   }
 
   unload(): number {
-    const earned = this.inventory * this.salePrice;
+    const earned = this.salePayout(this.inventory);
     this.coins += earned;
     this.saleRevenue += earned;
     this.inventory = 0;
     return earned;
+  }
+  private salePayout(amount: number) {
+    // Integer tenths retain fractional rewards across deliveries and pig bites.
+    const tenths = amount * (10 + this.levels.sale) + this.saleRemainder;
+    this.saleRemainder = tenths % 10;
+    return Math.floor(tenths / 10);
   }
   creditDiscovery(bonus: number) {
     if (!Number.isSafeInteger(bonus) || bonus < 0) throw new Error('Invalid discovery reward');
@@ -96,7 +119,7 @@ export class EconomySystem {
   feedPig(requested: number) {
     const amount = Math.min(Math.max(0, Math.floor(requested)), this.remaining);
     this.remaining -= amount; this.pigEaten += amount;
-    const earned = amount * this.salePrice;
+    const earned = this.salePayout(amount);
     this.saleRevenue += earned; this.coins += earned;
     return { amount, earned };
   }

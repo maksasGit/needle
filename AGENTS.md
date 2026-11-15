@@ -630,3 +630,11 @@ These are requirements for subsequent development, not claims that the current p
 - Footsteps follow actual grounded displacement and stop in menus/background/air; reuse a single loop.
 - Preserve the bounded four-voice effect pool, lazy audio sources and separate saved music/effects preferences.
 - Current user instruction remains: do not run automated tests, typechecks/builds, browser checks or screenshots unless requested; ask the user to verify gameplay manually.
+
+### Progression and vacuum override (2026-11-15)
+
+- The user's newer request explicitly overrides one-tap-only for the vacuum: repeat hay collection only while E, action button or a hay pointer is held. Stop on release/cancel/menu/background; allow movement while vacuuming. Other tools remain one action per tap. Busy collection taps are silent.
+- Target 10–15 actions per backpack at comparable progression. Current capacity 15 + 40/level, max 615. Sale upgrades add 10% of base price per level; retain integer tenths across payouts.
+- Pigs share bite-size/eating-speed upgrades in the book after first purchase. Keep the three-pig bound and all economy ledgers.
+- Preserve v3 save migration and the frozen legacy price tables: historical purchases use old prices, new purchases use current prices. Never reset the player's progress to apply a balance update.
+- GAME_REQUIREMENTS.md section 18 describes current provisional prices and manual acceptance; do not claim balance or device validation without actual user confirmation.

@@ -9,7 +9,7 @@
   input: { joystickDeadZone: 0.12 },
   firstPerson: { fov: 72, eyeHeight: 1.55, startPitch: -0.12, lookSensitivity: 0.004 },
   totalHay: 20000,
-  capacity: 5,
+  capacity: 15,
   collectionSeconds: 0.45,
   salePrice: 1,
   interactionTolerance: 0.08,
@@ -33,11 +33,11 @@
 } as const;
 
 export const upgrades = {
-  capacity: { name: 'Вместимость', basePrice: 5, growth: 1.8, lateGrowth: 1.35, legacyLevels: 5, maxLevel: 15, step: 5 },
-  movement: { name: 'Скорость ходьбы', basePrice: 10, growth: 1.9, maxLevel: 4, step: 0.25 },
-  collection: { name: 'Скорость сбора', basePrice: 10, growth: 1.8, maxLevel: 10, multiplier: 0.8 },
-  sale: { name: 'Цена продажи', basePrice: 25, growth: 2, maxLevel: 5, step: 1 },
-  tools: { name: 'Инструмент', basePrice: 15, growth: 2, maxLevel: 4, amounts: [1, 3, 6, 10, 14], names: ['Руки', 'Грабли', 'Вилы', 'Широкие вилы', 'Пылесос'] },
+  capacity: { name: 'Вместимость', basePrice: 30, growth: 1.8, lateGrowth: 1.4, legacyLevels: 5, maxLevel: 15, step: 40 },
+  movement: { name: 'Скорость ходьбы', basePrice: 120, growth: 1.85, maxLevel: 8, step: 0.25 },
+  collection: { name: 'Скорость сбора', basePrice: 150, growth: 1.9, maxLevel: 15, multiplier: 0.9 },
+  sale: { name: 'Цена продажи', basePrice: 2500, growth: 1.8, maxLevel: 20, step: 0.1 },
+  tools: { name: 'Инструмент', basePrice: 120, growth: 4, maxLevel: 4, amounts: [1, 3, 6, 10, 14], names: ['Руки', 'Грабли', 'Вилы', 'Широкие вилы', 'Пылесос'] },
 } as const;
 export type UpgradeId = keyof typeof upgrades;
 export function upgradePrice(id: UpgradeId, level: number): number {

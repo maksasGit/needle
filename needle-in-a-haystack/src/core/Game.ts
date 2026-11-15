@@ -10,7 +10,7 @@ import { CameraController } from './CameraController';
 import { InputManager } from './InputManager';
 import { Shop } from '../ui/Shop';
 import type { ShopAction } from '../ui/Shop';
-import { barnItems, barnWalls, isBarnTarget, pigBalance } from '../config/progression';
+import { barnItems, barnWalls, isBarnTarget } from '../config/progression';
 import type { UpgradeId } from '../config/balance';
 import { FirstPersonView } from '../entities/FirstPersonView';
 import { disposeTree } from './dispose';
@@ -91,11 +91,13 @@ export class Game {
           const sourceTotal = saved.totalHay ?? 10000;
           const restoredRemaining = this.world.restore(saved.hay, sourceTotal - remaining - saved.inventory - (saved.pigEaten ?? 0), saved.won, saved.hayContactScale ?? 1, sourceTotal, saved.hayProfile ?? 0);
           this.runTotal = saved.won ? sourceTotal : config.totalHay;
-          this.dirty = saved.version !== 2 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
+          this.dirty = saved.version !== 3 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
           Object.assign(this.economy.levels, saved.levels);
           this.economy.remaining = restoredRemaining; this.economy.inventory = saved.inventory; this.economy.coins = saved.coins;
           this.economy.discoveryCoins = saved.discoveryCoins ?? 0;
           this.economy.saleRevenue = saved.saleRevenue ?? (sourceTotal - remaining - saved.inventory) * config.salePrice;
+          this.economy.pigPortionLevel = saved.pigPortionLevel ?? 0; this.economy.pigSpeedLevel = saved.pigSpeedLevel ?? 0;
+          this.economy.saleRemainder = saved.saleRemainder ?? 0; this.economy.legacyProgress = saved.legacyProgress;
           this.economy.pigCount = saved.pigCount ?? 0; this.economy.pigEaten = saved.pigEaten ?? 0;
           this.economy.activeTool = saved.activeTool ?? saved.levels.tools;
           for (let i = 0; i < 4; i++) {
@@ -121,7 +123,7 @@ export class Game {
           const rarity = next === 'hay' ? strawRarity(this.world.hayIdAt(instanceId)) : strawRarity();
           if (this.aimTarget !== next || this.aimRarity.id !== rarity.id) { this.aimTarget = next; this.aimRarity = rarity; this.updateAimLabel(); }
         },
-        () => this.paused, () => this.jump());
+        () => this.paused, () => this.jump(), () => this.economy.activeTool === 4);
       this.resizeObserver = new ResizeObserver(() => {
         const { width, height } = host.getBoundingClientRect();
         if (width <= 0 || height <= 0) return;
@@ -168,8 +170,11 @@ export class Game {
     try {
       if (!this.paused) {
         this.stepSoundStart.copy(this.player.position);
-        this.moveManually(dt); this.updateGameplay(dt);
-        this.world.updatePigs(dt, this.economy.pigCount, this.onPigEat); this.world.updateHay(dt);
+        this.moveManually(dt);
+        if (this.economy.activeTool === 4 && !this.input?.holdingCollection()) this.collectionTimer = 0;
+        this.input?.updateHeld(dt, this.collectionTimer === 0 && this.economy.inventory < this.economy.capacity && this.economy.remaining > 0 && this.inRange('hay'));
+        this.updateGameplay(dt);
+        this.world.updatePigs(dt, this.economy.pigCount, this.onPigEat, this.economy.pigIntervalMultiplier); this.world.updateHay(dt);
         this.player.group.position.y = this.locomotion.height;
         this.options.audio?.setWalking(this.locomotion.grounded && this.stepSoundStart.distanceToSquared(this.player.position) > .000001, this.economy.movementSpeed / config.movementSpeed);
         this.viewModel?.update(dt, this.collectionTimer, this.collectionDuration || this.economy.collectionSeconds);
@@ -216,7 +221,8 @@ export class Game {
   private moveManually(dt: number) {
     const input = this.input!.movement();
     if (input.lengthSq()) {
-      this.collectionTimer = 0; this.player.command([]); this.destination = 'ground'; this.dirty = true;
+      if (this.economy.activeTool !== 4) this.collectionTimer = 0;
+      this.player.command([]); this.destination = 'ground'; this.dirty = true;
     }
     const yaw = this.camera.yaw;
     const delta = this.delta ?? new THREE.Vector2();
@@ -246,9 +252,9 @@ export class Game {
       this.message(offer.owned ? 'equipped' : 'boughtItem', { name: offer.name });
       this.refreshHUD(); this.saveNow(); return;
     }
+    if (target === 'hay' && this.collectionTimer > 0) return;
     if (this.won || (target === 'needle' && this.economy.remaining > 0)) return;
     if (!this.inRange(target)) { this.message('closer'); this.options.audio?.effect('deny'); return; }
-    if (target === 'hay' && this.collectionTimer > 0) { this.options.audio?.effect('deny'); return; }
     if (target === 'hay') { this.harvestPoint = point.clone(); this.harvestId = this.world.hayIdAt(instanceId); }
     this.collectionTimer = 0; this.player.command([]); this.destination = target;
     this.interact();
@@ -301,7 +307,7 @@ export class Game {
   }
   private onPigEat = (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => {
     if (!this.economy.remaining) return;
-    const payout = this.economy.feedPig(pigBalance.portions[index]);
+    const payout = this.economy.feedPig(this.economy.pigPortion(index));
     const discovery = this.world.collectHay(payout.amount, point, mouth);
     if (discovery.bonus) this.economy.creditDiscovery(discovery.bonus);
     this.feedback?.show('coins', payout.earned + discovery.bonus);
@@ -312,7 +318,8 @@ export class Game {
     let success = false;
     if (action.kind === 'character') {
       success = this.economy.buy(action.id); this.lastBought = action.id;
-    } else if (action.kind === 'equip') success = this.economy.equip(action.tool);
+    } else if (action.kind === 'pig') success = this.economy.upgradePig(action.upgrade);
+    else if (action.kind === 'equip') success = this.economy.equip(action.tool);
     else success = this.economy.upgradeTool(action.tool, action.kind);
     if (!success) { this.options.audio?.effect('deny'); this.feedback?.notice(t('buyBlocked')); return; }
     this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
@@ -336,7 +343,7 @@ export class Game {
   }
   saveNow() {
     if (!this.dirty || !this.saveSystem || this.disposed) return;
-    const data = { version: 2 as const, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
+    const data = { version: 3 as const, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
     if (this.saveSystem.write(data)) this.dirty = false;
     this.updateSaveNotice();

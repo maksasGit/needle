@@ -103,8 +103,8 @@ export class World {
     mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
   updateBarn(economy: EconomySystem) { this.barn.update(economy); }
-  updatePigs(dt: number, count: number, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void) {
-    this.pigs.update(dt, count, this.pigSurface, this.pigFeed, onEat);
+  updatePigs(dt: number, count: number, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void, intervalMultiplier = 1) {
+    this.pigs.update(dt, count, this.pigSurface, this.pigFeed, onEat, intervalMultiplier);
   }
   hayIdAt(slot?: number) { return this.hay.idAt(slot); }
   loadNoncriticalAssets() {

@@ -167,3 +167,7 @@ npm run verify
 ### Action audio
 
 AudioManager plays collect_hay.mp3 on successful collection, sell_sound.mp3 on player sale, steps_loop.mp3 during grounded movement and inventory_is_full.mp3 for unavailable actions. Effects and music have separate saved toggles/volume controls. The bounded effect pool and cooldowns prevent unbounded overlap. User manual review is pending; no tests, build or screenshots were run for this change.
+
+### Progression rebalance and held vacuum
+
+The vacuum repeats hay collection while E, Interact or a hay pointer is held; releasing stops it. Other tools keep one action per tap. Busy collection taps are silent. The pig book tab upgrades bite size and eating interval for all pigs. Sale upgrades now add 10% of base price per level, with fractional rewards carried between payouts. Capacity starts at 15 and grows by 40; prices and level caps are in config/balance.ts and config/progression.ts. Save v3 preserves historical purchase costs using frozen legacy tables and retains coins/progress. See GAME_REQUIREMENTS.md section 18 for values and manual acceptance. No automated checks, build, browser run or screenshots were performed for this change at the user's request.

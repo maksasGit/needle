@@ -24,7 +24,7 @@ export class PigHerd {
     }
     pig.target.copy(pig.point);
   }
-  update(dt: number, count: number, surface: (x: number, z: number) => number, feedingPoint: (point: THREE.Vector2) => THREE.Vector3 | undefined, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void) {
+  update(dt: number, count: number, surface: (x: number, z: number) => number, feedingPoint: (point: THREE.Vector2) => THREE.Vector3 | undefined, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void, intervalMultiplier = 1) {
     while (this.pigs.length < count && this.pigs.length < 3) {
       const index = this.pigs.length, model = this.assets.pig();
       model.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = false; });
@@ -33,7 +33,7 @@ export class PigHerd {
       this.group.add(model); this.pigs.push(pig); this.wander(pig);
     }
     for (let index = 0; index < this.pigs.length; index++) {
-      const pig = this.pigs[index]; pig.age += dt; pig.cooldown = Math.max(0, pig.cooldown - dt);
+      const pig = this.pigs[index]; pig.age += dt; pig.cooldown = Math.max(0, pig.cooldown - dt / intervalMultiplier);
       if (!pig.eating && pig.age > 3) {
         const target = feedingPoint(pig.point);
         if (target) { pig.target.set(target.x, target.z); pig.eating = true; pig.age = 0; }

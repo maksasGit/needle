@@ -2,10 +2,13 @@ import { config, upgrades, upgradePrice } from '../config/balance';
 import type { UpgradeId } from '../config/balance';
 import type { Language } from '../ui/i18n';
 import { maxDiscoveryBonus, rarityVersion } from '../config/rarity';
-import { pigBalance, toolUpgradeLimits, toolUpgradePrice } from '../config/progression';
+import { pigBalance, pigUpgrades, pigUpgradePrice, toolUpgradeLimits, toolUpgradePrice } from '../config/progression';
+import { upgrades as oldUpgrades, upgradePrice as oldUpgradePrice } from '../config/legacyBalance';
+import { pigBalance as oldPigs, toolUpgradePrice as oldToolPrice, toolUpgradeLimits as oldToolLimits } from '../config/legacyProgression';
 export const SAVE_KEY = 'needle.save.v1';
+export type LegacyProgress = { levels: Record<UpgradeId, number>; toolVolumes: number[]; toolSpecials: number[]; pigCount: number };
 export type SaveData = {
-  version: 1 | 2; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
+  version: 1 | 2 | 3; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
   position: [number, number]; yaw: number; pitch: number; won: boolean;
   hayContactScale?: number;
   totalHay?: number;
@@ -18,6 +21,10 @@ export type SaveData = {
   toolSpecials?: number[];
   pigCount?: number;
   pigEaten?: number;
+  pigPortionLevel?: number;
+  pigSpeedLevel?: number;
+  saleRemainder?: number;
+  legacyProgress?: LegacyProgress;
 };
 export type Settings = { language: Language; reducedMotion: boolean; musicEnabled: boolean; musicVolume: number; effectsEnabled: boolean; effectsVolume: number };
 const MAX_BYTES = 500 * 1024;
@@ -44,7 +51,7 @@ export function decodeHay(value: string): Int16Array {
 export function validateSave(value: unknown): SaveData {
   if (!value || typeof value !== 'object') throw new Error('Invalid save');
   const source = value as SaveData;
-  if ((source.version !== 1 && source.version !== 2) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
+  if (![1, 2, 3].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
   const s: SaveData = { ...source, levels: { ...source.levels, sale: source.levels.sale ?? 0 } };
   if (s.rarityVersion !== undefined && s.rarityVersion !== rarityVersion) throw new Error('Unsupported rarity version');
   if (s.hayProfile !== undefined && !integer(s.hayProfile, 0, config.hayVisual.profileVersion)) throw new Error('Invalid hay profile');
@@ -62,7 +69,8 @@ export function validateSave(value: unknown): SaveData {
   const consumed = total - remaining - s.inventory;
   s.saleRevenue ??= consumed * config.salePrice;
   s.pigCount ??= 0; s.pigEaten ??= 0; s.activeTool ??= s.levels.tools;
-  if (!integer(s.saleRevenue, consumed * config.salePrice, consumed * (config.salePrice + s.levels.sale * upgrades.sale.step))) throw new Error('Invalid sales ledger');
+  s.pigPortionLevel ??= 0; s.pigSpeedLevel ??= 0; s.saleRemainder ??= 0;
+  if (!integer(s.pigPortionLevel, 0, pigUpgrades.maxLevel) || !integer(s.pigSpeedLevel, 0, pigUpgrades.maxLevel) || (!s.pigCount && (s.pigPortionLevel || s.pigSpeedLevel)) || !integer(s.saleRemainder, 0, 9)) throw new Error('Invalid helper upgrades');
   if (!integer(s.coins, 0, s.saleRevenue + discoveryCoins) || !integer(s.pigCount, 0, pigBalance.prices.length) || !integer(s.pigEaten, 0, consumed) || (!s.pigCount && s.pigEaten)) throw new Error('Invalid helper economy');
   if (!integer(s.activeTool, 0, s.levels.tools)) throw new Error('Invalid active tool');
   const validateToolLevels = (levels: number[] | undefined, max: number) => {
@@ -72,13 +80,34 @@ export function validateSave(value: unknown): SaveData {
   };
   s.toolVolumes = validateToolLevels(s.toolVolumes, toolUpgradeLimits.volume);
   s.toolSpecials = validateToolLevels(s.toolSpecials, toolUpgradeLimits.special);
-  let spent = 0;
-  for (const id of Object.keys(upgrades) as UpgradeId[]) for (let level = 0; level < s.levels[id]; level++) spent += upgradePrice(id, level);
-  for (let tool = 1; tool <= 4; tool++) {
-    for (let level = 0; level < s.toolVolumes[tool - 1]; level++) spent += toolUpgradePrice(tool, 'volume', level);
-    for (let level = 0; level < s.toolSpecials[tool - 1]; level++) spent += toolUpgradePrice(tool, 'special', level);
+  if (source.version < 3) {
+    if (s.pigPortionLevel || s.pigSpeedLevel || s.saleRemainder) throw new Error('Invalid legacy upgrades');
+    s.legacyProgress = { levels: { ...s.levels }, toolVolumes: [...s.toolVolumes], toolSpecials: [...s.toolSpecials], pigCount: s.pigCount };
   }
-  for (let pig = 0; pig < s.pigCount; pig++) spent += pigBalance.prices[pig];
+  const legacy = s.legacyProgress;
+  if (legacy) {
+    if (!legacy.levels || !integer(legacy.pigCount, 0, s.pigCount)) throw new Error('Invalid legacy progress');
+    for (const id of Object.keys(upgrades) as UpgradeId[]) if (!integer(legacy.levels[id], 0, Math.min(s.levels[id], oldUpgrades[id].maxLevel))) throw new Error('Invalid legacy level');
+    for (const [levels, current, max] of [[legacy.toolVolumes, s.toolVolumes, oldToolLimits.volume], [legacy.toolSpecials, s.toolSpecials, oldToolLimits.special]] as const) {
+      if (!Array.isArray(levels) || levels.length !== 4 || levels.some((level, i) => !integer(level, 0, Math.min(current[i], max)) || (i >= legacy.levels.tools && level !== 0))) throw new Error('Invalid legacy tool upgrades');
+    }
+  }
+  const maxRevenue = Math.max(Math.floor(consumed * (10 + s.levels.sale) / 10), consumed * (legacy ? 1 + legacy.levels.sale : 1));
+  if (!integer(s.saleRevenue, consumed, maxRevenue)) throw new Error('Invalid sales ledger');
+  const cost = (progress: LegacyProgress, old: boolean) => {
+    let spent = 0;
+    for (const id of Object.keys(upgrades) as UpgradeId[]) for (let level = 0; level < progress.levels[id]; level++) spent += (old ? oldUpgradePrice : upgradePrice)(id, level);
+    for (let tool = 1; tool <= 4; tool++) {
+      for (let level = 0; level < progress.toolVolumes[tool - 1]; level++) spent += (old ? oldToolPrice : toolUpgradePrice)(tool, 'volume', level);
+      for (let level = 0; level < progress.toolSpecials[tool - 1]; level++) spent += (old ? oldToolPrice : toolUpgradePrice)(tool, 'special', level);
+    }
+    for (let pig = 0; pig < progress.pigCount; pig++) spent += (old ? oldPigs : pigBalance).prices[pig];
+    return spent;
+  };
+  let spent = cost({ levels: s.levels, toolVolumes: s.toolVolumes, toolSpecials: s.toolSpecials, pigCount: s.pigCount }, false);
+  if (legacy) spent += cost(legacy, true) - cost(legacy, false);
+  for (let level = 0; level < s.pigPortionLevel; level++) spent += pigUpgradePrice('portion', level);
+  for (let level = 0; level < s.pigSpeedLevel; level++) spent += pigUpgradePrice('speed', level);
   if (s.coins + spent !== s.saleRevenue + discoveryCoins) throw new Error('Unbalanced economy');
   if (!Array.isArray(s.position) || s.position.length !== 2 || s.position.some(v => !Number.isFinite(v) || Math.abs(v) > config.worldHalfSize)) throw new Error('Invalid position');
   if (!Number.isFinite(s.yaw) || !Number.isFinite(s.pitch) || Math.abs(s.pitch) > 1.25 || typeof s.won !== 'boolean' || (s.won && remaining > 0)) throw new Error('Invalid camera/progress');

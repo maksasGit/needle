@@ -1,10 +1,10 @@
 import { upgrades } from '../config/balance';
-import { toolSpecs, toolUpgradePrice, toolUpgradeLimits } from '../config/progression';
+import { pigBalance, pigUpgrades, pigUpgradePrice, toolSpecs, toolUpgradePrice, toolUpgradeLimits } from '../config/progression';
 import type { ToolUpgrade } from '../config/progression';
 import type { EconomySystem } from '../systems/EconomySystem';
 import { t, toolName } from './i18n';
 
-export type ShopAction = { kind: 'character'; id: 'movement' | 'collection' | 'sale' } | { kind: 'volume' | 'special' | 'equip'; tool: number };
+export type ShopAction = { kind: 'character'; id: 'movement' | 'collection' | 'sale' } | { kind: 'volume' | 'special' | 'equip'; tool: number } | { kind: 'pig'; upgrade: 'portion' | 'speed' };
 export class Shop {
   private controller = new AbortController();
   private dialog = document.querySelector<HTMLDialogElement>('#shop-dialog')!;
@@ -21,6 +21,9 @@ export class Shop {
       if (kind === 'character') {
         const id = button.dataset.upgrade;
         if (id === 'movement' || id === 'collection' || id === 'sale') this.onBuy({ kind, id });
+      } else if (kind === 'pig') {
+        const upgrade = button.dataset.upgrade;
+        if (upgrade === 'portion' || upgrade === 'speed') this.onBuy({ kind, upgrade });
       } else if (kind === 'volume' || kind === 'special' || kind === 'equip') this.onBuy({ kind, tool: Number(button.dataset.tool) });
     }, { signal: this.controller.signal });
   }
@@ -48,7 +51,7 @@ export class Shop {
     return head + (['volume','special'] as ToolUpgrade[]).map(kind => {
       const level = (kind === 'volume' ? this.economy.toolVolumes : this.economy.toolSpecials)[tool - 1];
       const price = level >= toolUpgradeLimits[kind] ? null : toolUpgradePrice(tool, kind, level);
-      const value = (n: number) => kind === 'volume' ? `${upgrades.tools.amounts[tool] + n * spec.volumeStep} ${t('perTap')}` : this.featureValue(tool, n);
+      const value = (n: number) => kind === 'volume' ? `${upgrades.tools.amounts[tool] + n * spec.volumeStep} ${t(tool === 4 ? 'perCycle' : 'perTap')}` : this.featureValue(tool, n);
       return `<article class="upgrade"><h3>${t(kind === 'volume' ? 'volumeUpgrade' : spec.special)} <small>${level} / ${toolUpgradeLimits[kind]}</small></h3><p>${value(level)}${price === null ? '' : ` &rarr; ${value(level + 1)}`}</p>${this.buyButton(price, `data-action="${kind}" data-tool="${tool}"`)}</article>`;
     }).join('');
   }
@@ -65,8 +68,18 @@ export class Shop {
     const list = this.dialog.querySelector('[data-upgrades]')!;
     if (this.tab === 'character') list.innerHTML = this.characterPage();
     else if (this.tab === 'backpack') list.innerHTML = `<h3>${t('backpack')}</h3><p>${t('backpackInfo', { n: this.economy.capacity })}</p><p>${t('atBarn')}</p>`;
-    else if (this.tab === 'pigs') list.innerHTML = `<h3>${t('pigs')}</h3><p>${t('pigsInfo', { n: this.economy.pigCount, eaten: this.economy.pigEaten })}</p><p>${t('atBarn')}</p>`;
+    else if (this.tab === 'pigs') list.innerHTML = this.pigPage();
     else list.innerHTML = this.toolPage(Number(this.tab.slice(4)));
+  }
+  private pigPage() {
+    return `<h3>${t('pigs')}</h3><p>${t('pigsInfo', { n: this.economy.pigCount, eaten: this.economy.pigEaten })}</p><p>${t('pigUpgradeHint')}</p>` + (['portion', 'speed'] as const).map(kind => {
+      const level = kind === 'portion' ? this.economy.pigPortionLevel : this.economy.pigSpeedLevel;
+      const price = level >= pigUpgrades.maxLevel ? null : pigUpgradePrice(kind, level);
+      const value = (n: number) => kind === 'portion'
+        ? `${pigBalance.portions.slice(0, this.economy.pigCount).map(base => base + n * pigUpgrades.portionStep).join(' / ')} ${t('perBite')}`
+        : `${pigBalance.intervals.slice(0, this.economy.pigCount).map(base => (base * pigUpgrades.intervalMultiplier ** n).toFixed(1)).join(' / ')} ${t('seconds')}`;
+      return `<article class="upgrade"><h3>${t(kind === 'portion' ? 'pigPortion' : 'pigSpeed')} <small>${level} / ${pigUpgrades.maxLevel}</small></h3><p>${value(level)}${price === null ? '' : ` &rarr; ${value(level + 1)}`}</p>${this.buyButton(price, `data-action="pig" data-upgrade="${kind}"`)}</article>`;
+    }).join('');
   }
   invalidate() { this.render(); }
   dispose() { this.controller.abort(); document.querySelector<HTMLButtonElement>('#shop')!.onclick = null; this.dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = null; }

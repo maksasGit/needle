@@ -1,16 +1,16 @@
 export const toolSpecs = [
-  { duration: 0.8, volumeStep: 1, volumePrice: 8, specialPrice: 15, special: 'rakeFeature' },
-  { duration: 0.95, volumeStep: 2, volumePrice: 20, specialPrice: 40, special: 'forkFeature' },
-  { duration: 1.2, volumeStep: 3, volumePrice: 45, specialPrice: 80, special: 'wideFeature' },
-  { duration: 0.9, volumeStep: 4, volumePrice: 100, specialPrice: 160, special: 'vacuumFeature' },
+  { duration: 0.8, volumeStep: 1, volumePrice: 90, specialPrice: 180, special: 'rakeFeature' },
+  { duration: 0.95, volumeStep: 2, volumePrice: 300, specialPrice: 600, special: 'forkFeature' },
+  { duration: 1.2, volumeStep: 3, volumePrice: 1000, specialPrice: 2000, special: 'wideFeature' },
+  { duration: 0.9, volumeStep: 4, volumePrice: 3200, specialPrice: 6400, special: 'vacuumFeature' },
 ] as const;
-export const toolUpgradeLimits = { volume: 8, special: 5 } as const;
+export const toolUpgradeLimits = { volume: 12, special: 8 } as const;
 export type ToolUpgrade = keyof typeof toolUpgradeLimits;
 export function toolUpgradePrice(tool: number, kind: ToolUpgrade, level: number) {
   const spec = toolSpecs[tool - 1];
-  return Math.ceil((kind === 'volume' ? spec.volumePrice : spec.specialPrice) * 1.65 ** level);
+  return Math.ceil((kind === 'volume' ? spec.volumePrice : spec.specialPrice) * 1.85 ** level);
 }
-export const pigBalance = { prices: [80, 220, 600], intervals: [4.5, 4, 3.5], portions: [1, 2, 3], speed: 0.8 } as const;
+export const pigBalance = { prices: [800, 2400, 7200], intervals: [4.5, 4, 3.5], portions: [1, 2, 3], speed: 0.8 } as const;
 export const barnItems = {
   rake: { tool: 1, x: -0.1, z: -5.85, radius: 0.35 },
   fork: { tool: 2, x: 0.85, z: -5.85, radius: 0.35 },
@@ -26,3 +26,7 @@ export const barnWalls = [
   { x: 4.38, z: -4.7, halfX: 0.12, halfZ: 1.5 },
   { x: 1.8, z: -6.2, halfX: 2.7, halfZ: 0.12 },
 ] as const;
+
+export type PigUpgrade = "portion" | "speed";
+export const pigUpgrades = { maxLevel: 12, portionStep: 1, intervalMultiplier: .9 } as const;
+export function pigUpgradePrice(kind: PigUpgrade, level: number) { return Math.ceil((kind === "portion" ? 450 : 650) * 1.8 ** level); }
