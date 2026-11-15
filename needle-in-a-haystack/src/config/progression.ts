@@ -11,7 +11,13 @@ export function toolUpgradePrice(tool: number, kind: ToolUpgrade, level: number)
   return Math.ceil((kind === 'volume' ? spec.volumePrice : spec.specialPrice) * 1.85 ** level);
 }
 export const pigBalance = { prices: [800, 2400, 7200], intervals: [4.5, 4, 3.5], portions: [1, 2, 3], speed: 0.8 } as const;
-export const barnItems = {
+export const barnLayout = { x: 7, z: -9, yaw: -Math.PI / 6, localX: 1.8, localZ: -4.7 } as const;
+export function barnWorld(x: number, z: number) {
+  const dx = x - barnLayout.localX, dz = z - barnLayout.localZ;
+  const c = Math.cos(barnLayout.yaw), s = Math.sin(barnLayout.yaw);
+  return { x: barnLayout.x + c * dx + s * dz, z: barnLayout.z - s * dx + c * dz };
+}
+export const barnLocalItems = {
   rake: { tool: 1, x: -0.1, z: -5.85, radius: 0.35 },
   fork: { tool: 2, x: 0.85, z: -5.85, radius: 0.35 },
   widefork: { tool: 3, x: 1.8, z: -5.85, radius: 0.35 },
@@ -19,13 +25,19 @@ export const barnItems = {
   backpack: { tool: 0, x: 3.7, z: -5.85, radius: 0.35 },
   pig: { tool: 0, x: 5, z: -3.9, radius: 0.5 },
 } as const;
+const place = <T extends { x: number; z: number }>(item: T) => ({ ...item, ...barnWorld(item.x, item.z) });
+export const barnItems = {
+  rake: place(barnLocalItems.rake), fork: place(barnLocalItems.fork), widefork: place(barnLocalItems.widefork),
+  vacuum: place(barnLocalItems.vacuum), backpack: place(barnLocalItems.backpack), pig: place(barnLocalItems.pig),
+};
 export type BarnTarget = keyof typeof barnItems;
 export function isBarnTarget(target: string): target is BarnTarget { return Object.hasOwn(barnItems, target); }
-export const barnWalls = [
+export const barnLocalWalls = [
   { x: -0.78, z: -4.7, halfX: 0.12, halfZ: 1.5 },
   { x: 4.38, z: -4.7, halfX: 0.12, halfZ: 1.5 },
   { x: 1.8, z: -6.2, halfX: 2.7, halfZ: 0.12 },
 ] as const;
+export const barnWalls = barnLocalWalls.map(wall => ({ ...place(wall), yaw: barnLayout.yaw }));
 
 export type PigUpgrade = "portion" | "speed";
 export const pigUpgrades = { maxLevel: 12, portionStep: 1, intervalMultiplier: .9 } as const;

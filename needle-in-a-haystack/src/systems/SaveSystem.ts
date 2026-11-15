@@ -25,6 +25,7 @@ export type SaveData = {
   pigSpeedLevel?: number;
   saleRemainder?: number;
   legacyProgress?: LegacyProgress;
+  layoutVersion?: number;
 };
 export type Settings = { language: Language; reducedMotion: boolean; musicEnabled: boolean; musicVolume: number; effectsEnabled: boolean; effectsVolume: number };
 const MAX_BYTES = 500 * 1024;
@@ -53,6 +54,7 @@ export function validateSave(value: unknown): SaveData {
   const source = value as SaveData;
   if (![1, 2, 3].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
   const s: SaveData = { ...source, levels: { ...source.levels, sale: source.levels.sale ?? 0 } };
+  if (s.layoutVersion !== undefined && !integer(s.layoutVersion, 0, config.layoutVersion)) throw new Error('Invalid map layout');
   if (s.rarityVersion !== undefined && s.rarityVersion !== rarityVersion) throw new Error('Unsupported rarity version');
   if (s.hayProfile !== undefined && !integer(s.hayProfile, 0, config.hayVisual.profileVersion)) throw new Error('Invalid hay profile');
   if (s.hayContactScale !== undefined && (!Number.isFinite(s.hayContactScale) || s.hayContactScale < 0.25 || s.hayContactScale > 1)) throw new Error('Invalid hay contact scale');

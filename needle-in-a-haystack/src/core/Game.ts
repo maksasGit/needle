@@ -108,7 +108,12 @@ export class Game {
           this.player.movementSpeed = this.economy.movementSpeed;
           this.camera.yaw = saved.yaw; this.camera.pitch = saved.pitch; this.won = saved.won;
           if (!restoredRemaining) this.movement = new MovementSystem([config.cart, ...barnWalls]);
-          if (!this.movement.walkable(this.player.position)) this.player.group.position.set(0, 0, 3.3);
+          if (saved.layoutVersion !== config.layoutVersion || !this.movement.walkable(this.player.position)) {
+            this.player.group.position.set(config.playerSpawn.x, 0, config.playerSpawn.z);
+            this.camera.yaw = -Math.atan2(config.hay.x - config.playerSpawn.x, config.playerSpawn.z - config.hay.z);
+            this.camera.pitch = config.firstPerson.startPitch;
+            this.dirty = true;
+          }
         } catch { this.saveSystem!.invalid = true; }
       }
       this.locomotion.height = this.world.surfaceHeight(this.player.group.position.x, this.player.group.position.z);
@@ -343,7 +348,7 @@ export class Game {
   }
   saveNow() {
     if (!this.dirty || !this.saveSystem || this.disposed) return;
-    const data = { version: 3 as const, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
+    const data = { version: 3 as const, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
     if (this.saveSystem.write(data)) this.dirty = false;
     this.updateSaveNotice();

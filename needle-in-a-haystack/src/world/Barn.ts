@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { barnItems, barnWalls } from '../config/progression';
+import { barnLocalItems as barnItems, barnLocalWalls as barnWalls, barnLayout } from '../config/progression';
 import type { BarnTarget } from '../config/progression';
 import type { EconomySystem } from '../systems/EconomySystem';
 import { t } from '../ui/i18n';
@@ -42,6 +42,11 @@ export class Barn {
     }
     for (const x of [4.55, 5.45]) assets.box(this.group, [.07, .6, .07], [x, .25, -4.45], 0xfff2cd);
     assets.box(this.group, [.96, .07, .07], [5, .45, -4.45], 0xfff2cd);
+    for (const child of this.group.children) {
+      child.position.x -= barnLayout.localX; child.position.z -= barnLayout.localZ;
+    }
+    this.group.position.set(barnLayout.x, 0, barnLayout.z);
+    this.group.rotation.y = barnLayout.yaw;
   }
   update(economy: EconomySystem) {
     const state = `${economy.levels.tools}/${economy.levels.capacity}/${economy.activeTool}/${economy.pigCount}/${t('shop')}`;

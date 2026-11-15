@@ -1,5 +1,7 @@
 ﻿export const config = {
-  worldHalfSize: 6.5,
+  worldHalfSize: 13,
+  layoutVersion: 1,
+  playerSpawn: { x: -5, z: 0 },
   playerRadius: 0.28,
   movementSpeed: 2.6,
   locomotion: { jumpSpeed: 5.5, gravity: 14, stepHeight: 0.24, surfaceSlope: 3 },
@@ -27,9 +29,9 @@
     gravity: 5, rollSpeed: 8, stableLayers: 2, maxTransfers: 24, maxActive: 96,
     maxFlights: 24, flightSeconds: 0.35,
   },
-  hay: { x: -1.6, z: -0.8, radius: 2.32 },
-  needle: { x: -1.6, z: -0.8, radius: 0.25 },
-  cart: { x: 2.7, z: 0.6, radius: 1.35 },
+  hay: { x: -5, z: -5, radius: 2.32 },
+  needle: { x: -5, z: -5, radius: 0.25 },
+  cart: { x: -8, z: 9, radius: 1.35 },
 } as const;
 
 export const upgrades = {

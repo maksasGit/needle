@@ -28,7 +28,7 @@ export class Player {
     this.bundle = box([0.5, 0.32, 0.4], 0xe6b64b, 0.65);
     this.bundle.position.z = 0.35;
     this.bundle.visible = false;
-    this.group.position.set(0, 0, 3.3);
+    this.group.position.set(config.playerSpawn.x, 0, config.playerSpawn.z);
   }
   get position() { return this.point.set(this.group.position.x, this.group.position.z); }
   command(route: THREE.Vector2[]) { this.route = route; this.state = route.length ? 'Moving' : 'Idle'; }

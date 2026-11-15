@@ -34,18 +34,18 @@ export class World {
 
   constructor() {
     this.scene.background = new THREE.Color(0x36c9ff);
-    this.scene.fog = new THREE.Fog(0x36c9ff, 18, 65);
+    this.scene.fog = new THREE.Fog(0x36c9ff, 32, 90);
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0xc9b28a, 1.8));
     const sun = new THREE.DirectionalLight(0xfff3ce, 2.3);
-    sun.position.set(-4, 7, 3); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
-    Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 0.5, far: 30 });
+    sun.position.set(-10, 20, 8); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+    Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 0.5, far: 65 });
     sun.shadow.normalBias = 0.04; this.scene.add(sun);
-    this.box(this.scene, [14, 0.5, 14], [0, -0.3, 0], 0x986239);
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(13, 13), new THREE.MeshStandardMaterial({ color: 0x67d83d, roughness: 0.85 }));
+    this.box(this.scene, [config.worldHalfSize * 2 + 1, 0.5, config.worldHalfSize * 2 + 1], [0, -0.3, 0], 0x986239);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(config.worldHalfSize * 2, config.worldHalfSize * 2), new THREE.MeshStandardMaterial({ color: 0x67d83d, roughness: 0.85 }));
     ground.rotation.x = -Math.PI / 2; ground.position.y = -0.035; ground.receiveShadow = true;
     ground.userData.target = 'ground'; this.scene.add(ground); this.pickables.push(ground);
     const patch = new THREE.Mesh(new THREE.CircleGeometry(2.8, 9), new THREE.MeshStandardMaterial({ color: 0xe4b96b }));
-    patch.rotation.x = -Math.PI / 2; patch.position.set(0.3, -0.025, 0.7); this.scene.add(patch);
+    patch.rotation.x = -Math.PI / 2; patch.position.set(config.hay.x, -0.025, config.hay.z); this.scene.add(patch);
     this.scene.add(this.hay.group); this.pickables.push(this.hay.mesh);
     this.scene.add(this.needle.group);
     let seed = 42;
@@ -64,15 +64,19 @@ export class World {
       this.box(cart, [0.17, 0.12, 0.12], [x * 1.08, 0.36, z], 0xffe14a);
     }
     this.scene.add(this.cart); this.tag(this.cart, 'cart');
-    for (let i = -3; i <= 3; i++) {
-      this.box(this.scene, [0.23, 1.1, 0.23], [i * 2, 0.44, -6.8], 0xfff4d6);
-      this.box(this.scene, [0.23, 1.1, 0.23], [-6.8, 0.44, i * 2], 0xfff4d6);
+    const edge = config.worldHalfSize + .3;
+    for (let i = 0; i <= 8; i++) {
+      const along = -edge + i * edge / 4;
+      for (const side of [-1, 1]) {
+        this.box(this.scene, [.23, 1.1, .23], [along, .44, side * edge], 0xfff4d6);
+        if (i > 0 && i < 8) this.box(this.scene, [.23, 1.1, .23], [side * edge, .44, along], 0xfff4d6);
+      }
     }
-    for (const y of [0.3, 0.65]) {
-      this.box(this.scene, [12.3, 0.16, 0.14], [0, y, -6.8], 0xfff4d6);
-      this.box(this.scene, [0.14, 0.16, 12.3], [-6.8, y, 0], 0xfff4d6);
+    for (const y of [.3, .65]) for (const side of [-1, 1]) {
+      this.box(this.scene, [edge * 2, .16, .14], [0, y, side * edge], 0xfff4d6);
+      this.box(this.scene, [.14, .16, edge * 2], [side * edge, y, 0], 0xfff4d6);
     }
-    for (const [x, z] of [[-7.3, -4.3], [-7.3, 2], [4, -7.3]]) {
+    for (const [x, z] of [[-14, -8], [-14, 4], [8, -14]]) {
       this.box(this.scene, [0.25, 1.5, 0.25], [x, 0.5, z], 0x836849);
       this.box(this.scene, [1.8, 1.25, 1.7], [x, 1.85, z], 0x38a92e);
       this.box(this.scene, [1.25, 0.8, 1.2], [x + 0.16, 2.75, z - 0.08], 0x67d83d);
@@ -87,8 +91,8 @@ export class World {
       this.box(this.scene, [2.5, 0.8, 1.9], [x + 0.5, 9.5, z], 0xffffff);
     }
     for (let i = 0; i < 65; i++) {
-      const x = (random() - 0.5) * 12, z = (random() - 0.5) * 12;
-      if (Math.hypot(x, z) < 4.4) continue;
+      const x = (random() - 0.5) * (config.worldHalfSize * 2 - 1), z = (random() - 0.5) * (config.worldHalfSize * 2 - 1);
+      if (Math.hypot(x - config.hay.x, z - config.hay.z) < 3 || Math.hypot(x - config.cart.x, z - config.cart.z) < 2) continue;
       const blade = this.box(this.scene, [0.035, 0.14, 0.035], [x, 0.04, z], 0x38a92e); blade.rotation.z = random() - 0.5;
       blade.castShadow = false;
     }

@@ -1,7 +1,7 @@
 import { Vector2 } from 'three';
 import { config } from '../config/balance';
 
-export type Obstacle = { x: number; z: number; radius: number } | { x: number; z: number; halfX: number; halfZ: number };
+export type Obstacle = { x: number; z: number; radius: number } | { x: number; z: number; halfX: number; halfZ: number; yaw?: number };
 
 // A small eight-neighbour navigation grid. Inflated obstacles leave space for the body.
 export class MovementSystem {
@@ -15,7 +15,13 @@ export class MovementSystem {
     return Math.abs(p.x) <= this.limit && Math.abs(p.y) <= this.limit &&
       this.obstacles.every(o => 'radius' in o
         ? Math.hypot(p.x - o.x, p.y - o.z) > o.radius + config.playerRadius
-        : Math.hypot(Math.max(0, Math.abs(p.x - o.x) - o.halfX), Math.max(0, Math.abs(p.y - o.z) - o.halfZ)) > config.playerRadius);
+        : this.outsideWall(p, o));
+  }
+  private outsideWall(p: Vector2, wall: { x: number; z: number; halfX: number; halfZ: number; yaw?: number }) {
+    const c = Math.cos(wall.yaw ?? 0), s = Math.sin(wall.yaw ?? 0);
+    const dx = p.x - wall.x, dz = p.y - wall.z;
+    const x = c * dx - s * dz, z = s * dx + c * dz;
+    return Math.hypot(Math.max(0, Math.abs(x) - wall.halfX), Math.max(0, Math.abs(z) - wall.halfZ)) > config.playerRadius;
   }
 
   clear(a: Vector2, b: Vector2): boolean {

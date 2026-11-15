@@ -638,3 +638,9 @@ These are requirements for subsequent development, not claims that the current p
 - Pigs share bite-size/eating-speed upgrades in the book after first purchase. Keep the three-pig bound and all economy ledgers.
 - Preserve v3 save migration and the frozen legacy price tables: historical purchases use old prices, new purchases use current prices. Never reset the player's progress to apply a balance update.
 - GAME_REQUIREMENTS.md section 18 describes current provisional prices and manual acceptance; do not claim balance or device validation without actual user confirmation.
+
+### Map layout override (2026-11-15)
+
+- Playable map is 26×26 (twice each former side), hay upper left, cart lower left, barn upper right rotated -30° around Y. Keep layout coordinates in balance.ts/progression.ts and use barnWorld for world-space interaction points; barn geometry uses local coordinates.
+- Preserve rotated-wall collision support and expanded pig roaming bounds. Do not move visuals without their interaction/collision data.
+- Save layoutVersion and relocate only legacy-layout or obstructed player positions to the configured spawn; retain all economy, hay and upgrade progress. See GAME_REQUIREMENTS.md section 19 for manual acceptance.

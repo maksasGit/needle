@@ -171,3 +171,7 @@ AudioManager plays collect_hay.mp3 on successful collection, sell_sound.mp3 on p
 ### Progression rebalance and held vacuum
 
 The vacuum repeats hay collection while E, Interact or a hay pointer is held; releasing stops it. Other tools keep one action per tap. Busy collection taps are silent. The pig book tab upgrades bite size and eating interval for all pigs. Sale upgrades now add 10% of base price per level, with fractional rewards carried between payouts. Capacity starts at 15 and grows by 40; prices and level caps are in config/balance.ts and config/progression.ts. Save v3 preserves historical purchase costs using frozen legacy tables and retains coins/progress. See GAME_REQUIREMENTS.md section 18 for values and manual acceptance. No automated checks, build, browser run or screenshots were performed for this change at the user's request.
+
+### Expanded farm layout
+
+The field is now 26×26, hay upper left, a rotated barn upper right and cart lower left. Barn visuals, interaction points and rotated wall obstacles share the same transform. Old-layout saves retain progress and move the player to the new spawn once. Manual desktop/mobile acceptance is pending; no automatic tests/build/screenshots were run.

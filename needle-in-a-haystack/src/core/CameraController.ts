@@ -6,7 +6,7 @@ export class CameraController {
   pitch: number = config.firstPerson.startPitch;
   constructor() {
     this.camera.rotation.order = 'YXZ';
-    this.yaw = Math.atan2(config.hay.x, 3.3 - config.hay.z) * -1;
+    this.yaw = -Math.atan2(config.hay.x - config.playerSpawn.x, config.playerSpawn.z - config.hay.z);
   }
   look(dx: number, dy: number) {
     this.yaw -= dx * config.firstPerson.lookSensitivity;

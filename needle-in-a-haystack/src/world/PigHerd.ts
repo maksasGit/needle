@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { config } from '../config/balance';
-import { pigBalance, barnWalls } from '../config/progression';
+import { pigBalance, barnWalls, barnWorld } from '../config/progression';
 import { MovementSystem } from '../systems/MovementSystem';
 import { ToolAssets } from './ToolAssets';
 
@@ -17,7 +17,7 @@ export class PigHerd {
   private wander(pig: Pig) {
     pig.eating = false; pig.age = 0;
     for (let i = 0; i < 12; i++) {
-      this.candidate.set((this.random() - .5) * 9.5, -2.3 + this.random() * 6.8);
+      this.candidate.set((this.random() - .5) * (config.worldHalfSize * 2 - 2), (this.random() - .5) * (config.worldHalfSize * 2 - 2));
       if (this.navigation.walkable(this.candidate) && Math.hypot(this.candidate.x - config.hay.x, this.candidate.y - config.hay.z) > config.hay.radius + .4) {
         pig.target.copy(this.candidate); return;
       }
@@ -28,7 +28,8 @@ export class PigHerd {
     while (this.pigs.length < count && this.pigs.length < 3) {
       const index = this.pigs.length, model = this.assets.pig();
       model.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = false; });
-      const point = new THREE.Vector2(4.9 - index * .55, -2.1);
+      const spawn = barnWorld(4.9 - index * .55, -2.1);
+      const point = new THREE.Vector2(spawn.x, spawn.z);
       const pig = { model, point, target: point.clone(), age: 0, eating: false, cooldown: pigBalance.intervals[index] };
       this.group.add(model); this.pigs.push(pig); this.wander(pig);
     }
@@ -54,7 +55,7 @@ export class PigHerd {
         const target = feedingPoint(pig.point);
         if (target && Math.hypot(target.x - pig.point.x, target.z - pig.point.y) < .7) onEat(index, target, pig.model.position.clone().add(new THREE.Vector3(0, .35, 0)));
         pig.cooldown = pigBalance.intervals[index]; this.wander(pig);
-      } else if ((!pig.eating && distance < .1 && pig.age > 1) || pig.age > 12) this.wander(pig);
+      } else if ((!pig.eating && distance < .1 && pig.age > 1) || pig.age > 40) this.wander(pig);
     }
   }
 }
