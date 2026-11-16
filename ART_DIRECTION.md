@@ -92,3 +92,7 @@ Use [GAME_REQUIREMENTS.md section 21](GAME_REQUIREMENTS.md#21-визуальна
 - Do not restore individual cart straws or delayed payout for spectacle. Keep the static cargo mound; prefer a few pooled 2D coins over a separate 3D coin family when sufficient. Optional decoration loads after interaction; animated scenery waits for authorized performance measurement.
 
 Visual implementation order: HUD feedback → barn card → collection/sale presentation → cohesive mobile UI → onboarding/loading → restrained scenery. Mechanics still missing (needle collection and events) are tracked separately. Review each iteration manually with the user; the current no-automatic-tests/build/screenshots instruction supersedes generic validation commands above until requested.
+
+### Runtime prototype mapping (2026-11-16)
+
+Current code for the adopted feedback direction is mapped in GAME_REQUIREMENTS.md section 22: presentation.ts, HudFeedback.ts, BarnCard.ts, Onboarding.ts, icons.ts, FarmDecor.ts and SaleEvent.ts. These are unverified prototypes, not accepted final art. The original sunny palette/layout remains; a five-needle album was declined by the owner. New scenery stays static until authorized performance measurement, and no new raster/PBR/audio assets are implied by this implementation.

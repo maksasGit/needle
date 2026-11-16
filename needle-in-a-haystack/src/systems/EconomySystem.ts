@@ -19,6 +19,8 @@ export class EconomySystem {
   pigPortionLevel = 0;
   pigSpeedLevel = 0;
   saleRemainder = 0;
+  eventRevenue = 0;
+  eventRemainder = 0;
   legacyProgress?: LegacyProgress;
   priceBaseline?: PriceBaseline;
   activeTool = 0;
@@ -74,12 +76,18 @@ export class EconomySystem {
     return amount;
   }
 
-  unload(): number {
+  unload(multiplier: 1 | 2 = 1): number {
     const earned = this.salePayout(this.inventory);
-    this.coins += earned;
+    let bonus = 0;
+    if (multiplier === 2 && this.inventory > 0) {
+      const hundredths = this.inventory * (100 + this.levels.sale * 25) + this.eventRemainder;
+      bonus = Math.floor(hundredths / 100); this.eventRemainder = hundredths % 100;
+      this.eventRevenue += bonus;
+    }
+    this.coins += earned + bonus;
     this.saleRevenue += earned;
     this.inventory = 0;
-    return earned;
+    return earned + bonus;
   }
   private salePayout(amount: number) {
     // Integer hundredths retain fractional rewards across deliveries and pig bites.

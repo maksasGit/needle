@@ -179,3 +179,11 @@ The field is now 26×26, hay upper left, a rotated barn upper right and cart low
 ### Lower prices and stronger sale upgrades
 
 All purchase prices are reduced by at least 30%; sale upgrades by 72% (first 700), now +25% base value per level. Save v4 preserves historical purchase costs and converts fractional rewards to hundredths. Cart and cargo rotate together by 30°. Manual acceptance pending; no build/tests/screenshots run.
+
+## Presentation prototype (2026-11-16)
+
+Implemented shared presentation settings, interrupted HUD counters, an eight-coin decorative pool, actual-value popups, original inline SVG icons, barn selection/item confirmation cards, book feedback, distinct tool motion, replayable interactive onboarding, deferred barn/scenery generation and on-demand held tool models. Optional FarmDecor uses shared primitive geometry and instancing, with no colliders, texture maps or new lights. Scenery is static pending authorized performance measurement.
+
+The owner retained one needle. A player-only ×2 delivery event starts after onboarding, waits 180–300 active seconds, runs for 45 seconds, pauses with gameplay and has no urgency countdown or offline rewards. Save v5 preserves v1–v4 progress and keeps eventRevenue/eventRemainder separate from base sales and rare rewards. Replay guidance in Help. Opt-in diagnostics includes startupMs, initialTransferBytes, tutorial completion and event state.
+
+No tests, typecheck/build, browser, screenshots or performance/device/hosting checks were run at the owner's request. Manual acceptance: HUD bursts/full bag/empty sale; barn purchase/equip/locked/max; book and focus; guide/replay; vacuum release and reduced motion; RU/EN and portrait/landscape; old-save reload and a ×2 sale without pig/rarity duplication. Production readiness is not verified. See GAME_REQUIREMENTS.md section 22 for the implementation matrix and remaining sound/motion work.

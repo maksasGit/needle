@@ -3,29 +3,41 @@ import { pigBalance, pigUpgrades, pigUpgradePrice, toolSpecs, toolUpgradePrice, 
 import type { ToolUpgrade } from '../config/progression';
 import type { EconomySystem } from '../systems/EconomySystem';
 import { t, toolName } from './i18n';
+import { icon } from './icons';
+import type { IconName } from './icons';
+import { presentation } from '../config/presentation';
 
 export type ShopAction = { kind: 'character'; id: 'movement' | 'collection' | 'sale' } | { kind: 'volume' | 'special' | 'equip'; tool: number } | { kind: 'pig'; upgrade: 'portion' | 'speed' };
 export class Shop {
   private controller = new AbortController();
   private dialog = document.querySelector<HTMLDialogElement>('#shop-dialog')!;
   private tab = 'character';
-  constructor(private economy: EconomySystem, private onBuy: (action: ShopAction) => void, private onReject: () => void = () => {}) {
-    document.querySelector<HTMLButtonElement>('#shop')!.onclick = () => { this.render(true); if (!this.dialog.open) this.dialog.showModal(); };
+  private busy = false;
+  private timer?: ReturnType<typeof setTimeout>;
+  constructor(private economy: EconomySystem, private onBuy: (action: ShopAction) => boolean, private onReject: () => void = () => {}) {
+    document.querySelector<HTMLButtonElement>('#shop')!.onclick = () => { this.dialog.querySelector('[data-book-feedback]')!.textContent = ''; this.render(true); if (!this.dialog.open) this.dialog.showModal(); };
     this.dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = () => this.dialog.close();
     this.dialog.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
       if (!button || button.disabled) return;
-      if (button.dataset.unavailable === 'true') { this.onReject(); return; }
+      if (button.dataset.unavailable === 'true') { this.dialog.querySelector('[data-book-feedback]')!.textContent = button.textContent?.includes(t('max')) ? t('max') : t('buyBlocked'); this.onReject(); return; }
       if (button.dataset.tab) { this.tab = button.dataset.tab; this.render(); return; }
       const kind = button.dataset.action;
       if (kind === 'character') {
         const id = button.dataset.upgrade;
-        if (id === 'movement' || id === 'collection' || id === 'sale') this.onBuy({ kind, id });
+        if (id === 'movement' || id === 'collection' || id === 'sale') this.purchase({ kind, id });
       } else if (kind === 'pig') {
         const upgrade = button.dataset.upgrade;
-        if (upgrade === 'portion' || upgrade === 'speed') this.onBuy({ kind, upgrade });
-      } else if (kind === 'volume' || kind === 'special' || kind === 'equip') this.onBuy({ kind, tool: Number(button.dataset.tool) });
+        if (upgrade === 'portion' || upgrade === 'speed') this.purchase({ kind, upgrade });
+      } else if (kind === 'volume' || kind === 'special' || kind === 'equip') this.purchase({ kind, tool: Number(button.dataset.tool) });
     }, { signal: this.controller.signal });
+  }
+  private purchase(action: ShopAction) {
+    if (this.busy) return;
+    this.busy = true;
+    const success = this.onBuy(action);
+    this.dialog.querySelector('[data-book-feedback]')!.textContent = success ? t(action.kind === 'equip' ? 'equipped' : 'upgradeDone') : t('buyBlocked');
+    this.timer = setTimeout(() => { this.busy = false; }, presentation.purchaseGuardMs);
   }
   private buyButton(price: number | null, attrs: string) {
     const disabled = price === null || this.economy.coins < price;
@@ -57,6 +69,9 @@ export class Shop {
   }
   render(force = false) {
     if (!force && !this.dialog.open) return;
+    const focused = this.dialog.contains(document.activeElement) ? document.activeElement as HTMLButtonElement : undefined;
+    const focusSelector = focused?.dataset.tab ? `[data-tab="${focused.dataset.tab}"]`
+      : focused?.dataset.action ? `[data-action="${focused.dataset.action}"]${focused.dataset.upgrade ? `[data-upgrade="${focused.dataset.upgrade}"]` : focused.dataset.tool ? `[data-tool="${focused.dataset.tool}"]` : ''}` : undefined;
     this.dialog.querySelector('[data-wallet]')!.textContent = `${this.economy.coins} ${t('money')}`;
     const tabs = [{ id: 'character', name: t('character') }];
     for (let tool = 1; tool <= this.economy.levels.tools; tool++) tabs.push({ id: `tool${tool}`, name: toolName(tool) });
@@ -64,12 +79,16 @@ export class Shop {
     if (this.economy.pigCount > 0) tabs.push({ id: 'pigs', name: t('pigs') });
     if (!tabs.some(tab => tab.id === this.tab)) this.tab = 'character';
     const nav = this.dialog.querySelector('[data-book-tabs]')!;
-    nav.innerHTML = tabs.map(tab => `<button role="tab" aria-selected="${tab.id === this.tab}" data-tab="${tab.id}">${tab.name}</button>`).join('');
+    nav.innerHTML = tabs.map(tab => `<button role="tab" aria-selected="${tab.id === this.tab}" data-tab="${tab.id}">${icon((tab.id === "character" ? "book" : tab.id === "pigs" ? "pig" : tab.id === "backpack" ? "backpack" : ["rake","fork","widefork","vacuum"][Number(tab.id.slice(4)) - 1]) as IconName)}${tab.name}</button>`).join('');
     const list = this.dialog.querySelector('[data-upgrades]')!;
     if (this.tab === 'character') list.innerHTML = this.characterPage();
     else if (this.tab === 'backpack') list.innerHTML = `<h3>${t('backpack')}</h3><p>${t('backpackInfo', { n: this.economy.capacity })}</p><p>${t('atBarn')}</p>`;
     else if (this.tab === 'pigs') list.innerHTML = this.pigPage();
     else list.innerHTML = this.toolPage(Number(this.tab.slice(4)));
+    if (focusSelector) {
+      const next = this.dialog.querySelector<HTMLButtonElement>(focusSelector);
+      (next && !next.disabled ? next : this.dialog.querySelector<HTMLButtonElement>('[aria-selected="true"]'))?.focus({ preventScroll: true });
+    }
   }
   private pigPage() {
     return `<h3>${t('pigs')}</h3><p>${t('pigsInfo', { n: this.economy.pigCount, eaten: this.economy.pigEaten })}</p><p>${t('pigUpgradeHint')}</p>` + (['portion', 'speed'] as const).map(kind => {
@@ -82,5 +101,5 @@ export class Shop {
     }).join('');
   }
   invalidate() { this.render(); }
-  dispose() { this.controller.abort(); document.querySelector<HTMLButtonElement>('#shop')!.onclick = null; this.dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = null; }
+  dispose() { clearTimeout(this.timer); this.controller.abort(); document.querySelector<HTMLButtonElement>('#shop')!.onclick = null; this.dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = null; }
 }

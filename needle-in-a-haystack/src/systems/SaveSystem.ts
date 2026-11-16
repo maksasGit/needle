@@ -6,11 +6,13 @@ import { pigBalance, pigUpgrades, pigUpgradePrice, toolUpgradeLimits, toolUpgrad
 import { upgrades as oldUpgrades, upgradePrice as oldUpgradePrice } from '../config/legacyBalance';
 import { pigBalance as oldPigs, toolUpgradePrice as oldToolPrice, toolUpgradeLimits as oldToolLimits } from '../config/legacyProgression';
 import { previousToolUpgradePrice, previousPigUpgradePrice, previousPigPrices } from '../config/progression';
+import type { SaleEventState } from './SaleEvent';
+import { saleEvent } from '../config/presentation';
 export const SAVE_KEY = 'needle.save.v1';
 export type LegacyProgress = { levels: Record<UpgradeId, number>; toolVolumes: number[]; toolSpecials: number[]; pigCount: number };
 export type PriceBaseline = LegacyProgress & { pigPortionLevel: number; pigSpeedLevel: number };
 export type SaveData = {
-  version: 1 | 2 | 3 | 4; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
+  version: 1 | 2 | 3 | 4 | 5; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
   position: [number, number]; yaw: number; pitch: number; won: boolean;
   hayContactScale?: number;
   totalHay?: number;
@@ -29,6 +31,9 @@ export type SaveData = {
   legacyProgress?: LegacyProgress;
   priceBaseline?: PriceBaseline;
   layoutVersion?: number;
+  eventRevenue?: number;
+  eventRemainder?: number;
+  saleEvent?: SaleEventState;
 };
 export type Settings = { language: Language; reducedMotion: boolean; musicEnabled: boolean; musicVolume: number; effectsEnabled: boolean; effectsVolume: number };
 const MAX_BYTES = 500 * 1024;
@@ -55,7 +60,7 @@ export function decodeHay(value: string): Int16Array {
 export function validateSave(value: unknown): SaveData {
   if (!value || typeof value !== 'object') throw new Error('Invalid save');
   const source = value as SaveData;
-  if (![1, 2, 3, 4].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
+  if (![1, 2, 3, 4, 5].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
   const s: SaveData = { ...source, levels: { ...source.levels, sale: source.levels.sale ?? 0 } };
   if (s.layoutVersion !== undefined && !integer(s.layoutVersion, 0, config.layoutVersion)) throw new Error('Invalid map layout');
   if (s.rarityVersion !== undefined && s.rarityVersion !== rarityVersion) throw new Error('Unsupported rarity version');
@@ -74,9 +79,15 @@ export function validateSave(value: unknown): SaveData {
   const consumed = total - remaining - s.inventory;
   s.saleRevenue ??= consumed * config.salePrice;
   s.pigCount ??= 0; s.pigEaten ??= 0; s.activeTool ??= s.levels.tools;
+  s.eventRevenue ??= 0; s.eventRemainder ??= 0;
+  if (!integer(s.eventRevenue, 0, Number.MAX_SAFE_INTEGER) || !integer(s.eventRemainder, 0, 99) || (source.version < 5 && (s.eventRevenue || s.eventRemainder || s.saleEvent !== undefined))) throw new Error('Invalid event ledger');
+  if (s.saleEvent !== undefined) {
+    const event = s.saleEvent;
+    if (!event || !Number.isFinite(event.wait) || !Number.isFinite(event.remaining) || event.wait < 0 || event.wait > saleEvent.maxWait || event.remaining < 0 || event.remaining > saleEvent.duration || (event.remaining > 0 && event.wait !== 0)) throw new Error('Invalid sale event');
+  }
   s.pigPortionLevel ??= 0; s.pigSpeedLevel ??= 0; s.saleRemainder ??= 0;
   if (!integer(s.pigPortionLevel, 0, pigUpgrades.maxLevel) || !integer(s.pigSpeedLevel, 0, pigUpgrades.maxLevel) || (!s.pigCount && (s.pigPortionLevel || s.pigSpeedLevel)) || !integer(s.saleRemainder, 0, source.version < 4 ? 9 : 99)) throw new Error('Invalid helper upgrades');
-  if (!integer(s.coins, 0, s.saleRevenue + discoveryCoins) || !integer(s.pigCount, 0, pigBalance.prices.length) || !integer(s.pigEaten, 0, consumed) || (!s.pigCount && s.pigEaten)) throw new Error('Invalid helper economy');
+  if (!integer(s.coins, 0, s.saleRevenue + discoveryCoins + s.eventRevenue) || !integer(s.pigCount, 0, pigBalance.prices.length) || !integer(s.pigEaten, 0, consumed) || (!s.pigCount && s.pigEaten)) throw new Error('Invalid helper economy');
   if (!integer(s.activeTool, 0, s.levels.tools)) throw new Error('Invalid active tool');
   const validateToolLevels = (levels: number[] | undefined, max: number) => {
     const result = levels ?? [0, 0, 0, 0];
@@ -112,6 +123,7 @@ export function validateSave(value: unknown): SaveData {
   if (legacy && !baseline) throw new Error('Missing price baseline');
   const maxRevenue = Math.max(Math.floor(consumed * (100 + s.levels.sale * 25) / 100), consumed * (legacy ? 1 + legacy.levels.sale : 1));
   if (!integer(s.saleRevenue, consumed, maxRevenue)) throw new Error('Invalid sales ledger');
+  if (s.eventRevenue > maxRevenue) throw new Error('Invalid event revenue');
   const cost = (progress: LegacyProgress, old: boolean, previous = false) => {
     let spent = 0;
     for (const id of Object.keys(upgrades) as UpgradeId[]) for (let level = 0; level < progress.levels[id]; level++) spent += (old ? oldUpgradePrice : previous ? previousUpgradePrice : upgradePrice)(id, level);
@@ -127,7 +139,7 @@ export function validateSave(value: unknown): SaveData {
   if (legacy) spent += cost(legacy, true) - cost(legacy, false, true);
   for (let level = 0; level < s.pigPortionLevel; level++) spent += (level < (baseline?.pigPortionLevel ?? 0) ? previousPigUpgradePrice : pigUpgradePrice)('portion', level);
   for (let level = 0; level < s.pigSpeedLevel; level++) spent += (level < (baseline?.pigSpeedLevel ?? 0) ? previousPigUpgradePrice : pigUpgradePrice)('speed', level);
-  if (s.coins + spent !== s.saleRevenue + discoveryCoins) throw new Error('Unbalanced economy');
+  if (s.coins + spent !== s.saleRevenue + discoveryCoins + s.eventRevenue) throw new Error('Unbalanced economy');
   if (!Array.isArray(s.position) || s.position.length !== 2 || s.position.some(v => !Number.isFinite(v) || Math.abs(v) > config.worldHalfSize)) throw new Error('Invalid position');
   if (!Number.isFinite(s.yaw) || !Number.isFinite(s.pitch) || Math.abs(s.pitch) > 1.25 || typeof s.won !== 'boolean' || (s.won && remaining > 0)) throw new Error('Invalid camera/progress');
   return s;

@@ -1,5 +1,14 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  buyEquip: 'Купить и взять', pigCardHint: 'Помогает убирать сено и приносит монеты. Порцию и скорость еды улучшай в книге.',
+  loadingFarm: 'Готовим ферму…', replayGuide: 'Показать обучение снова',
+  guideHay: 'Подойди к сену', guideCollect: 'Собери сено', guideCart: 'Отнеси сено к телеге', guideSell: 'Продай сено',
+  guideUpgrade: 'Купи улучшение рюкзака у амбара', guideBook: 'Открой книгу и купи улучшение', guideEarn: 'Собирай и продавай — накопи на первое улучшение',
+  guideTry: 'Попробуй улучшение! Разбери стог и найди иголку', sellHayHint: 'Рюкзак полон — продай сено',
+  saleEventActive: '×2 за сдачу сена', saleEventEnd: 'Обычная цена продажи', rareReward: 'Редкая находка: +{n}',
+  guideComplete: 'Теперь найди спрятанную иголку!',
+  guideBarn: 'Купи доступный предмет у амбара',
+  upgradeDone: 'Улучшение куплено!',
   perCycle: 'за цикл всасывания',
   pigPortion: 'Порция свинок', pigSpeed: 'Скорость еды', perBite: 'соломинок за укус',
   pigUpgradeHint: 'Улучшения действуют на всех свинок, включая будущих. Интервал минимальный: ходьба занимает дополнительное время.',
@@ -56,6 +65,15 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  buyEquip: 'Buy & equip', pigCardHint: 'Helps clear hay and earns coins. Upgrade bite size and eating speed in the book.',
+  loadingFarm: 'Getting the farm ready…', replayGuide: 'Replay guidance',
+  guideHay: 'Walk to the hay', guideCollect: 'Collect some hay', guideCart: 'Carry hay to the cart', guideSell: 'Sell your hay',
+  guideUpgrade: 'Buy a backpack upgrade at the barn', guideBook: 'Open the book and buy an upgrade', guideEarn: 'Collect and sell to afford your first upgrade',
+  guideTry: 'Try your upgrade! Clear the pile and find the needle', sellHayHint: 'Backpack full — sell your hay',
+  saleEventActive: '×2 on hay deliveries', saleEventEnd: 'Regular sale price', rareReward: 'Rare find: +{n}',
+  guideComplete: 'Now find the hidden needle!',
+  guideBarn: 'Buy an affordable item at the barn',
+  upgradeDone: 'Upgrade purchased!',
   perCycle: 'per suction cycle',
   pigPortion: 'Pig bite size', pigSpeed: 'Eating speed', perBite: 'straws per bite',
   pigUpgradeHint: 'Upgrades affect all pigs, including future purchases. Intervals are minimums; walking takes extra time.',

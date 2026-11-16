@@ -1,10 +1,9 @@
 import { t } from './i18n';
+import { iconPaths } from './icons';
+import { presentation } from '../config/presentation';
 
 type Kind = 'hay' | 'coins' | 'full' | 'notice';
-const paths = {
-  hay: 'M3 21 12 3l9 18H3 M7 20l5-13 5 13 M9 17h6',
-  coins: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M14 8h-3a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-3 M12 6v12',
-};
+const paths = iconPaths;
 
 /** Four reusable DOM elements; rapid actions never create an unbounded queue. */
 export class FloatingFeedback {
@@ -41,8 +40,9 @@ export class FloatingFeedback {
       { opacity: 1, transform: `translate(calc(-50% + ${x}px), ${y}px) scale(1)`, offset: 0.14 },
       { opacity: 1, transform: `translate(calc(-50% + ${x}px), ${y + (reduced ? 0 : -22)}px) scale(1)`, offset: 0.6 },
       { opacity: 0, transform: `translate(calc(-50% + ${x}px), ${y + (reduced ? 0 : -48)}px) scale(1)` },
-    ], { duration: kind === 'full' ? 850 : 1050, easing: 'ease-out', fill: 'forwards' });
+    ], { duration: kind === 'full' ? presentation.fullMessageMs : presentation.messageMs, easing: presentation.easing, fill: 'forwards' });
   }
+  stop() { for (const item of this.items) item.animation?.cancel(); }
   dispose() {
     for (const item of this.items) { item.animation?.cancel(); item.node.remove(); }
     this.items.length = 0;

@@ -9,6 +9,7 @@ import { ToolAssets } from './ToolAssets';
 import type { BarnTarget } from '../config/progression';
 import type { EconomySystem } from '../systems/EconomySystem';
 import { disposeTree } from '../core/dispose';
+import { presentation } from '../config/presentation';
 export type Target = 'ground' | 'hay' | 'cart' | 'needle' | BarnTarget;
 export class World {
   readonly scene = new THREE.Scene();
@@ -27,7 +28,11 @@ export class World {
   private materials = new Map<number, THREE.MeshStandardMaterial>();
   private geometries = new Map<string, THREE.BoxGeometry>();
   readonly toolAssets = new ToolAssets();
-  private barn = new Barn(this.toolAssets);
+  private barn?: Barn;
+  private barnHighlight?: THREE.BoxHelper;
+  private selectedBarn?: BarnTarget;
+  private latestEconomy?: EconomySystem;
+  private optionalTimer?: ReturnType<typeof setTimeout>;
   private pigs = new PigHerd(this.toolAssets);
   private pigSurface = (x: number, z: number) => this.surfaceHeight(x, z);
   private pigFeed = (point: THREE.Vector2) => this.hay.feedingPoint(point);
@@ -85,8 +90,7 @@ export class World {
     // Background scenery stays outside the playable boundaries.
     const landscape = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshStandardMaterial({ color: 0x67d83d, roughness: 0.8 }));
     landscape.rotation.x = -Math.PI / 2; landscape.position.y = -0.56; this.scene.add(landscape);
-    this.scene.add(this.barn.group, this.pigs.group);
-    this.pickables.push(...this.barn.pickables);
+    this.scene.add(this.pigs.group);
     for (const [x, z] of [[-12, -16], [10, -20], [16, 6]]) {
       this.box(this.scene, [4.5, 0.7, 2], [x, 9, z], 0xffffff);
       this.box(this.scene, [2.5, 0.8, 1.9], [x + 0.5, 9.5, z], 0xffffff);
@@ -107,7 +111,17 @@ export class World {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
-  updateBarn(economy: EconomySystem) { this.barn.update(economy); }
+  updateBarn(economy: EconomySystem) { this.latestEconomy = economy; this.barn?.update(economy); }
+  highlightBarn(target?: BarnTarget) {
+    if (target === this.selectedBarn) return;
+    this.selectedBarn = target;
+    if (this.barnHighlight) this.barnHighlight.visible = false;
+    const object = target && this.barn?.object(target);
+    if (!object) return;
+    if (!this.barnHighlight) { this.barnHighlight = new THREE.BoxHelper(object, 0xffe14a); this.scene.add(this.barnHighlight); }
+    else this.barnHighlight.setFromObject(object);
+    this.barnHighlight.visible = true;
+  }
   updatePigs(dt: number, count: number, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void, intervalMultiplier = 1) {
     this.pigs.update(dt, count, this.pigSurface, this.pigFeed, onEat, intervalMultiplier);
   }
@@ -115,6 +129,16 @@ export class World {
   loadNoncriticalAssets() {
     if (this.modelRequested || this.disposed) return;
     this.modelRequested = true;
+    this.optionalTimer = setTimeout(() => {
+      if (this.disposed) return;
+      this.barn = new Barn(this.toolAssets); this.scene.add(this.barn.group); this.pickables.push(...this.barn.pickables);
+      if (this.latestEconomy) this.barn.update(this.latestEconomy);
+      this.barn.group.updateMatrixWorld(true); this.shadowDirty = true;
+      void import('./FarmDecor').then(module => {
+        if (this.disposed) return;
+        this.scene.add(module.createFarmDecor()); this.shadowDirty = true;
+      }).catch(() => { /* Optional dressing never blocks a playable farm. */ });
+    }, presentation.sceneDelayMs);
     this.cartModelStatus = 'loading';
     // Keep the first frame and interactions independent of model transfer/parse.
     void import('./cartModel').then(module => module.loadCartModel()).then(model => {
@@ -171,7 +195,7 @@ export class World {
     this.hay.update(dt); this.needle.update(dt, this.reducedMotion);
   }
   takeShadowUpdate() { const dirty = this.shadowDirty; this.shadowDirty = false; return dirty; }
-  dispose() { this.disposed = true; disposeTree(this.scene); this.pickables.length = 0; this.materials.clear(); this.geometries.clear(); }
+  dispose() { this.disposed = true; clearTimeout(this.optionalTimer); this.latestEconomy = undefined; disposeTree(this.scene); this.pickables.length = 0; this.materials.clear(); this.geometries.clear(); }
   private tag(group: THREE.Group, target: Target) {
     group.traverse(object => { if (object instanceof THREE.Mesh) { object.userData.target = target; this.pickables.push(object); } });
   }

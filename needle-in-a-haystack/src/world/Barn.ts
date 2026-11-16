@@ -12,6 +12,8 @@ export class Barn {
   private canvas = document.createElement('canvas');
   private texture: THREE.CanvasTexture;
   private lastState = '';
+  private displays = new Map<BarnTarget, THREE.Object3D>();
+  object(target: BarnTarget) { return this.displays.get(target); }
   constructor(assets: ToolAssets) {
     for (const wall of barnWalls) {
       const mesh = assets.box(this.group, [wall.halfX * 2, 2.6, wall.halfZ * 2], [wall.x, 1.25, wall.z], 0xef5341);
@@ -32,6 +34,7 @@ export class Barn {
       const display = item.tool ? assets.tool(item.tool) : target === 'backpack' ? assets.backpack() : assets.pig();
       display.position.set(item.x, target === 'pig' ? 0 : 1.02, item.z + .08);
       this.group.add(display);
+      this.displays.set(target, display);
       display.traverse(object => { if (object instanceof THREE.Mesh) { object.userData.target = target; this.pickables.push(object); } });
       const geometry = new THREE.PlaneGeometry(.85, .42), uv = geometry.getAttribute('uv');
       for (let v = 0; v < uv.count; v++) uv.setXY(v, (i % 4 + uv.getX(v)) / 4, 1 - (Math.floor(i / 4) + 1 - uv.getY(v)) / 2);
