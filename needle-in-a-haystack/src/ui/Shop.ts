@@ -14,13 +14,18 @@ export class Shop {
   private tab = 'character';
   private busy = false;
   private timer?: ReturnType<typeof setTimeout>;
-  constructor(private economy: EconomySystem, private onBuy: (action: ShopAction) => boolean, private onReject: () => void = () => {}) {
-    document.querySelector<HTMLButtonElement>('#shop')!.onclick = () => { this.dialog.querySelector('[data-book-feedback]')!.textContent = ''; this.render(true); if (!this.dialog.open) this.dialog.showModal(); };
+  constructor(private economy: EconomySystem, private onBuy: (action: ShopAction) => boolean, private onReject: (text: string) => void = () => {}) {
+    document.querySelector<HTMLButtonElement>('#shop')!.onclick = () => { const feedback = this.dialog.querySelector<HTMLElement>('[data-book-feedback]')!; feedback.textContent = ''; delete feedback.dataset.feedbackState; this.render(true); if (!this.dialog.open) this.dialog.showModal(); };
     this.dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = () => this.dialog.close();
     this.dialog.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
       if (!button || button.disabled) return;
-      if (button.dataset.unavailable === 'true') { this.dialog.querySelector('[data-book-feedback]')!.textContent = button.textContent?.includes(t('max')) ? t('max') : t('buyBlocked'); this.onReject(); return; }
+      if (this.busy && button.dataset.action) return;
+      if (button.dataset.unavailable === 'true') {
+        const price = Number(button.dataset.price);
+        this.onReject(button.dataset.reason === 'max' ? t('denyMax') : Number.isFinite(price) && price > this.economy.coins ? t('denyFunds', { n: price - this.economy.coins }) : t('denyUnavailable'));
+        return;
+      }
       if (button.dataset.tab) { this.tab = button.dataset.tab; this.render(); return; }
       const kind = button.dataset.action;
       if (kind === 'character') {
@@ -36,12 +41,14 @@ export class Shop {
     if (this.busy) return;
     this.busy = true;
     const success = this.onBuy(action);
-    this.dialog.querySelector('[data-book-feedback]')!.textContent = success ? t(action.kind === 'equip' ? 'equipped' : 'upgradeDone') : t('buyBlocked');
+    const feedback = this.dialog.querySelector<HTMLElement>('[data-book-feedback]')!;
+    if (success) { feedback.textContent = t(action.kind === 'equip' ? 'equipped' : 'upgradeDone'); feedback.dataset.feedbackState = 'success'; }
+    else if (!feedback.textContent) { feedback.textContent = t('denyUnavailable'); feedback.dataset.feedbackState = 'error'; }
     this.timer = setTimeout(() => { this.busy = false; }, presentation.purchaseGuardMs);
   }
   private buyButton(price: number | null, attrs: string) {
     const disabled = price === null || this.economy.coins < price;
-    return `<button ${attrs} aria-disabled="${disabled}" data-unavailable="${disabled}">${price === null ? t('max') : `${t('buy')} &middot; ${price} ${t('money')}`}</button>`;
+    return `<button ${attrs} aria-disabled="${disabled}" data-unavailable="${disabled}" data-reason="${price === null ? 'max' : 'funds'}" data-price="${price ?? ''}">${price === null ? t('max') : `${t('buy')} &middot; ${price} ${t('money')}`}</button>`;
   }
   private characterPage() {
     const avatar = '<svg class="book-avatar" viewBox="0 0 64 80" aria-hidden="true"><rect x="20" y="4" width="24" height="24" rx="7" fill="#ffcf8b"/><rect x="14" y="31" width="36" height="30" rx="7" fill="#23b8ff"/><rect x="5" y="34" width="8" height="25" rx="4" fill="#ffcf8b"/><rect x="51" y="34" width="8" height="25" rx="4" fill="#ffcf8b"/><path d="M19 65h11v13H19zM34 65h11v13H34z" fill="#526985"/></svg>';

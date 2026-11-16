@@ -20,18 +20,20 @@ export class BarnCard {
       if (this.busy || !this.target) return;
       const offer = this.economy.barnOffer(this.target);
       if (offer.locked || (!offer.owned && (offer.price === null || offer.price > this.economy.coins))) {
-        const text = offer.locked ? t('previousTool') : offer.price === null ? t('max') : t('missing', { n: offer.price - this.economy.coins });
-        this.dialog.querySelector('[data-barn-feedback]')!.textContent = text; this.reject(text); return;
+        const text = offer.locked ? t('denyPrevious') : offer.price === null ? t('denyMax') : t('denyFunds', { n: offer.price - this.economy.coins });
+        this.reject(text); return;
       }
       this.busy = true;
       const success = this.purchase(this.target);
       this.render();
       if (success) this.dialog.dataset.success = 'true';
-      this.dialog.querySelector('[data-barn-feedback]')!.textContent = success ? (offer.owned ? t('equipped') : t('boughtItem', { name: offer.name })) : t('buyBlocked');
+      const feedback = this.dialog.querySelector<HTMLElement>('[data-barn-feedback]')!;
+      if (success) { feedback.textContent = offer.owned ? t('equipped') : t('boughtItem', { name: offer.name }); feedback.dataset.feedbackState = 'success'; }
+      else if (!feedback.textContent) { feedback.textContent = t('denyUnavailable'); feedback.dataset.feedbackState = 'error'; }
       this.timer = setTimeout(() => { this.busy = false; delete this.dialog.dataset.success; this.render(); }, presentation.purchaseGuardMs);
     }, { signal: this.controller.signal });
   }
-  show(target: BarnTarget) { this.target = target; this.dialog.querySelector('[data-barn-feedback]')!.textContent = ''; this.render(true); if (!this.dialog.open) this.dialog.showModal(); }
+  show(target: BarnTarget) { this.target = target; const feedback = this.dialog.querySelector<HTMLElement>('[data-barn-feedback]')!; feedback.textContent = ''; delete feedback.dataset.feedbackState; this.render(true); if (!this.dialog.open) this.dialog.showModal(); }
   render(force = false) {
     if (!this.target || (!force && !this.dialog.open)) return;
     const offer = this.economy.barnOffer(this.target), tool = barnItems[this.target].tool;

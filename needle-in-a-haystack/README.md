@@ -212,3 +212,7 @@ Settings now offer optional local economy measurements, disabled by default, plu
 ## Очередь замечаний команды
 
 Подготовленные замечания и порядок будущих доработок: [docs/DEVELOPER_NOTES.md](../docs/DEVELOPER_NOTES.md), требования §25. Направления: видимые причины отказа, заметный ×2 с таймером, немного большая стартовая дальность, короткое меню по будущему рисунку, затем согласованные сундуки/результаты/колодец/алмазы/скины. Это запись задач, не новая реализация; решения, которых ещё нет, сохранены в OPEN_QUESTIONS.md.
+
+### Visible rejection reasons
+
+TEAM-01 routes every gameplay deny sound through Game.reject with a short localized reason. World actions use the existing popup pool; menu actions use the active dialog feedback. Denial text/audio share a 450 ms cooldown. Busy collection stays silent. No prices, ranges or saves changed; manual desktop/touch review is pending and no automatic game checks/build/screenshots were run.

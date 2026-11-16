@@ -5,5 +5,6 @@ export const presentation = {
   sceneDelayMs: 80, tutorialPulseMs: 1100,
   pressMs: 100, counterPower: 3, easing: 'cubic-bezier(.2,.8,.2,1)',
   messageMs: 1050, fullMessageMs: 850,
+  rejectionCooldownMs: 450,
 } as const;
 export const saleEvent = { minWait: 180, maxWait: 300, duration: 45 } as const;

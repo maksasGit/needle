@@ -297,3 +297,5 @@ html[data-reduced-motion="true"] button { transition:none; }
   #tutorial .ui-icon { width:20px; height:20px; }
 }
 #barn-dialog [data-barn-feedback],#shop-dialog [data-book-feedback] { color:#367929; font-weight:800; min-height:1.3em; }
+/* Rejection reasons stay readable inside the active modal. */
+#barn-dialog [data-barn-feedback][data-feedback-state="error"],#shop-dialog [data-book-feedback][data-feedback-state="error"],[data-denial-feedback] { color:#963b20; font-weight:800; }

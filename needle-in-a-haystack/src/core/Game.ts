@@ -10,7 +10,8 @@ import { CameraController } from './CameraController';
 import { InputManager } from './InputManager';
 import { Shop } from '../ui/Shop';
 import type { ShopAction } from '../ui/Shop';
-import { barnItems, barnWalls, isBarnTarget } from '../config/progression';
+import { barnItems, barnWalls, isBarnTarget, pigUpgrades, pigUpgradePrice, toolUpgradeLimits, toolUpgradePrice } from '../config/progression';
+import { presentation } from '../config/presentation';
 import type { UpgradeId } from '../config/balance';
 import { FirstPersonView } from '../entities/FirstPersonView';
 import { disposeTree } from './dispose';
@@ -38,6 +39,7 @@ export class Game {
   private destination: 'ground' | 'hay' | 'cart' | 'needle' = 'ground';
   private collectionTimer = 0;
   private collectionDuration = 0;
+  private lastRejectionAt = -Infinity;
   private shop?: Shop;
   private input?: InputManager;
   private harvestPoint = new THREE.Vector3(config.hay.x, 1, config.hay.z);
@@ -154,8 +156,8 @@ export class Game {
       });
       this.resizeObserver.observe(host);
       const { width, height } = host.getBoundingClientRect(); this.camera.resize(width, height); this.renderer.setSize(width, height);
-      this.refreshHUD(); this.shop = new Shop(this.economy, id => this.buy(id), () => this.options.audio?.effect('deny'));
-      this.barnCard = new BarnCard(this.economy, target => this.purchaseBarn(target), text => { this.options.audio?.effect('deny'); this.feedback?.notice(text); });
+      this.refreshHUD(); this.shop = new Shop(this.economy, id => this.buy(id), text => this.reject(text));
+      this.barnCard = new BarnCard(this.economy, target => this.purchaseBarn(target), text => this.reject(text));
       const signal = this.controller.signal;
       const syncPause = () => {
         this.menuOpen = !!document.querySelector('dialog[open]');
@@ -251,11 +253,42 @@ export class Game {
     const item = barnItems[target];
     return Math.hypot(this.player.group.position.x - item.x, this.player.group.position.z - item.z) <= 1.9 && this.player.group.position.y <= 1;
   }
+  private reject(text: string) {
+    if (this.disposed || this.failed) return;
+    const now = performance.now();
+    if (now - this.lastRejectionAt < presentation.rejectionCooldownMs) return;
+    this.lastRejectionAt = now;
+    const focusedDialog = document.activeElement?.closest<HTMLDialogElement>('dialog[open]');
+    const dialog = focusedDialog ?? Array.from(document.querySelectorAll<HTMLDialogElement>('dialog[open]')).at(-1);
+    if (dialog) {
+      let node = dialog.querySelector<HTMLElement>('[data-barn-feedback], [data-book-feedback], [data-denial-feedback]');
+      if (!node) { node = document.createElement('p'); node.dataset.denialFeedback = ''; node.setAttribute('role', 'status'); dialog.append(node); }
+      node.dataset.feedbackState = 'error'; node.textContent = text;
+    } else this.feedback?.notice(text);
+    this.status.textContent = text;
+    this.options.audio?.effect('deny');
+  }
+  private priceRejection(price: number | null) {
+    return price === null ? t('denyMax') : price > this.economy.coins ? t('denyFunds', { n: price - this.economy.coins }) : t('denyUnavailable');
+  }
+  private purchaseRejection(action: ShopAction) {
+    if (action.kind === 'character') return this.priceRejection(this.economy.price(action.id));
+    if (action.kind === 'pig') {
+      if (!this.economy.pigCount) return t('denyNeedPig');
+      const level = action.upgrade === 'portion' ? this.economy.pigPortionLevel : this.economy.pigSpeedLevel;
+      return this.priceRejection(level >= pigUpgrades.maxLevel ? null : pigUpgradePrice(action.upgrade, level));
+    }
+    if (action.tool < 1 || action.tool > this.economy.levels.tools) return t('denyNeedTool');
+    if (action.kind === 'equip') return t('denyUnavailable');
+    const level = (action.kind === 'volume' ? this.economy.toolVolumes : this.economy.toolSpecials)[action.tool - 1];
+    return this.priceRejection(level >= toolUpgradeLimits[action.kind] ? null : toolUpgradePrice(action.tool, action.kind, level));
+  }
   private purchaseBarn(target: keyof typeof barnItems) {
-    if (this.disposed || this.failed || !this.inBarnRange(target)) { this.options.audio?.effect('deny'); this.feedback?.notice(t('closer')); return false; }
+    if (this.disposed || this.failed) return false;
+    if (!this.inBarnRange(target)) { this.reject(t('denyFar')); return false; }
     const offer = this.economy.barnOffer(target);
     const before = this.economy.coins;
-    if (!this.economy.buyAtBarn(target)) { this.options.audio?.effect('deny'); this.feedback?.notice(offer.price === null ? t('max') : t('buyBlocked')); return false; }
+    if (!this.economy.buyAtBarn(target)) { this.reject(offer.locked ? t('denyPrevious') : this.priceRejection(offer.price)); return false; }
     this.collectionTimer = 0; this.player.command([]); this.destination = 'ground'; this.dirty = true;
     if (!offer.owned) { this.guide.action('upgrade'); this.hud?.pulse('purchase'); this.telemetry?.purchase(target, before - this.economy.coins, this.economy.remaining, this.economy.levels.sale); }
     this.feedback?.notice(offer.owned ? `${t('equipped')}: ${offer.name}` : t('boughtItem', { name: offer.name }));
@@ -269,7 +302,7 @@ export class Game {
   replayGuide() { this.guide.replay(); }
   private jump() {
     if (this.paused) return;
-    if (!this.locomotion.jump()) { this.options.audio?.effect('deny'); return; }
+    if (!this.locomotion.jump()) { this.reject(t('denyAirborne')); return; }
     this.options.audio?.setWalking(false);
     this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
   }
@@ -299,12 +332,12 @@ export class Game {
     if (this.paused) return;
     if (target === 'ground') return;
     if (isBarnTarget(target)) {
-      if (!this.inBarnRange(target)) { this.message('closer'); this.options.audio?.effect('deny'); return; }
+      if (!this.inBarnRange(target)) { this.reject(t('denyFar')); return; }
       this.hud?.flush(); this.barnCard?.show(target); return;
     }
     if (target === 'hay' && this.collectionTimer > 0) return;
     if (this.won || (target === 'needle' && this.economy.remaining > 0)) return;
-    if (!this.inRange(target)) { this.message('closer'); this.options.audio?.effect('deny'); return; }
+    if (!this.inRange(target)) { this.reject(t('denyFar')); return; }
     if (target === 'hay') { this.harvestPoint = point.clone(); this.harvestId = this.world.hayIdAt(instanceId); }
     this.collectionTimer = 0; this.player.command([]); this.destination = target;
     this.interact();
@@ -320,8 +353,8 @@ export class Game {
       this.dirty = true; this.saveNow(); this.options?.onWin?.(); return;
     }
     if (target === 'hay' && this.economy.remaining === 0) { this.message('discovered'); return; }
-    if (target === 'hay' && this.economy.inventory >= this.economy.capacity) { this.message('full'); this.options.audio?.effect('deny'); this.feedback?.show('full'); return; }
-    if (!this.inRange(target)) { this.message('closer'); this.options.audio?.effect('deny'); return; }
+    if (target === 'hay' && this.economy.inventory >= this.economy.capacity) { this.reject(t('denyFull')); return; }
+    if (!this.inRange(target)) { this.reject(t('denyFar')); return; }
     const object = config[target];
     this.player.group.rotation.y = Math.atan2(object.x - this.player.group.position.x, object.z - this.player.group.position.z);
     if (target === 'hay') {
@@ -332,7 +365,7 @@ export class Game {
       const eventBefore = this.economy.eventRevenue;
       const earned = this.economy.unload(this.saleEvent.active ? 2 : 1);
       this.telemetry?.sale(sold, earned, this.economy.eventRevenue - eventBefore);
-      this.options.audio?.effect(earned > 0 ? 'sell' : 'deny');
+      if (earned > 0) this.options.audio?.effect('sell'); else this.reject(t('denyEmpty'));
       this.feedback?.show('coins', earned);
       if (earned > 0) {
         const point = new THREE.Vector3(config.cart.x, 1.2, config.cart.z).project(this.camera.camera);
@@ -387,7 +420,7 @@ export class Game {
     } else if (action.kind === 'pig') success = this.economy.upgradePig(action.upgrade);
     else if (action.kind === 'equip') success = this.economy.equip(action.tool);
     else success = this.economy.upgradeTool(action.tool, action.kind);
-    if (!success) { this.options.audio?.effect('deny'); this.feedback?.notice(t('buyBlocked')); return false; }
+    if (!success) { this.reject(this.purchaseRejection(action)); return false; }
     this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
     this.player.movementSpeed = this.economy.movementSpeed; this.dirty = true;
     if (action.kind !== 'equip') { this.hud?.pulse('purchase'); this.guide.action('upgrade'); this.telemetry?.purchase(action.kind === 'character' ? action.id : action.kind === 'pig' ? `pig-${action.upgrade}` : `tool${action.tool}-${action.kind}`, before - this.economy.coins, this.economy.remaining, this.economy.levels.sale); }

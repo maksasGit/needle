@@ -1,5 +1,8 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  denyFar: 'Слишком далеко', denyFull: 'Сумка полна', denyEmpty: 'Нечего продать', denyAirborne: 'В воздухе',
+  denyFunds: 'Не хватает {n} монет', denyMax: 'Максимум', denyPrevious: 'Сначала предыдущий инструмент',
+  denyNeedTool: 'Сначала купи инструмент', denyNeedPig: 'Сначала купи свинку', denyUnavailable: 'Недоступно',
   metricsCopyHint: 'Замеры также доступны ниже: можно выделить и скопировать JSON, если встроенное окно не разрешает скачать файл.',
   economyTelemetry: 'Локальные замеры экономики (добровольно)', economyTelemetryHint: 'Только этот сеанс на устройстве: время, покупки, поездки и свинки. Без имени и отправки в интернет.', exportEconomyMetrics: 'Скачать замеры JSON', resetEconomyMetrics: 'Сбросить замеры',
   buyEquip: 'Купить и взять', pigCardHint: 'Помогает убирать сено и приносит монеты. Порцию и скорость еды улучшай в книге.',
@@ -67,6 +70,9 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  denyFar: 'Too far away', denyFull: 'Bag full', denyEmpty: 'Nothing to sell', denyAirborne: 'In the air',
+  denyFunds: 'Need {n} more coins', denyMax: 'Maximum', denyPrevious: 'Buy the previous tool first',
+  denyNeedTool: 'Buy the tool first', denyNeedPig: 'Buy a pig first', denyUnavailable: 'Unavailable',
   metricsCopyHint: 'Measurements are also shown below. Select and copy the JSON if the embedded player cannot download files.',
   economyTelemetry: 'Local economy measurements (opt in)', economyTelemetryHint: 'This session on your device only: timing, purchases, trips and pigs. No name or network upload.', exportEconomyMetrics: 'Download measurements JSON', resetEconomyMetrics: 'Reset measurements',
   buyEquip: 'Buy & equip', pigCardHint: 'Helps clear hay and earns coins. Upgrade bite size and eating speed in the book.',

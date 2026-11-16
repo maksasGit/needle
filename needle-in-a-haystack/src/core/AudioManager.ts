@@ -4,10 +4,11 @@ import denyUrl from '../../public/audio/inventory_is_full.mp3?url';
 import sellUrl from '../../public/audio/sell_sound.mp3?url';
 import stepsUrl from '../../public/audio/steps_loop.mp3?url';
 import type { Settings } from '../systems/SaveSystem';
+import { presentation } from '../config/presentation';
 
 type Effect = 'collect' | 'sell' | 'deny';
 const effectUrls = { collect: collectUrl, sell: sellUrl, deny: denyUrl };
-const cooldowns = { collect: 90, sell: 140, deny: 450 };
+const cooldowns = { collect: 90, sell: 140, deny: presentation.rejectionCooldownMs };
 
 /** Bounded media elements: music, footsteps and four reusable effect voices. */
 export class AudioManager {
