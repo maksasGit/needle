@@ -208,3 +208,23 @@ Playground находится в соседнем репозитории, не �
 7. Дать владельцу результат и ограничения, сохранить коммит и push. Не объявлять готовность к релизу без подтверждённой приёмки.
 
 **Сейчас открыто:** Q-004 — реальные времена игры, Q-007 — активация кандидата после результатов, Q-005 — будущий престиж. Они не блокируют этот архитектурный обзор. Старые уровни/эффекты сохранять, AI свинок пока не менять, автоматические игровые проверки отложены — эти решения уже приняты и не требуют повторного вопроса.
+
+## 11. Где менять и как проверять
+
+Пути ниже относительно `needle-in-a-haystack/`. Проверки — только после явного запроса; известные устаревшие ожидания сначала исправить по [docs/TESTING.md](docs/TESTING.md).
+
+| Запрос | Ответственный источник | Связанные потребители | Адресная проверка после разрешения |
+|---|---|---|---|
+| Цена/предел/эффект улучшения | `src/config/balance.ts`, `src/config/progression.ts` | EconomySystem, SaveSystem, Shop/Barn, экспорт каталога | Типы, актуализированные gameplay/миграционные сценарии; экспорт каталога |
+| Цена продажи | `balance.ts: upgrades.sale`, `systems/economyMath.ts: saleHundredthsAt` | EconomySystem getters/effect/payout, SaveSystem maxRevenue | Сотые, обычная/pig/×2 выплата и старый save; коэффициент сейчас дублируется, см. REPO_REVIEW |
+| Выбор/удаление соломинки | `world/Haystack.ts` | InputManager, Game, World, rarity, SaveSystem | Выбранный stable ID, swap/remove, snapshot/restore, исчерпание и опора |
+| Редкость | `config/rarity.ts` | Haystack, discovery ledger, SaveSystem | Фиксированные ID/seed, однократная награда и миграция версии |
+| Карта/амбар/прыжок | `balance.ts`, `progression.ts: barnWorld/barnWalls`, `systems/Locomotion.ts` | MovementSystem, Game, World/Barn/PigHerd, spawn | Navigation + целевые movement/layout/climb сценарии; ручной touch |
+| Формат сохранения | `systems/SaveSystem.ts` | Game restore/saveNow, Haystack, EconomySystem, main settings | Независимые фикстуры v1–v5, ledgers/исторические цены, повторная загрузка |
+| Событие ×2 | `config/presentation.ts`, `systems/SaleEvent.ts` | Game frame, EconomySystem.unload, SaveSystem | Управляемые random/clock, pause/reload, eventRevenue, исключение pigs/rare |
+| HUD/книга/карточка/обучение | `src/ui/*`, `src/main.ts`, `src/style.css` | Game, presentation.ts, i18n | Реальное состояние против анимации, focus/modal input, RU/EN/reduced motion; ручная приёмка |
+| Звук/загрузка/очистка | `core/AudioManager.ts`, `world/World.ts`, `core/dispose.ts`, `Game.dispose` | main/HMR, held scene, cartModel/ToolAssets | Late async load после dispose, 10 restart, фон/меню/жест; производительность отдельно |
+| Производительность/старт | `Game.diagnostics`, `scripts/check-first-load.mjs`, `scripts/check-build.mjs` | Vite chunks, browser scripts, asset budgets | Методика PERFORMANCE, исправление координат аудита, одинаковая сборка/среда |
+| Эксперимент v2 | `config/balance.v2.ts`, `scripts/simulate-economy-v2.mjs` | Отчёт/JSON; production не переключён | Разрешённая модель; активация зависит от Q-007 и будущей миграции |
+
+Порядок проверок и побочные эффекты команд: [docs/TESTING.md](docs/TESTING.md). Протокол измерений: [docs/PERFORMANCE.md](docs/PERFORMANCE.md). Находки и база следующего аудита: [docs/REPO_REVIEW.md](docs/REPO_REVIEW.md). Эти документы дополняют требования; новые механики и запуски ими не разрешаются.
