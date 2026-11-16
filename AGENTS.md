@@ -801,3 +801,12 @@ If unanswered, create entries in `OPEN_QUESTIONS.md` for:
 ## Architecture and documentation entry point
 
 Read [ARCHITECTURE.md](ARCHITECTURE.md) for the current module map, lifecycle, gameplay invariants, persistence, concise rules and documentation index. It is an overview, not a replacement for AGENTS.md, GAME_REQUIREMENTS.md or ART_DIRECTION.md. Update it alongside actual changes to module responsibilities, lifecycle, persistence/platform boundaries or document authority. Keep implemented, experimental, measured and pending states distinct; a documentation-only task does not activate the v2 candidate or authorize game tests/publishing.
+
+## Team feedback and menu direction — 2026-11-16
+
+- The owner requested preparation only, with confirmation before starting implementation. docs/DEVELOPER_NOTES.md is the tracked TEAM-01…08 backlog; GAME_REQUIREMENTS.md §25 records scope. New mechanics are not implemented by documenting them.
+- Read master-agent commit 66e0794 and docs/REPO_REVIEW.md, TESTING.md, PERFORMANCE.md for current audit findings and check limitations. Do not claim its documentation changes fixed gameplay or ran tests.
+- Every denial sound needs a concise visible reason in the appropriate world/menu UI. Busy collection remains silent; no repeated message/sound queues. Keep the existing cooldown and pooling.
+- Owner now wants a visible timer/status for ×2 money and timed optional chest progress bars. This supersedes the earlier no-countdown presentation decision for these features only; preserve player-sale-only ×2 semantics until separately changed. No penalty for ignoring an optional chest or manipulative monetization.
+- Short menu copy is the new direction: icon, brief label/value, price and main button; technical explanations belong in docs. Wait for the owner's promised drawing before changing menu layout. Do not remove localization/accessibility to reduce copy.
+- Chests, leaderboard, diamond/well meta-upgrades and helper skins require the recorded decisions Q-009…014 plus Q-005. Do not infer a backend, destructive prestige, new pig AI or unlicensed assets. Candidate economy v2 remains inactive under Q-007.

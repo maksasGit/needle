@@ -96,3 +96,9 @@ Visual implementation order: HUD feedback → barn card → collection/sale pres
 ### Runtime prototype mapping (2026-11-16)
 
 Current code for the adopted feedback direction is mapped in GAME_REQUIREMENTS.md section 22: presentation.ts, HudFeedback.ts, BarnCard.ts, Onboarding.ts, icons.ts, FarmDecor.ts and SaleEvent.ts. These are unverified prototypes, not accepted final art. The original sunny palette/layout remains; a five-needle album was declined by the owner. New scenery stays static until authorized performance measurement, and no new raster/PBR/audio assets are implied by this implementation.
+
+## Updated menu and feedback brief — 2026-11-16
+
+The owner rejects verbose, generic menu descriptions. For the next implementation use short labels, icon/value/price, one primary action and at most one essential benefit line. Keep help/tutorial content separate. A new layout awaits the owner's drawing; this documentation task does not invent it. Maintain RU/EN, readable disabled reasons, focus and touch targets.
+
+The owner now requests attention and a visible timer for ×2 money, plus a small progress timer over optional chests. These supersede the former no-countdown presentation for those features, while keeping a friendly style without flashing/pressure. Chest/well/helper-skin/record visuals are pending product decisions in docs/DEVELOPER_NOTES.md, not produced assets. The named helper-skin reference needs a supplied/authorized original visual and recorded source before integration; it is not permission to import another creator's model or sound.
