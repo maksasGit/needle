@@ -47,7 +47,7 @@ Do not use every accent everywhere. Maintain a consistent hierarchy: hay = warm 
 **Thumbnail/cover:** May use oversized outlined text, a huge golden haystack, a prominent needle, a lively character pose, saturated sky/grass and a bold readable focal composition. Cover art is separate from gameplay rendering. Do not copy the typography/composition of the reference image.
 
 ## Animation and onboarding
-- First interaction within seconds: animated pointer highlights the haystack; tap triggers immediate movement/collection response.
+- First interaction within seconds: an animated pointer highlights the haystack and guides manual movement into range. A tap collects; only the vacuum repeats while held. Ground taps never move the player.
 - Then highlight cart, reward, and first upgrade **one step at a time**; advance on completed actions, not a fixed timer.
 - Hay visibly shrinks or changes silhouette; cart fills; coins bounce briefly; purchased tools visibly change.
 - Use limited pooled particles and short effects. Avoid overstimulation or persistent visual clutter.
@@ -78,3 +78,17 @@ Do not use every accent everywhere. Maintain a consistent hierarchy: hay = warm 
 4. Implement the smallest representative change and check desktop/mobile framing.
 5. Run the production build and report performance or asset-size changes when measurable.
 6. Ask for approval before changing the core art style or introducing expensive graphics techniques.
+
+## Visual feedback specification — adopted 2026-11-16
+
+Use [GAME_REQUIREMENTS.md section 21](GAME_REQUIREMENTS.md#21-визуальная-обратная-связь-интерфейс-и-насыщенность-мира--референсы-2026-11-16) for the accepted visual backlog and review decisions. The two proposal files are source snapshots, not alternative art directions. These are planned improvements, not completed visuals.
+
+- Reuse a shared set of configurable durations, easing, icon scales, radii, borders, typography and semantic color roles across HUD, book, item cards and barn price signs. Develop original SVG/CSS components first; no new UI framework or raster asset per state.
+- A successful action has one readable focal response: a small icon accent, actual +N reward and optional bounded particles. Counter animation illustrates an already completed transaction; rapid updates retarget rather than queue. Keep costs and actionable states synchronized to real values.
+- Give tools distinct motion: pinch, rake stroke, fork grab, wider grab and directed vacuum flow. Preserve the selected straw, actual carried count, hidden hands after tool purchase and bounded local hay physics. Avoid sustained camera shake or flashing.
+- An item card is temporary and closeable. Keep the established HUD placement, no persistent bottom action description and no current-tool HUD card. Use text/symbols as well as color for locked, unaffordable, owned, equipped and max states; all actions support touch without hover.
+- Reduced motion uses static or brief opacity confirmations without flight, shake or large scale changes. Feedback remains understandable with audio disabled and never covers joystick, jump, action controls or important counters.
+- Dress the sunny 26×26 farm in small logical groups, preserving hay upper left, barn upper right and cart lower left, including their approved rotations. Start with shared prop families and cheap distant silhouettes; protect paths, picking, signs and mobile frame time. A decorative lantern does not imply extra dynamic lighting.
+- Do not restore individual cart straws or delayed payout for spectacle. Keep the static cargo mound; prefer a few pooled 2D coins over a separate 3D coin family when sufficient. Optional decoration loads after interaction; animated scenery waits for authorized performance measurement.
+
+Visual implementation order: HUD feedback → barn card → collection/sale presentation → cohesive mobile UI → onboarding/loading → restrained scenery. Mechanics still missing (needle collection and events) are tracked separately. Review each iteration manually with the user; the current no-automatic-tests/build/screenshots instruction supersedes generic validation commands above until requested.
