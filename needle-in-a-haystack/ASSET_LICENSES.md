@@ -61,3 +61,7 @@ Original project procedural geometry/materials in src/world/RewardChest.ts. No e
 ### TEAM-03 notice board (2026-11-16)
 
 Original project procedural farm board in src/world/NoticeBoard.ts; no Witcher assets, textures, designs, sounds or branding copied. Fictional demo leaderboard names are local fixture data, not actual users.
+
+### TEAM-04 well and diamonds (2026-11-16)
+
+Original project procedural geometry/materials in Well.ts and Diamonds.ts. No external textures, models, characters, sounds or fonts added; existing licensed/original sell/deny audio reused.

@@ -1,5 +1,5 @@
 ﻿import { Game } from './core/Game';
-import { SaveSystem, SAVE_KEY } from './systems/SaveSystem';
+import { SaveSystem } from './systems/SaveSystem';
 import { t, setLanguage } from './ui/i18n';
 import type { Language } from './ui/i18n';
 import { config } from './config/balance';
@@ -22,7 +22,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div id="joystick" role="group" data-label="joystick"><span class="joystick-guide" aria-hidden="true">✥</span><span class="joystick-knob" aria-hidden="true"></span></div>
 ${text('action', 'button', 'id="interact" aria-describedby="aim-label"')}
 <button id="jump" data-label="jump"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V4M5 11l7-7 7 7M5 21h14"/></svg></button>
-<section class="hud"><div>${uiIcon('coins', 'counter-icon')}${text('coins')}<strong id="coins">0</strong></div><div>${uiIcon('backpack', 'counter-icon')}${text('inventory')}<strong id="inventory">0 / ${config.capacity}</strong></div><button id="shop" data-label="shop">${uiIcon('book', 'counter-icon')}${text('shop')}</button></section>
+<section class="hud"><div>${uiIcon('coins', 'counter-icon')}${text('coins')}<strong id="coins">0</strong></div><div><span class="diamond-icon" aria-hidden="true">?</span>${text('diamonds')}<strong id="diamonds">0</strong></div><div>${uiIcon('backpack', 'counter-icon')}${text('inventory')}<strong id="inventory">0 / ${config.capacity}</strong></div><button id="shop" data-label="shop">${uiIcon('book', 'counter-icon')}${text('shop')}</button></section>
 <div class="hay-progress"><progress id="hay-progress" max="${config.totalHay}" value="${config.totalHay}" aria-labelledby="hay-progress-label"></progress><div class="hay-progress-caption">${text('remaining', 'span', 'id="hay-progress-label" class="sr-only"')}${uiIcon('hay', 'counter-icon')}<strong id="remaining">${config.totalHay}</strong></div></div>
 <div id="action-feedback" aria-hidden="true"></div><div id="sale-event" role="status" hidden></div><div id="tutorial" role="status" hidden></div><div id="tutorial-pointer" aria-hidden="true" hidden>${uiIcon('arrow')}</div>
 <div class="utility-controls"><button id="help" data-label="help">${uiIcon('help')}</button><button id="settings" data-label="settings">${uiIcon('settings', 'counter-icon')}</button></div><div id="status" class="sr-only" role="status" aria-live="polite"></div>
@@ -49,9 +49,9 @@ function translate() {
 function start(reset = false) {
   document.querySelector<HTMLElement>('#loading-farm')!.hidden = false;
   for (const element of document.querySelectorAll<HTMLDialogElement>('dialog[open]')) element.close();
+  const retainedMeta=reset?game?.metaSnapshot():undefined;
   game?.dispose(!reset); game = undefined;
-  if (reset) { try { localStorage.removeItem(SAVE_KEY); } catch { /* Memory-only session still restarts. */ } }
-  try { game = new Game(document.querySelector('#game')!, document.querySelector('#status')!, { settings, audio: music, onReady: () => { document.querySelector<HTMLElement>('#loading-farm')!.hidden = true; }, onWin: () => show('#win-dialog'), onError: fail }); }
+  try { game = new Game(document.querySelector('#game')!, document.querySelector('#status')!, { newGame:reset,retainedMeta,settings, audio: music, onReady: () => { document.querySelector<HTMLElement>('#loading-farm')!.hidden = true; }, onWin: () => show('#win-dialog'), onError: fail }); }
   catch (error) { console.error(error); fail(t('webgl')); }
 }
 for (const button of document.querySelectorAll<HTMLButtonElement>('dialog [data-close]')) button.onclick = () => button.closest('dialog')!.close();

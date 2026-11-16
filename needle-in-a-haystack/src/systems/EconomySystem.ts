@@ -11,6 +11,7 @@ import { chestBalance } from '../config/chests';
 
 /** Collection is command-driven; only an actively held vacuum repeats commands. */
 export class EconomySystem {
+  metaMovement=1;
   remaining: number = config.totalHay;
   inventory = 0;
   coins = 0;
@@ -32,7 +33,7 @@ export class EconomySystem {
   readonly toolSpecials = [0, 0, 0, 0];
   readonly levels: Record<UpgradeId, number> = { capacity: 0, movement: 0, collection: 0, tools: 0, sale: 0 };
   get capacity() { return capacityAt(config.capacity, upgrades.capacity.step, this.levels.capacity); }
-  get movementSpeed() { return movementAt(config.movementSpeed, upgrades.movement.step, this.levels.movement); }
+  get movementSpeed() { return movementAt(config.movementSpeed, upgrades.movement.step, this.levels.movement) * this.metaMovement; }
   get collectionSeconds() { return durationAt(config.collectionSeconds, upgrades.collection.multiplier, this.levels.collection, toolSpecs[this.activeTool - 1]?.duration ?? 1, this.activeTool === 3 ? this.toolSpecials[2] : 0, toolSpecs[2].specialDuration); }
   get collectionAmount() { return amountAt(upgrades.tools.amounts[this.activeTool], this.activeTool ? toolSpecs[this.activeTool - 1].volumeStep : 0, this.activeTool ? this.toolVolumes[this.activeTool - 1] : 0); }
   get toolName() { return toolName(this.activeTool); }

@@ -1,5 +1,8 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  well: 'Колодец', diamonds: 'Алмазы', diamondFound: '◆ +1 алмаз', metaNextRun: 'Действует со следующего захода', metaMissing: 'Не хватает {n} алмазов', metaStart: 'Старт:',
+  metalegs: 'Быстрые ноги', metalegsEffect: 'Скорость ×1,5', metaluck: 'Удачный фермер', metaluckEffect: 'Сундуки вдвое чаще', metagold: 'Золотое сено', metagoldEffect: '×2 продажи: 90 секунд', metafriends: 'Друзья', metafriendsEffect: 'Одна свинка на старте',
+  metaTool1: 'Фермер-любитель', metaTool2: 'Опытный фермер', metaTool3: 'Фермер-профессионал', metaTool4: 'Легенда фермеров',
   recordsTitle: 'Рекорды', recordsLocal: 'Локально', recordsGlobal: 'Глобально', recordsYou: 'Ты', recordsAim: 'Доска рекордов',
   recordsDemo: 'Демо · вымышленные результаты', recordsRule: 'Топ-5 · активное время до иголки', recordsEmpty: 'Заверши новый заход — здесь появится результат.', recordsUnsaved: 'Рекорды доступны только в этом сеансе: сохранение недоступно.',
   chest: 'Сундук', chestTime: 'Время до исчезновения сундука', chestAppeared: 'Сундук появился!', chestGone: 'Сундук исчез', chestAim: 'Сундук · +{n} монет',
@@ -47,7 +50,7 @@ const ru = {
   tagline: 'МАЛЕНЬКАЯ ФЕРМА · БОЛЬШИЕ ПОИСКИ', subtitle: 'Иголка в стоге сена', stage: 'Найди иголку!',
   action: 'Действие · E', coins: 'МОНЕТЫ', inventory: 'В РУКАХ', remaining: 'В СТОГЕ', tool: 'ИНСТРУМЕНТ',
   shop: 'Магазин', help: 'Как играть', settings: 'Настройки', close: 'На ферму', newGame: 'Новая игра',
-  confirmReset: 'Начать заново? Текущий прогресс будет удалён.', yes: 'Начать заново', cancel: 'Отмена',
+  confirmReset: 'Начать новый заход? Алмазы, колодец и рекорды сохранятся.', yes: 'Начать заново', cancel: 'Отмена',
   helpTitle: 'Найди иголку в стоге',
   help1: 'Подойди к стогу и нажми на соломинку или действие: одно нажатие — одна порция. С пылесосом удерживай действие, E или касание сена. Соломинка с мятным контуром будет собрана первой.',
   help2: 'Сначала помещается 15 соломинок. Нажми на телегу: сено сразу исчезнет из рук, монеты начислятся. У амбара покупай инструменты, улучшай рюкзак и нанимай до трёх свинок. Порцию и скорость свинок улучшай в книге.',
@@ -74,6 +77,9 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  well: 'Wishing well', diamonds: 'Diamonds', diamondFound: '◆ +1 diamond', metaNextRun: 'Applies next run', metaMissing: 'Need {n} more diamonds', metaStart: 'Start:',
+  metalegs: 'Quick feet', metalegsEffect: 'Movement ×1.5', metaluck: 'Lucky farmer', metaluckEffect: 'Chests twice as often', metagold: 'Golden hay', metagoldEffect: 'Double sales: 90 seconds', metafriends: 'Friends', metafriendsEffect: 'Start with one pig',
+  metaTool1: 'Hobby farmer', metaTool2: 'Experienced farmer', metaTool3: 'Professional farmer', metaTool4: 'Farming legend',
   recordsTitle: 'Records', recordsLocal: 'Local', recordsGlobal: 'Global', recordsYou: 'You', recordsAim: 'Records board',
   recordsDemo: 'Demo · fictional results', recordsRule: 'Top 5 · active time to the needle', recordsEmpty: 'Finish a new run to set your first record.', recordsUnsaved: 'Records last for this session only: saving unavailable.',
   chest: 'Chest', chestTime: 'Time until the chest disappears', chestAppeared: 'A chest appeared!', chestGone: 'Chest expired', chestAim: 'Chest · +{n} coins',
@@ -120,7 +126,7 @@ const en: Record<Key, string> = {
   rareFound: '+{amount} hay · {rarity}: +{n} coins',
   tagline: 'SMALL FARM · BIG SEARCH', subtitle: 'Find the needle in the haystack', stage: 'Find the needle!',
   action: 'Interact · E', coins: 'COINS', inventory: 'CARRYING', remaining: 'HAY LEFT', tool: 'TOOL',
-  shop: 'Shop', help: 'How to play', settings: 'Settings', close: 'Back to farm', newGame: 'New game', confirmReset: 'Start over? Your current progress will be deleted.', yes: 'Start over', cancel: 'Cancel',
+  shop: 'Shop', help: 'How to play', settings: 'Settings', close: 'Back to farm', newGame: 'New game', confirmReset: 'Start a new run? Diamonds, well upgrades and records are kept.', yes: 'Start over', cancel: 'Cancel',
   helpTitle: 'Find the needle in the haystack',
   help1: 'Walk up to the pile and tap a straw or Interact for one portion. With the vacuum, hold Interact, E or a touch on hay. The mint-outlined straw is collected first.',
   help2: 'You initially carry 15 straws. Tap the cart to instantly sell your hay. Buy tools, backpack upgrades and up to three pigs at the barn. Upgrade pig bite size and eating speed in the book.',

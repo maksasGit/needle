@@ -1,3 +1,6 @@
+import { validateMeta } from './MetaProgress';
+import type { MetaProfile, GemState } from './MetaProgress';
+import type { MetaBuffs } from '../config/meta';
 import { validateRun } from './RunRecords';
 import type { RunState } from './RunRecords';
 import { config, upgrades, upgradePrice, previousUpgradePrice } from '../config/balance';
@@ -16,7 +19,7 @@ export const SAVE_KEY = 'needle.save.v1';
 export type LegacyProgress = { levels: Record<UpgradeId, number>; toolVolumes: number[]; toolSpecials: number[]; pigCount: number };
 export type PriceBaseline = LegacyProgress & { pigPortionLevel: number; pigSpeedLevel: number };
 export type SaveData = {
-  version: 1 | 2 | 3 | 4 | 5 | 6 | 7; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
   position: [number, number]; yaw: number; pitch: number; won: boolean;
   hayContactScale?: number;
   totalHay?: number;
@@ -38,6 +41,9 @@ export type SaveData = {
   eventRevenue?: number;
   eventRemainder?: number;
   saleEvent?: SaleEventState;
+  meta?: MetaProfile;
+  buffs?: MetaBuffs;
+  gems?: GemState;
   run?: RunState;
   chestRevenue?: number;
   chestClaims?: number[];
@@ -68,7 +74,7 @@ export function decodeHay(value: string): Int16Array {
 export function validateSave(value: unknown): SaveData {
   if (!value || typeof value !== 'object') throw new Error('Invalid save');
   const source = value as SaveData;
-  if (![1, 2, 3, 4, 5, 6, 7].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
+  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
   const s: SaveData = { ...source, levels: { ...source.levels, sale: source.levels.sale ?? 0 } };
   if (s.layoutVersion !== undefined && !integer(s.layoutVersion, 0, config.layoutVersion)) throw new Error('Invalid map layout');
   if (s.rarityVersion !== undefined && s.rarityVersion !== rarityVersion) throw new Error('Unsupported rarity version');
@@ -83,6 +89,9 @@ export function validateSave(value: unknown): SaveData {
   if (source.version < 6 && (s.chestState !== undefined || s.chestRevenue !== undefined || s.chestClaims !== undefined)) throw new Error('Unexpected legacy chest data');
   s.chestRevenue ??= 0; s.chestClaims ??= [0, 0, 0, 0];
   validateChestLedger(s.chestState, s.chestClaims, s.chestRevenue, remaining, total);
+  if(source.version<8 && (s.meta!==undefined||s.buffs!==undefined||s.gems!==undefined))throw new Error('Unexpected legacy meta');
+  if(source.version===8 && (!s.meta||!s.buffs||!s.gems))throw new Error('Missing meta state');
+  validateMeta(s.meta,s.buffs,s.gems);
   const capacity = config.capacity + s.levels.capacity * upgrades.capacity.step;
   const discoveryCoins = s.discoveryCoins ?? 0;
   if (!integer(discoveryCoins, 0, (total - remaining) * maxDiscoveryBonus * 2)) throw new Error('Invalid discovery ledger');
@@ -94,7 +103,7 @@ export function validateSave(value: unknown): SaveData {
   if (!integer(s.eventRevenue, 0, Number.MAX_SAFE_INTEGER) || !integer(s.eventRemainder, 0, 99) || (source.version < 5 && (s.eventRevenue || s.eventRemainder || s.saleEvent !== undefined))) throw new Error('Invalid event ledger');
   if (s.saleEvent !== undefined) {
     const event = s.saleEvent;
-    if (!event || !Number.isFinite(event.wait) || !Number.isFinite(event.remaining) || event.wait < 0 || event.wait > saleEvent.maxWait || event.remaining < 0 || event.remaining > saleEvent.duration || (event.remaining > 0 && event.wait !== 0)) throw new Error('Invalid sale event');
+    if (!event || !Number.isFinite(event.wait) || !Number.isFinite(event.remaining) || event.wait < 0 || event.wait > saleEvent.maxWait || event.remaining < 0 || event.remaining > saleEvent.duration * (s.buffs?.gold ? 2 : 1) || (event.remaining > 0 && event.wait !== 0)) throw new Error('Invalid sale event');
   }
   s.pigPortionLevel ??= 0; s.pigSpeedLevel ??= 0; s.saleRemainder ??= 0;
   if (!integer(s.pigPortionLevel, 0, pigUpgrades.maxLevel) || !integer(s.pigSpeedLevel, 0, pigUpgrades.maxLevel) || (!s.pigCount && (s.pigPortionLevel || s.pigSpeedLevel)) || !integer(s.saleRemainder, 0, source.version < 4 ? 9 : 99)) throw new Error('Invalid helper upgrades');
@@ -150,12 +159,17 @@ export function validateSave(value: unknown): SaveData {
   if (legacy) spent += cost(legacy, true) - cost(legacy, false, true);
   for (let level = 0; level < s.pigPortionLevel; level++) spent += (level < (baseline?.pigPortionLevel ?? 0) ? previousPigUpgradePrice : pigUpgradePrice)('portion', level);
   for (let level = 0; level < s.pigSpeedLevel; level++) spent += (level < (baseline?.pigSpeedLevel ?? 0) ? previousPigUpgradePrice : pigUpgradePrice)('speed', level);
+  const startTool=s.buffs?.tool??0, startPig=s.buffs?.friends?1:0;
+  if(startTool>s.levels.tools||startPig>s.pigCount)throw new Error('Missing starting items');
+  for(let level=0;level<startTool;level++)spent-=upgradePrice('tools',level);
+  for(let pig=0;pig<startPig;pig++)spent-=pigBalance.prices[pig];
   const income = s.saleRevenue + discoveryCoins + s.eventRevenue + s.chestRevenue;
   if (!Number.isSafeInteger(income) || !Number.isSafeInteger(s.coins + spent) || s.coins + spent !== income) throw new Error('Unbalanced economy');
   if (!Array.isArray(s.position) || s.position.length !== 2 || s.position.some(v => !Number.isFinite(v) || Math.abs(v) > config.worldHalfSize)) throw new Error('Invalid position');
   if (!Number.isFinite(s.yaw) || !Number.isFinite(s.pitch) || Math.abs(s.pitch) > 1.25 || typeof s.won !== 'boolean' || (s.won && remaining > 0)) throw new Error('Invalid camera/progress');
   if (source.version < 7 && s.run !== undefined) throw new Error('Unexpected legacy run');
   validateRun(s.run, s.won);
+  if(s.buffs && ['legs','luck','gold','friends','tool'].some(k=>(s.run?.buffs?.[k as keyof MetaBuffs]??(k==='tool'?0:false))!==s.buffs![k as keyof MetaBuffs]))throw new Error('Run buffs mismatch');
   return s;
 }
 export class SaveSystem {

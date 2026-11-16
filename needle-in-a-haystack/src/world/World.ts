@@ -1,3 +1,6 @@
+import { Well } from './Well';
+import { Diamonds } from './Diamonds';
+import type { GemState } from '../systems/MetaProgress';
 import { NoticeBoard } from './NoticeBoard';
 ﻿import * as THREE from 'three';
 import { Haystack } from './Haystack';
@@ -13,7 +16,7 @@ import { disposeTree } from '../core/dispose';
 import { presentation } from '../config/presentation';
 import { RewardChest } from './RewardChest';
 import type { ActiveChest } from '../systems/ChestEvent';
-export type Target = 'ground' | 'hay' | 'cart' | 'needle' | 'chest' | 'records' | BarnTarget;
+export type Target = 'ground' | 'hay' | 'cart' | 'needle' | 'chest' | 'records' | 'well' | 'diamond' | BarnTarget;
 export class World {
   readonly scene = new THREE.Scene();
   readonly pickables: THREE.Object3D[] = [];
@@ -37,6 +40,13 @@ export class World {
   private latestEconomy?: EconomySystem;
   private optionalTimer?: ReturnType<typeof setTimeout>;
   private chest?: RewardChest;
+  private diamonds?: Diamonds;
+  private gemSource = (id:number,out:THREE.Vector3) => this.hay.strawPosition(id,out);
+  updateDiamonds(state:GemState) { if(!this.diamonds){this.diamonds=new Diamonds();this.scene.add(this.diamonds.group);this.pickables.push(this.diamonds.hitbox);}this.diamonds.update(state,this.gemSource); }
+  diamondPosition(index:number) { return this.diamonds?.position(index); }
+  diamondId(slot:number) { return this.diamonds?.idAt(slot); }
+  hasStraw(id:number) { return this.hay.idAt(0) !== undefined && this.hay.strawPosition(id,this.tempGem); }
+  private tempGem=new THREE.Vector3();
   private pigs = new PigHerd(this.toolAssets);
   private pigSurface = (x: number, z: number) => this.surfaceHeight(x, z);
   private pigFeed = (point: THREE.Vector2) => this.hay.feedingPoint(point);
@@ -143,6 +153,7 @@ export class World {
     this.modelRequested = true;
     this.optionalTimer = setTimeout(() => {
       if (this.disposed) return;
+      const well = new Well(); this.scene.add(well.group); this.pickables.push(well.hitbox);
       const board = new NoticeBoard(); this.scene.add(board.group); this.pickables.push(board.hitbox);
       this.barn = new Barn(this.toolAssets); this.scene.add(this.barn.group); this.pickables.push(...this.barn.pickables);
       if (this.latestEconomy) this.barn.update(this.latestEconomy);

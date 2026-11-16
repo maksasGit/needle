@@ -6,12 +6,12 @@ export type ChestState = { wait: number; sequence: number; randomState: number; 
 /** At most one chest. All time is active game time; snapshots include RNG and lifetime. */
 export class ChestEvent {
   private state: ChestState;
-  constructor(saved?: ChestState) {
+  constructor(saved?: ChestState, private waitMultiplier = 1) {
     if (saved) this.state = { ...saved, active: saved.active ? { ...saved.active } : undefined };
     else { this.state = { wait: 0, sequence: 0, randomState: Math.floor(Math.random() * 4294967296) }; this.state.wait = this.nextWait(); }
   }
   private random() { this.state.randomState = (Math.imul(this.state.randomState, 1664525) + 1013904223) >>> 0; return this.state.randomState / 4294967296; }
-  private nextWait() { return chestBalance.minWait + this.random() * (chestBalance.maxWait - chestBalance.minWait); }
+  private nextWait() { return (chestBalance.minWait + this.random() * (chestBalance.maxWait - chestBalance.minWait)) * this.waitMultiplier; }
   get active(): Readonly<ActiveChest> | undefined { return this.state.active; }
   update(dt: number, remaining: number, total: number, canSpawn: (index: number) => boolean): 'spawn' | 'expire' | undefined {
     if (this.state.active) {

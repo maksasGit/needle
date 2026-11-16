@@ -1,4 +1,5 @@
-﻿import * as THREE from 'three';
+import { diamondIndex } from '../config/meta';
+import * as THREE from 'three';
 import { config } from '../config/balance';
 import { createStrawGeometry } from './strawGeometry';
 import { decodeHay } from '../systems/SaveSystem';
@@ -216,7 +217,9 @@ export class Haystack {
       this.outlineBack.rotation.copy(this.highlighted.rotation);
     }
   }
+  strawPosition(id: number, out: THREE.Vector3) { const straw=this.byId.get(id); if(!straw)return false; out.copy(straw.position).add(this.group.position); return true; }
   remove(amount: number, worldPoint: THREE.Vector3, receiver: THREE.Vector3, selectedId?: number, discoveryMultiplier = 1) {
+    const diamonds: number[] = [];
     let bonus = 0, rareCount = 0, highest = strawRarity();
     const local = worldPoint.clone().sub(this.group.position);
     const end = receiver.clone().sub(this.group.position); end.y = receiver.y || 0.8;
@@ -231,6 +234,7 @@ export class Haystack {
       });
       // Keep a stable identity across dense instance-slot swaps and settling.
       const removed = (n === 0 && selectedId !== undefined ? this.byId.get(selectedId) : undefined) ?? this.columns[selected].pieces.at(-1)!;
+      const gem = diamondIndex(removed.id); if (gem >= 0) diamonds.push(gem);
       const rarity = strawRarity(removed.id);
       if (rarity.bonus) { bonus += Math.ceil(rarity.bonus * discoveryMultiplier); rareCount++; if (rarity.bonus > highest.bonus) highest = rarity; }
       selected = removed.column;
@@ -268,7 +272,7 @@ export class Haystack {
     this.mesh.count = this.count;
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
-    return { bonus, rareCount, highest };
+    return { bonus, rareCount, highest, diamonds };
   }
   update(dt: number) {
     dt = Math.min(Math.max(dt, 0), 0.05);

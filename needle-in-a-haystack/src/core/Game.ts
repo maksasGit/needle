@@ -1,3 +1,8 @@
+import { MetaProgress, freshGems } from '../systems/MetaProgress';
+import type { MetaProfile } from '../systems/MetaProgress';
+import { emptyBuffs, wellConfig } from '../config/meta';
+import type { MetaBuffs, MetaId } from '../config/meta';
+import { WellMenu } from '../ui/WellMenu';
 import { RunClock, RunRecords } from '../systems/RunRecords';
 import { Leaderboard } from '../ui/Leaderboard';
 import { recordsConfig } from '../config/records';
@@ -33,14 +38,14 @@ import { ChestEvent } from '../systems/ChestEvent';
 import { chestBalance } from '../config/chests';
 import { ChestTimer } from '../ui/ChestTimer';
 
-type Options = { audio?: AudioManager; settings?: Settings; onReady?: () => void; onWin?: () => void; onError?: (message: string) => void };
+type Options = { newGame?: boolean; retainedMeta?: MetaProfile; audio?: AudioManager; settings?: Settings; onReady?: () => void; onWin?: () => void; onError?: (message: string) => void };
 export class Game {
   private renderer!: THREE.WebGLRenderer;
   private world = new World();
   private player = new Player();
   private camera = new CameraController();
   private economy = new EconomySystem();
-  private movement = new MovementSystem([config.cart, recordsConfig, ...barnWalls]);
+  private movement = new MovementSystem([config.cart, recordsConfig, wellConfig, ...barnWalls]);
   private locomotion = new Locomotion();
   private destination: 'ground' | 'hay' | 'cart' | 'needle' = 'ground';
   private collectionTimer = 0;
@@ -59,6 +64,12 @@ export class Game {
   private barnCard?: BarnCard;
   private guide = new Onboarding();
   private saleEvent = new SaleEvent();
+  private meta = new MetaProgress();
+  private buffs:MetaBuffs=emptyBuffs();
+  private gems=freshGems();
+  private gemAge=0;
+  private wellMenu?:WellMenu;
+  private lastMetaPurchaseAt=-Infinity;
   private run = new RunClock();
   private records = new RunRecords();
   private leaderboard?: Leaderboard;
@@ -116,14 +127,22 @@ export class Game {
       const feedbackHost = document.querySelector<HTMLElement>('#action-feedback');
       if (feedbackHost) { this.feedback = new FloatingFeedback(feedbackHost); this.feedback.reducedMotion = !!options.settings?.reducedMotion; }
       this.world.reducedMotion = this.viewModel.reducedMotion = !!options.settings?.reducedMotion;
-      const saved = this.saveSystem!.read();
+      const source = this.saveSystem!.read();
+      this.meta=new MetaProgress(options.retainedMeta ?? source?.meta);
+      const saved=options.newGame?undefined:source;
+      this.buffs=saved ? {...(saved.buffs??emptyBuffs())} : {...this.meta.profile.bought};
+      this.economy.metaMovement=this.buffs.legs?1.5:1;
+      this.saleEvent=new SaleEvent(saved?.saleEvent,this.buffs.gold?2:1);
+      this.chests=new ChestEvent(saved?.chestState,this.buffs.luck ? 0.5 : 1);
+      if(!saved){this.economy.levels.tools=this.economy.activeTool=this.buffs.tool;this.economy.pigCount=this.buffs.friends?1:0;this.run.state.buffs={...this.buffs};}
+      this.player.movementSpeed=this.economy.movementSpeed;
       if (saved) {
         try {
           const remaining = decodeHay(saved.hay).length / 8;
           const sourceTotal = saved.totalHay ?? 10000;
           const restoredRemaining = this.world.restore(saved.hay, sourceTotal - remaining - saved.inventory - (saved.pigEaten ?? 0), saved.won, saved.hayContactScale ?? 1, sourceTotal, saved.hayProfile ?? 0);
           this.runTotal = saved.won ? sourceTotal : config.totalHay;
-          this.dirty = saved.version !== 7 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
+          this.dirty = saved.version !== 8 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
           Object.assign(this.economy.levels, saved.levels);
           this.economy.remaining = restoredRemaining; this.economy.inventory = saved.inventory; this.economy.coins = saved.coins;
           this.economy.discoveryCoins = saved.discoveryCoins ?? 0;
@@ -131,10 +150,10 @@ export class Game {
           this.economy.pigPortionLevel = saved.pigPortionLevel ?? 0; this.economy.pigSpeedLevel = saved.pigSpeedLevel ?? 0;
           this.economy.saleRemainder = saved.saleRemainder ?? 0; this.economy.legacyProgress = saved.legacyProgress; this.economy.priceBaseline = saved.priceBaseline;
           this.economy.eventRevenue = saved.eventRevenue ?? 0; this.economy.eventRemainder = saved.eventRemainder ?? 0;
-          this.saleEvent = new SaleEvent(saved.saleEvent);
+          this.saleEvent = new SaleEvent(saved.saleEvent,this.buffs.gold?2:1);
           this.economy.chestRevenue = saved.chestRevenue ?? 0;
           for (let i = 0; i < this.economy.chestClaims.length; i++) this.economy.chestClaims[i] = saved.chestClaims?.[i] ?? 0;
-          this.chests = new ChestEvent(saved.chestState);
+          this.chests = new ChestEvent(saved.chestState,this.buffs.luck ? 0.5 : 1);
           this.run = new RunClock(saved.run, false);
           if (!saved.run && saved.won) this.run.finish();
           this.economy.pigCount = saved.pigCount ?? 0; this.economy.pigEaten = saved.pigEaten ?? 0;
@@ -146,7 +165,7 @@ export class Game {
           this.player.group.position.set(saved.position[0], 0, saved.position[1]);
           this.player.movementSpeed = this.economy.movementSpeed;
           this.camera.yaw = saved.yaw; this.camera.pitch = saved.pitch; this.won = saved.won;
-          if (!restoredRemaining) this.movement = new MovementSystem([config.cart, recordsConfig, ...barnWalls]);
+          if (!restoredRemaining) this.movement = new MovementSystem([config.cart, recordsConfig, wellConfig, ...barnWalls]);
           if (saved.layoutVersion !== config.layoutVersion || !this.movement.walkable(this.player.position)) {
             this.player.group.position.set(config.playerSpawn.x, 0, config.playerSpawn.z);
             this.camera.yaw = -Math.atan2(config.hay.x - config.playerSpawn.x, config.playerSpawn.z - config.hay.z);
@@ -155,6 +174,8 @@ export class Game {
           }
         } catch { this.saveSystem!.invalid = true; }
       }
+      this.gems=saved?.gems ? {claimed:saved.gems.claimed,drops:saved.gems.drops.map(p=>p?[...p] as [number,number,number]:null)} : freshGems();
+      if(saved&&!saved.gems)for(let i=0;i<20;i++)if(!this.world.hasStraw(500+i*1000))this.gems.claimed|=1<<i;
       if (this.won) this.records.record(this.run.state);
       this.syncChest();
       this.telemetry = new EconomyTelemetry(this.economy.remaining, !!options.settings?.economyTelemetry, !!saved);
@@ -244,6 +265,7 @@ export class Game {
           this.saveNow();
         }
         this.world.updatePigs(dt, this.economy.pigCount, this.onPigEat, this.economy.pigIntervalMultiplier, this.options.settings?.economyTelemetry ? this.measurePig : undefined); this.world.updateHay(dt);
+        this.gemAge+=dt;if(this.gemAge>=.1){this.gemAge=0;this.world.updateDiamonds(this.gems);}
         this.player.group.position.y = this.locomotion.height;
         this.options.audio?.setWalking(this.locomotion.grounded && this.stepSoundStart.distanceToSquared(this.player.position) > .000001, this.economy.movementSpeed / config.movementSpeed);
         this.viewModel?.update(dt, this.collectionTimer, this.collectionDuration || this.economy.collectionSeconds);
@@ -265,7 +287,8 @@ export class Game {
         this.metrics.initialTransferBytes = performance.getEntriesByType('resource').reduce((sum, item) => sum + (item as PerformanceResourceTiming).transferSize, 0);
         this.run.setRunning(!this.paused);
         this.options.onReady?.();
-        this.world.loadNoncriticalAssets();
+        this.world.loadNoncriticalAssets();this.world.updateDiamonds(this.gems);
+        if(this.options.newGame){this.dirty=true;this.saveNow();}
       }
       this.frameTotal += elapsed; this.frameSamples++;
       if (this.frameSamples >= 60) {
@@ -318,7 +341,7 @@ export class Game {
     const focusedDialog = document.activeElement?.closest<HTMLDialogElement>('dialog[open]');
     const dialog = focusedDialog ?? Array.from(document.querySelectorAll<HTMLDialogElement>('dialog[open]')).at(-1);
     if (dialog) {
-      let node = dialog.querySelector<HTMLElement>('[data-barn-feedback], [data-book-feedback], [data-denial-feedback]');
+      let node = dialog.querySelector<HTMLElement>('[data-barn-feedback], [data-book-feedback], [data-well-feedback], [data-denial-feedback]');
       if (!node) { node = document.createElement('p'); node.dataset.denialFeedback = ''; node.setAttribute('role', 'status'); dialog.append(node); }
       node.dataset.feedbackState = 'error'; node.textContent = text;
     } else this.feedback?.notice(text);
@@ -388,6 +411,16 @@ export class Game {
   private command(target: Target, point: THREE.Vector3, instanceId?: number) {
     if (this.paused) return;
     if (target === 'ground') return;
+    if(target==='well'){
+      if(this.player.group.position.y>1.5||Math.hypot(this.player.position.x-wellConfig.x,this.player.position.y-wellConfig.z)>wellConfig.reach){this.reject(t('denyFar'));return;}
+      this.collectionTimer=0;this.input?.reset();this.run.setRunning(false);this.wellMenu??=new WellMenu(this.meta,id=>this.purchaseMeta(id));this.wellMenu.show();return;
+    }
+    if(target==='diamond'){
+      if(instanceId===undefined||!Number.isInteger(instanceId)||instanceId<0||instanceId>=20)return;
+      const index=this.world.diamondId(instanceId);if(index===undefined)return;
+      const pos=this.world.diamondPosition(index);if(!pos||this.player.group.position.distanceTo(pos)>2.5){this.reject(t('denyFar'));return;}
+      this.awardGem(index);return;
+    }
     if (target === 'records') {
       if (this.player.group.position.y > recordsConfig.maxHeight || Math.hypot(this.player.position.x-recordsConfig.x,this.player.position.y-recordsConfig.z) > recordsConfig.reach) { this.reject(t('denyFar')); return; }
       this.collectionTimer=0; this.input?.reset(); this.run.setRunning(false);
@@ -452,6 +485,7 @@ export class Game {
         const receiver = this.viewModel ? this.viewModel.releasePoint(this.camera.camera) : this.player.group.position;
         const discovery = this.world.collectHay(amount, this.harvestPoint, receiver, this.harvestId, this.economy.discoveryMultiplier);
         this.feedback?.show('hay', amount);
+        for(const gem of discovery.diamonds)this.awardGem(gem,false);
         const discoveryBonus = discovery?.bonus ?? 0;
         this.telemetry?.collect(this.economy.activeTool, amount, discoveryBonus);
         if (discoveryBonus) this.economy.creditDiscovery(discoveryBonus);
@@ -460,8 +494,9 @@ export class Game {
         if (amount > 0 && this.economy.inventory === this.economy.capacity) { this.hud?.pulse('full'); this.feedback?.notice(t('sellHayHint')); }
         this.message(this.economy.remaining === 0 ? 'discovered' : this.economy.inventory === this.economy.capacity ? 'collectedFull' : 'collected', { n: amount });
         if (discovery?.bonus) this.message('rareFound', { amount, n: discoveryBonus, rarity: `${discovery.highest.badge} ${t(discovery.highest.id)}` });
-        if (this.economy.remaining === 0) this.movement = new MovementSystem([config.cart, recordsConfig, ...barnWalls]);
+        if (this.economy.remaining === 0) this.movement = new MovementSystem([config.cart, recordsConfig, wellConfig, ...barnWalls]);
         this.dirty = true; this.refreshHUD();
+        if(discovery.diamonds.length)this.saveNow();
       }
     }
     this.player.update(dt);
@@ -470,12 +505,27 @@ export class Game {
     if (!this.economy.remaining) return;
     const payout = this.economy.feedPig(this.economy.pigPortion(index));
     const discovery = this.world.collectHay(payout.amount, point, mouth);
+    for(const gem of discovery.diamonds)if(!(this.gems.claimed&(1<<gem)))this.gems.drops[gem]=[point.x,.18,point.z];
     this.telemetry?.pig(payout.amount, payout.earned, discovery.bonus);
     if (discovery.bonus) this.economy.creditDiscovery(discovery.bonus);
     this.feedback?.show('coins', payout.earned + discovery.bonus);
     if (!this.economy.remaining) this.message('discovered');
     this.dirty = true; this.refreshHUD();
+    if(discovery.diamonds.length){this.world.updateDiamonds(this.gems);this.saveNow();}
   };
+  private awardGem(index:number,persist=true){
+    if(this.gems.claimed&(1<<index))return;
+    if(!this.meta.award())return;this.gems.claimed|=1<<index;this.gems.drops[index]=null;
+    this.feedback?.notice(t('diamondFound'));this.options.audio?.effect('sell');this.dirty=true;this.refreshHUD();
+    if(persist){this.world.updateDiamonds(this.gems);this.saveNow();}
+  }
+  private purchaseMeta(id:MetaId){
+    if(performance.now()-this.lastMetaPurchaseAt<presentation.purchaseGuardMs)return;
+    const price=this.meta.price(id);if(price===null){this.reject(t('denyMax'));return;}
+    if(price>this.meta.diamonds){this.reject(t('metaMissing',{n:price-this.meta.diamonds}));return;}
+    if(!this.meta.buy(id))return;this.lastMetaPurchaseAt=performance.now();this.dirty=true;this.saveNow();this.options.audio?.effect('sell');this.wellMenu?.render();this.wellMenu?.feedback(t('metaNextRun'));this.refreshHUD();
+  }
+  metaSnapshot(){return this.meta.snapshot();}
   private buy(action: ShopAction) {
     let success = false;
     const before = this.economy.coins;
@@ -493,6 +543,7 @@ export class Game {
     this.refreshHUD(); this.saveNow(); return true;
   }
   private refreshHUD() {
+    const diamonds=document.querySelector('#diamonds');if(diamonds)diamonds.textContent=String(this.meta.diamonds);
     this.hud?.set(this.economy.coins, this.economy.inventory, this.economy.capacity, this.economy.remaining, this.runTotal);
     this.player.setInventory(this.economy.inventory, this.economy.capacity);
     this.viewModel?.setInventory(this.economy.inventory, this.economy.activeTool); this.world.updateBarn(this.economy); this.shop?.render(); this.updateAimLabel();
@@ -506,13 +557,15 @@ export class Game {
     if (!this.saveSystem || this.disposed) return;
     if (!this.paused && this.metrics.readyMs) this.dirty = true;
     if (!this.dirty) return;
-    const data = { version: 7 as const, run: this.run.snapshot(), chestRevenue: this.economy.chestRevenue, chestClaims: [...this.economy.chestClaims], chestState: this.chests.snapshot(), eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
+    const data = { version: 8 as const, meta:this.meta.snapshot(),buffs:{...this.buffs},gems:{claimed:this.gems.claimed,drops:this.gems.drops.map(p=>p?[...p] as [number,number,number]:null)}, run: this.run.snapshot(), chestRevenue: this.economy.chestRevenue, chestClaims: [...this.economy.chestClaims], chestState: this.chests.snapshot(), eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
     if (this.saveSystem.write(data)) this.dirty = false;
     this.updateSaveNotice();
   }
   private updateAimLabel() {
     const node = document.querySelector('#aim-label');
+    if(node&&this.aimTarget==='well'){node.textContent=t('well');return;}
+    if(node&&this.aimTarget==='diamond'){node.textContent=t('diamonds');return;}
     if (node && this.aimTarget === 'records') { node.textContent=t('recordsAim'); return; }
     if (node && this.aimTarget === 'chest') { node.textContent = this.chests.active ? t('chestAim', { n: chestBalance.rewards[this.chests.active.stage] }) : ''; return; }
     if (node && this.aimTarget && isBarnTarget(this.aimTarget)) {
@@ -526,7 +579,7 @@ export class Game {
   refreshLanguage() {
     this.refreshHUD();
     this.refreshEvent();
-    this.leaderboard?.render();
+    this.leaderboard?.render();this.wellMenu?.render();
     if (this.statusKey === 'bought' && this.lastBought) this.statusVars.effect = this.economy.effect(this.lastBought);
     this.status.textContent = t(this.statusKey, this.statusVars); this.updateSaveNotice(); this.updateAimLabel();
     this.renderer.domElement.setAttribute('aria-label', t('world'));
@@ -543,7 +596,7 @@ export class Game {
     this.options.audio?.stopEffects();
     this.telemetry?.dispose();
     this.disposed = true; this.controller.abort(); this.resizeObserver?.disconnect(); this.observer?.disconnect();
-    this.input?.dispose(); this.shop?.dispose(); this.barnCard?.dispose(); this.leaderboard?.dispose(); this.chestTimer?.dispose(); this.guide.dispose(); this.hud?.dispose(); this.renderer?.setAnimationLoop(null);
+    this.input?.dispose(); this.shop?.dispose(); this.barnCard?.dispose(); this.leaderboard?.dispose(); this.wellMenu?.dispose(); this.chestTimer?.dispose(); this.guide.dispose(); this.hud?.dispose(); this.renderer?.setAnimationLoop(null);
     this.world.dispose(); this.viewModel?.dispose(); this.feedback?.dispose(); disposeTree(this.player.group);
     this.renderer?.renderLists.dispose(); this.renderer?.forceContextLoss(); this.renderer?.dispose(); this.renderer?.domElement.remove();
   }

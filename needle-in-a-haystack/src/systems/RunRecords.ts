@@ -1,7 +1,9 @@
+import type { MetaBuffs } from '../config/meta';
+import { validBuffs } from './MetaProgress';
 import { recordsConfig } from '../config/records';
 
-export type RunState = { id: string; activeMs: number; eligible: boolean; finished: boolean; rules: string };
-type PersonalRecord = { id: string; activeMs: number; rules: string };
+export type RunState = { id: string; activeMs: number; eligible: boolean; finished: boolean; buffs?: MetaBuffs; rules: string };
+type PersonalRecord = { id: string; activeMs: number; buffs?: MetaBuffs; rules: string };
 const KEY = 'needle.records.v1';
 let memory: PersonalRecord[] = [];
 const validId = (id: unknown): id is string => typeof id === 'string' && /^[a-zA-Z0-9-]{1,80}$/.test(id);
@@ -9,7 +11,7 @@ const validTime = (ms: unknown): ms is number => typeof ms === 'number' && Numbe
 export function validateRun(value: unknown, won: boolean): asserts value is RunState | undefined {
   if (value === undefined) return;
   const run = value as RunState;
-  if (!run || typeof run !== 'object' || !validId(run.id) || !validTime(run.activeMs) || typeof run.eligible !== 'boolean' || run.finished !== won || run.rules !== recordsConfig.rules) throw new Error('Invalid run timer');
+  if (!run || typeof run !== 'object' || !validId(run.id) || !validTime(run.activeMs) || typeof run.eligible !== 'boolean' || run.finished !== won || run.rules !== recordsConfig.rules || (run.buffs!==undefined&&!validBuffs(run.buffs))) throw new Error('Invalid run timer');
 }
 /** Active wall time, independent of capped physics delta. Settle at every lifecycle boundary. */
 export class RunClock {
@@ -31,14 +33,14 @@ export class RunRecords {
       const raw = localStorage.getItem(KEY);
       if (raw && raw.length <= 8192) {
         const data: unknown = JSON.parse(raw);
-        if (Array.isArray(data) && data.length <= recordsConfig.limit && data.every(r => r && validId(r.id) && validTime(r.activeMs) && r.activeMs > 0 && r.rules === recordsConfig.rules) && new Set(data.map(r => r.id)).size === data.length) memory = data;
+        if (Array.isArray(data) && data.length <= recordsConfig.limit && data.every(r => r && validId(r.id) && validTime(r.activeMs) && r.activeMs > 0 && (r.rules === recordsConfig.rules) && (r.buffs===undefined||validBuffs(r.buffs))) && new Set(data.map(r => r.id)).size === data.length) memory = data;
       }
     } catch { this.available = false; }
   }
-  list() { return memory.filter(r => r.rules === recordsConfig.rules).sort((a,b) => a.activeMs - b.activeMs || a.id.localeCompare(b.id)).slice(0, recordsConfig.limit).map(r => ({ ...r })); }
+  list() { return memory.filter(r => (r.rules === recordsConfig.rules) && (r.buffs===undefined||validBuffs(r.buffs))).sort((a,b) => a.activeMs - b.activeMs || a.id.localeCompare(b.id)).slice(0, recordsConfig.limit).map(r => ({ ...r })); }
   record(run: RunState) {
     if (!run.eligible || !run.finished || run.activeMs <= 0 || run.rules !== recordsConfig.rules) return;
-    const result = { id: run.id, activeMs: Math.round(run.activeMs), rules: run.rules };
+    const result = { id: run.id, activeMs: Math.round(run.activeMs), buffs:run.buffs?{...run.buffs}:undefined, rules: run.rules };
     memory = [...this.list().filter(r => r.id !== run.id), result].sort((a,b) => a.activeMs - b.activeMs || a.id.localeCompare(b.id)).slice(0, recordsConfig.limit);
     try { localStorage.setItem(KEY, JSON.stringify(memory)); this.available = true; } catch { this.available = false; }
   }
