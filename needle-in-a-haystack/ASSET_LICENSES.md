@@ -49,3 +49,7 @@ src/ui/icons.ts contains original code-authored inline SVG paths shared by HUD, 
 ### Layered mountain skyline (2026-11-16)
 
 The existing rounded primitive is reused for 24 overlapping foothills and 18 distant mountains with deterministic height/scale variation and a second green material. This replaces four isolated hills; no external model, texture or image was imported. Models remain outside gameplay and do not affect picking/collision. Visual/device acceptance remains pending.
+
+### Economy candidates and metrics (2026-11-16)
+
+No new audio/visual asset, external analytics SDK or third-party dependency was added. Candidate prices, deterministic synthetic simulation results and code-authored local measurement controls use the existing project stack. Metrics are disabled by default and stay local unless the player deliberately downloads JSON. Reports committed to the repository contain synthetic model output, not collected player data.

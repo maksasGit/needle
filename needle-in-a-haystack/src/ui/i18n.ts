@@ -1,5 +1,7 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  metricsCopyHint: 'Замеры также доступны ниже: можно выделить и скопировать JSON, если встроенное окно не разрешает скачать файл.',
+  economyTelemetry: 'Локальные замеры экономики (добровольно)', economyTelemetryHint: 'Только этот сеанс на устройстве: время, покупки, поездки и свинки. Без имени и отправки в интернет.', exportEconomyMetrics: 'Скачать замеры JSON', resetEconomyMetrics: 'Сбросить замеры',
   buyEquip: 'Купить и взять', pigCardHint: 'Помогает убирать сено и приносит монеты. Порцию и скорость еды улучшай в книге.',
   loadingFarm: 'Готовим ферму…', replayGuide: 'Показать обучение снова',
   guideHay: 'Подойди к сену', guideCollect: 'Собери сено', guideCart: 'Отнеси сено к телеге', guideSell: 'Продай сено',
@@ -65,6 +67,8 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  metricsCopyHint: 'Measurements are also shown below. Select and copy the JSON if the embedded player cannot download files.',
+  economyTelemetry: 'Local economy measurements (opt in)', economyTelemetryHint: 'This session on your device only: timing, purchases, trips and pigs. No name or network upload.', exportEconomyMetrics: 'Download measurements JSON', resetEconomyMetrics: 'Reset measurements',
   buyEquip: 'Buy & equip', pigCardHint: 'Helps clear hay and earns coins. Upgrade bite size and eating speed in the book.',
   loadingFarm: 'Getting the farm ready…', replayGuide: 'Replay guidance',
   guideHay: 'Walk to the hay', guideCollect: 'Collect some hay', guideCart: 'Carry hay to the cart', guideSell: 'Sell your hay',

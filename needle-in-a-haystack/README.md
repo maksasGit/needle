@@ -191,3 +191,15 @@ No tests, typecheck/build, browser, screenshots or performance/device/hosting ch
 ### Economy reference and skyline
 
 Full current prices and per-level effects are in ../ECONOMY_CATALOG.md; regenerate with `node scripts/export-economy.mjs` (Node 22.13+) after balance changes. This command exports documentation only. The far landscape now uses 42 shared-geometry hills/mountains in two overlapping rings; larger distant peaks aim to hide the flat skyline. Manual visual acceptance is pending. No game build/tests/browser/screenshots were run for this refinement.
+
+## Experimental economy v2
+
+Read ../ECONOMY_BALANCE_V2.md and ../CODEX_ECONOMY_RULES.md before economy changes; decisions are tracked in ../OPEN_QUESTIONS.md. src/config/balance.v2.ts contains isolated proposal/revision-2 tables, not active production prices. Reproduce the numerical comparison with `node scripts/simulate-economy-v2.mjs` (Node 22.13+); `--search` evaluates the explicit price grid. Reports are ../ECONOMY_SIMULATION_V2.md and .json. Shared runtime math is in systems/economyMath.ts; the current price profile remains version 1 and current saves remain v5.
+
+Revision 2 fits roughly 45–54 active minutes on seven baseline strategies but optimized rake/fork paths run about 36–39; device/route assumptions have large effects. These are simulated, not measured. Production activation awaits owner approval of results; no price/cap migration has been applied. The owner requires old levels/effects to remain and pig AI to stay unchanged. Prestige is out of scope.
+
+Settings now offer optional local economy measurements, disabled by default, plus JSON download/reset. They contain durations, actions, purchases, loads, pig activity and revenue categories without identifiers or network upload. Only the current uninterrupted segment is recorded; reloaded/mid-session metrics cannot establish full first-cycle time. No playtest measurements were collected and no game tests/typecheck/build/browser/screenshots were run in this task.
+
+Дополнение: текущие эффекты инструмента вынесены из дублирующих UI-чисел в toolSpecs (прежние +10%/0,18 м/×0,9/0,35 м сохранены), экспорт каталога использует их же. Опытный профиль использует предложенные +15%/0,25 м только в модели. Действующий ECONOMY_CATALOG.md после повторного экспорта не изменился. Настройка замеров не изменяет игровой save v5; локальный отчёт имеет отдельный ключ.
+
+Выгрузка метрик также показывает JSON в readonly-поле для ручного выделения/копирования: sandbox встроенного игрового окна может запрещать download. Это не копирует данные автоматически в буфер и не отправляет их наружу; данные доступны только по кнопке владельца сеанса.

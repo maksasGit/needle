@@ -35,7 +35,7 @@ export type SaveData = {
   eventRemainder?: number;
   saleEvent?: SaleEventState;
 };
-export type Settings = { language: Language; reducedMotion: boolean; musicEnabled: boolean; musicVolume: number; effectsEnabled: boolean; effectsVolume: number };
+export type Settings = { language: Language; reducedMotion: boolean; musicEnabled: boolean; musicVolume: number; effectsEnabled: boolean; effectsVolume: number; economyTelemetry?: boolean };
 const MAX_BYTES = 500 * 1024;
 const integer = (v: unknown, min: number, max: number): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= min && v <= max;
 export function decodeHay(value: string): Int16Array {
@@ -171,6 +171,7 @@ export class SaveSystem {
         musicEnabled: typeof s?.musicEnabled === 'boolean' ? s.musicEnabled : true,
         musicVolume: typeof s?.musicVolume === 'number' && Number.isFinite(s.musicVolume) ? Math.max(0, Math.min(1, s.musicVolume)) : .25,
         effectsEnabled: typeof s?.effectsEnabled === 'boolean' ? s.effectsEnabled : true,
+        economyTelemetry: s?.economyTelemetry === true,
         effectsVolume: typeof s?.effectsVolume === 'number' && Number.isFinite(s.effectsVolume) ? Math.max(0, Math.min(1, s.effectsVolume)) : .6 };
     } catch { return { language: 'ru', reducedMotion: false, musicEnabled: true, musicVolume: .25, effectsEnabled: true, effectsVolume: .6 }; }
   }

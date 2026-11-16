@@ -55,3 +55,5 @@ export function previousUpgradePrice(id: UpgradeId, level: number): number {
 export function upgradePrice(id: UpgradeId, level: number) {
   return Math.max(1, Math.floor(previousUpgradePrice(id, level) * (id === "sale" ? 28 : 70) / 100));
 }
+/** Existing production profile. Candidate v2 is not active. */
+export const economyVersion = 1;

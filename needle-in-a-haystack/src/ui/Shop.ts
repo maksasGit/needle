@@ -51,10 +51,10 @@ export class Shop {
     }).join('');
   }
   private featureValue(tool: number, level: number) {
-    if (tool === 1) return `+${level * 10}% ${t('rareBonus')}`;
-    if (tool === 2) return `${(.25 + level * .18).toFixed(2)} ${t('rangeExtra')}`;
-    if (tool === 3) return `${Math.round((1 - .9 ** level) * 100)}% ${t('faster')}`;
-    return `${(1.8 + level * .35).toFixed(2)} ${t('rangeExtra')}`;
+    const spec = toolSpecs[tool - 1];
+    if (tool === 1) return `+${Math.round(level * spec.rareStep * 100)}% ${t('rareBonus')}`;
+    if (tool === 3) return `${Math.round((1 - spec.specialDuration ** level) * 100)}% ${t('faster')}`;
+    return `${(spec.rangeBase + level * spec.rangeStep).toFixed(2)} ${t('rangeExtra')}`;
   }
   private toolPage(tool: number) {
     if (tool < 1 || tool > this.economy.levels.tools) return this.characterPage();

@@ -59,10 +59,10 @@ table(['Уровень', 'Цена улучшения', 'Всего', 'Цена 
 add('## Каждый инструмент — две независимые ветки', '',
   'Объём и особенность покупаются раздельно для каждого инструмента; перенос уровней между инструментами отсутствует. Вместимость не растёт от прокачки объёма инструмента.', '');
 const specials = [
-  level => `+${level * 10}% к бонусу редкости (×${decimal(1 + level * .1)})`,
-  level => `+${decimal(.25 + level * .18)} м к дальности сбора`,
-  level => `время замаха ×${decimal(.9 ** level, 4)} (−${decimal((1 - .9 ** level) * 100, 2)}%)`,
-  level => `+${decimal(1.8 + level * .35)} м к дальности сбора`,
+  level => `+${Math.round(level * toolSpecs[0].rareStep * 100)}% к бонусу редкости (×${decimal(1 + level * toolSpecs[0].rareStep)})`,
+  level => `+${decimal(toolSpecs[1].rangeBase + level * toolSpecs[1].rangeStep)} м к дальности сбора`,
+  level => `время замаха ×${decimal(toolSpecs[2].specialDuration ** level, 4)} (−${decimal((1 - toolSpecs[2].specialDuration ** level) * 100, 2)}%)`,
+  level => `+${decimal(toolSpecs[3].rangeBase + level * toolSpecs[3].rangeStep)} м к дальности сбора`,
 ];
 for (let tool = 1; tool <= toolSpecs.length; tool++) {
   const spec = toolSpecs[tool - 1];

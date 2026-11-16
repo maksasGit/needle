@@ -6,6 +6,7 @@ import type { PigUpgrade } from '../config/progression';
 import type { LegacyProgress, PriceBaseline } from './SaveSystem';
 import type { ToolUpgrade, BarnTarget } from '../config/progression';
 import { barnItems } from '../config/progression';
+import { capacityAt, movementAt, durationAt, amountAt, saleHundredthsAt, payoutAt } from './economyMath';
 
 /** Collection is command-driven; only an actively held vacuum repeats commands. */
 export class EconomySystem {
@@ -27,10 +28,10 @@ export class EconomySystem {
   readonly toolVolumes = [0, 0, 0, 0];
   readonly toolSpecials = [0, 0, 0, 0];
   readonly levels: Record<UpgradeId, number> = { capacity: 0, movement: 0, collection: 0, tools: 0, sale: 0 };
-  get capacity() { return config.capacity + this.levels.capacity * upgrades.capacity.step; }
-  get movementSpeed() { return config.movementSpeed * (1 + this.levels.movement * upgrades.movement.step); }
-  get collectionSeconds() { return config.collectionSeconds * upgrades.collection.multiplier ** this.levels.collection * (toolSpecs[this.activeTool - 1]?.duration ?? 1) * (this.activeTool === 3 ? 0.9 ** this.toolSpecials[2] : 1); }
-  get collectionAmount() { return upgrades.tools.amounts[this.activeTool] + (this.activeTool ? this.toolVolumes[this.activeTool - 1] * toolSpecs[this.activeTool - 1].volumeStep : 0); }
+  get capacity() { return capacityAt(config.capacity, upgrades.capacity.step, this.levels.capacity); }
+  get movementSpeed() { return movementAt(config.movementSpeed, upgrades.movement.step, this.levels.movement); }
+  get collectionSeconds() { return durationAt(config.collectionSeconds, upgrades.collection.multiplier, this.levels.collection, toolSpecs[this.activeTool - 1]?.duration ?? 1, this.activeTool === 3 ? this.toolSpecials[2] : 0, toolSpecs[2].specialDuration); }
+  get collectionAmount() { return amountAt(upgrades.tools.amounts[this.activeTool], this.activeTool ? toolSpecs[this.activeTool - 1].volumeStep : 0, this.activeTool ? this.toolVolumes[this.activeTool - 1] : 0); }
   get toolName() { return toolName(this.activeTool); }
   get salePrice() { return config.salePrice * (1 + this.levels.sale * upgrades.sale.step); }
   pigPortion(index: number) { return pigBalance.portions[index] + this.pigPortionLevel * pigUpgrades.portionStep; }
@@ -44,8 +45,8 @@ export class EconomySystem {
     if (kind === 'portion') this.pigPortionLevel++; else this.pigSpeedLevel++;
     return true;
   }
-  get collectionReach() { return this.activeTool === 4 ? 1.8 + this.toolSpecials[3] * 0.35 : this.activeTool === 2 ? 0.25 + this.toolSpecials[1] * 0.18 : 0; }
-  get discoveryMultiplier() { return this.activeTool === 1 ? 1 + this.toolSpecials[0] * 0.1 : 1; }
+  get collectionReach() { const spec = toolSpecs[this.activeTool - 1]; return spec ? spec.rangeBase + this.toolSpecials[this.activeTool - 1] * spec.rangeStep : 0; }
+  get discoveryMultiplier() { return this.activeTool === 1 ? 1 + this.toolSpecials[0] * toolSpecs[0].rareStep : 1; }
   price(id: UpgradeId): number | null {
     const item = upgrades[id];
     return this.levels[id] >= item.maxLevel ? null : upgradePrice(id, this.levels[id]);
@@ -65,7 +66,7 @@ export class EconomySystem {
       case 'movement': return `${(config.movementSpeed * (1 + level * upgrades.movement.step)).toFixed(2)} ${t('speedUnit')}`;
       case 'collection': return `${(config.collectionSeconds * upgrades.collection.multiplier ** level).toFixed(2)} ${t('seconds')}`;
       case 'tools': return `${toolName(level)} · ${upgrades.tools.amounts[level]} ${t('perTap')}`;
-      case 'sale': return `×${(1 + level * upgrades.sale.step).toFixed(2)} (+${level * 25}%)`;
+      case 'sale': return `×${(1 + level * upgrades.sale.step).toFixed(2)} (+${Math.round(level * upgrades.sale.step * 100)}%)`;
     }
   }
 
@@ -80,8 +81,8 @@ export class EconomySystem {
     const earned = this.salePayout(this.inventory);
     let bonus = 0;
     if (multiplier === 2 && this.inventory > 0) {
-      const hundredths = this.inventory * (100 + this.levels.sale * 25) + this.eventRemainder;
-      bonus = Math.floor(hundredths / 100); this.eventRemainder = hundredths % 100;
+      const result = payoutAt(this.inventory * saleHundredthsAt(this.levels.sale), this.eventRemainder);
+      bonus = result.earned; this.eventRemainder = result.remainder;
       this.eventRevenue += bonus;
     }
     this.coins += earned + bonus;
@@ -91,9 +92,9 @@ export class EconomySystem {
   }
   private salePayout(amount: number) {
     // Integer hundredths retain fractional rewards across deliveries and pig bites.
-    const hundredths = amount * (100 + this.levels.sale * 25) + this.saleRemainder;
-    this.saleRemainder = hundredths % 100;
-    return Math.floor(hundredths / 100);
+    const result = payoutAt(amount * saleHundredthsAt(this.levels.sale), this.saleRemainder);
+    this.saleRemainder = result.remainder;
+    return result.earned;
   }
   creditDiscovery(bonus: number) {
     if (!Number.isSafeInteger(bonus) || bonus < 0) throw new Error('Invalid discovery reward');

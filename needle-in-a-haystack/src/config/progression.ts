@@ -1,8 +1,8 @@
 export const toolSpecs = [
-  { duration: 0.8, volumeStep: 1, volumePrice: 90, specialPrice: 180, special: 'rakeFeature' },
-  { duration: 0.95, volumeStep: 2, volumePrice: 300, specialPrice: 600, special: 'forkFeature' },
-  { duration: 1.2, volumeStep: 3, volumePrice: 1000, specialPrice: 2000, special: 'wideFeature' },
-  { duration: 0.9, volumeStep: 4, volumePrice: 3200, specialPrice: 6400, special: 'vacuumFeature' },
+  { duration: 0.8, volumeStep: 1, volumePrice: 90, specialPrice: 180, special: 'rakeFeature', rareStep: .1, rangeBase: 0, rangeStep: 0, specialDuration: 1 },
+  { duration: 0.95, volumeStep: 2, volumePrice: 300, specialPrice: 600, special: 'forkFeature', rareStep: 0, rangeBase: .25, rangeStep: .18, specialDuration: 1 },
+  { duration: 1.2, volumeStep: 3, volumePrice: 1000, specialPrice: 2000, special: 'wideFeature', rareStep: 0, rangeBase: 0, rangeStep: 0, specialDuration: .9 },
+  { duration: 0.9, volumeStep: 4, volumePrice: 3200, specialPrice: 6400, special: 'vacuumFeature', rareStep: 0, rangeBase: 1.8, rangeStep: .35, specialDuration: 1 },
 ] as const;
 export const toolUpgradeLimits = { volume: 12, special: 8 } as const;
 export type ToolUpgrade = keyof typeof toolUpgradeLimits;
