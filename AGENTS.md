@@ -797,3 +797,7 @@ If unanswered, create entries in `OPEN_QUESTIONS.md` for:
 - balance.v2.ts revision 2 and ECONOMY_SIMULATION_V2.md contain the revised prices, assumptions, 243 runs and counterexamples. The 45–60-minute goal is NOT proven: faster tool-investment paths and device/time assumptions materially change results. No artificial waiting was added to meet a target.
 - EconomyTelemetry is opt-in and local only, disabled by default, capped at 200 purchase/trip entries, no identifiers/network upload. It records a current session segment, not an automatically stitched complete cycle across reloads. Do not export or upload player measurements without their action/authorization.
 - Grandfather implementation is not yet active: future v2 migration must keep original step effects for historical rake/range levels and allow above-new-cap saves. Never clamp the getter/validator or shrink the carry buffer to the fresh-player cap while old players can carry more.
+
+## Architecture and documentation entry point
+
+Read [ARCHITECTURE.md](ARCHITECTURE.md) for the current module map, lifecycle, gameplay invariants, persistence, concise rules and documentation index. It is an overview, not a replacement for AGENTS.md, GAME_REQUIREMENTS.md or ART_DIRECTION.md. Update it alongside actual changes to module responsibilities, lifecycle, persistence/platform boundaries or document authority. Keep implemented, experimental, measured and pending states distinct; a documentation-only task does not activate the v2 candidate or authorize game tests/publishing.
