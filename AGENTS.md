@@ -669,3 +669,8 @@ The owner authorized all visual roadmap stages in one task. Current prototypes a
 - SaleEvent.ts: after tutorial, 180–300 active seconds between events, 45 seconds ×2 for player deliveries only, no countdown urgency/offline reward. Save v5 persists timer/eventRevenue/eventRemainder alongside all v4 ledgers and price baselines. Pigs and rare discovery coins are excluded from ×2. Keep the full spending/revenue invariant.
 - FarmDecor.ts is optional static instanced scenery, loaded after the first playable frame; barn display is also deferred and held tool models are created on demand. No new lights, colliders, raster textures or separate cart straws. Scenery motion remains disabled until authorized performance measurement.
 - No automated tests, typechecks/builds, browser runs or screenshots were performed for this implementation per the owner's standing instruction. Visual acceptance, mobile/startup/resource measurements and production hosting validation remain pending. Do not claim release readiness or turn open checkboxes into verified completion without actual review.
+
+### Каталог экономики — 2026-11-16
+
+- Поддерживать [ECONOMY_CATALOG.md](ECONOMY_CATALOG.md): все действующие покупки/уровни/эффекты, отдельно цена шага и накопленные расходы. После правки balance.ts/progression.ts/rarity.ts обновлять экспортом `node scripts/export-economy.mjs` из приложения (Node 22.13+). Это генератор документации, не разрешение запускать тесты/сборку.
+- В каталоге объяснять фактические ограничения: скорость еды свинок не меняет прогулку/поиск корма, уровни веток инструментов не переносятся между предметами, ×2 только для сдачи игроком. Не менять баланс молча при формировании таблиц.

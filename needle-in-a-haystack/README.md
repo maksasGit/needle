@@ -187,3 +187,7 @@ Implemented shared presentation settings, interrupted HUD counters, an eight-coi
 The owner retained one needle. A player-only ×2 delivery event starts after onboarding, waits 180–300 active seconds, runs for 45 seconds, pauses with gameplay and has no urgency countdown or offline rewards. Save v5 preserves v1–v4 progress and keeps eventRevenue/eventRemainder separate from base sales and rare rewards. Replay guidance in Help. Opt-in diagnostics includes startupMs, initialTransferBytes, tutorial completion and event state.
 
 No tests, typecheck/build, browser, screenshots or performance/device/hosting checks were run at the owner's request. Manual acceptance: HUD bursts/full bag/empty sale; barn purchase/equip/locked/max; book and focus; guide/replay; vacuum release and reduced motion; RU/EN and portrait/landscape; old-save reload and a ×2 sale without pig/rarity duplication. Production readiness is not verified. See GAME_REQUIREMENTS.md section 22 for the implementation matrix and remaining sound/motion work.
+
+### Economy reference and skyline
+
+Full current prices and per-level effects are in ../ECONOMY_CATALOG.md; regenerate with `node scripts/export-economy.mjs` (Node 22.13+) after balance changes. This command exports documentation only. The far landscape now uses 42 shared-geometry hills/mountains in two overlapping rings; larger distant peaks aim to hide the flat skyline. Manual visual acceptance is pending. No game build/tests/browser/screenshots were run for this refinement.

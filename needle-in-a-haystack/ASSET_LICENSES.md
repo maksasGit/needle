@@ -45,3 +45,7 @@ The earlier description of music as the only integrated audio is superseded by t
 ### Original presentation assets — 2026-11-16
 
 src/ui/icons.ts contains original code-authored inline SVG paths shared by HUD, book, item cards and guidance. HudFeedback, BarnCard and Onboarding use DOM/CSS/WAAPI without downloaded artwork or fonts. FarmDecor.ts creates original shared primitive crates, barrels, rocks, bushes, trees, distant hills, flowers and paths; BoxHelper selection and FirstPersonView reuse existing Three.js/project resources. No external texture, model, icon pack, sound recording, new dependency or generated raster image was imported. The user-authored cart and four action MP3s remain unchanged. Manual visual/audio/device acceptance is pending.
+
+### Layered mountain skyline (2026-11-16)
+
+The existing rounded primitive is reused for 24 overlapping foothills and 18 distant mountains with deterministic height/scale variation and a second green material. This replaces four isolated hills; no external model, texture or image was imported. Models remain outside gameplay and do not affect picking/collision. Visual/device acceptance remains pending.

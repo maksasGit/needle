@@ -26,7 +26,22 @@ export function createFarmDecor() {
   addInstances(new THREE.TorusGeometry(.32,.028,3,10).rotateX(Math.PI / 2), 0x516479, [[10,.55,-7,1,1,1],[10.8,.55,-7.2,1,1,1],[-10.2,.55,9.5,1,1,1]]);
   addInstances(rounded, 0x8d9c9a, [[-11,.18,-9,.5,.24,.4],[11,.2,7,.6,.28,.4],[-10,.16,2,.35,.2,.45],[4,.15,10,.4,.2,.35],[10,.14,2,.3,.18,.4]]);
   addInstances(rounded, 0x38a92e, [[-11,.45,-11,.9,.65,.8],[-11,.4,11,1.1,.55,.8],[11,.5,10,1.2,.7,.9],[-15,.7,-4,1.4,.9,1.2]]);
-  addInstances(rounded, 0x54b945, [[-24,-1,-24,11,4,8],[6,-1,-29,14,5,8],[27,-1,10,9,4,12],[-27,-1,12,8,3,9]]);
+  // Overlapping rings hide the flat skyline from every side of the farm.
+  // Shared 20-triangle primitive; deterministic variation needs no per-frame work.
+  const foothills: number[][] = [], mountains: number[][] = [];
+  for (let i = 0; i < 24; i++) {
+    const angle = i * Math.PI * 2 / 24, radius = 39 + Math.sin(i * 2.1) * 3;
+    foothills.push([Math.cos(angle) * radius, -3, Math.sin(angle) * radius,
+      14 + Math.sin(i * 1.7) * 2, 10 + Math.cos(i * 2.3) * 3, 13 + Math.cos(i * 1.3) * 2, angle + .3]);
+  }
+  for (let i = 0; i < 18; i++) {
+    const angle = (i + .4) * Math.PI * 2 / 18, radius = 58 + Math.cos(i * 1.9) * 4;
+    mountains.push([Math.cos(angle) * radius, -5, Math.sin(angle) * radius,
+      19 + Math.sin(i * 1.4) * 3, i % 5 === 0 ? 24 : 16 + Math.cos(i * 2.2) * 4,
+      17 + Math.cos(i * 1.6) * 3, angle]);
+  }
+  addInstances(rounded, 0x54b945, foothills).receiveShadow = false;
+  addInstances(rounded, 0x69b894, mountains).receiveShadow = false;
   addInstances(new THREE.CylinderGeometry(.13,.2,1.5,5), 0x86562f, [[-17,.4,-11],[-18,.4,8],[17,.4,4],[12,.4,-17]]);
   addInstances(rounded, 0x29994f, [[-17,2,-11,1.3,1.6,1.2],[-18,2,8,1.5,1.8,1.3],[17,2,4,1.3,1.6,1.2],[12,2,-17,1.6,1.8,1.3]]);
   addInstances(new THREE.IcosahedronGeometry(.1,0), 0xffd83d, [[-10,.12,-10],[-10.3,.13,-10.2],[10,.13,9],[10.3,.13,9.3],[3,.13,10.7]]);
