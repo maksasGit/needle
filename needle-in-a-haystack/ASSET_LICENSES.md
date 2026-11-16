@@ -57,3 +57,7 @@ No new audio/visual asset, external analytics SDK or third-party dependency was 
 ### TEAM-02 reward chest (2026-11-16)
 
 Original project procedural geometry/materials in src/world/RewardChest.ts. No external model, texture, image or sound added; pickup reuses the existing sell effect.
+
+### TEAM-03 notice board (2026-11-16)
+
+Original project procedural farm board in src/world/NoticeBoard.ts; no Witcher assets, textures, designs, sounds or branding copied. Fictional demo leaderboard names are local fixture data, not actual users.

@@ -1,3 +1,4 @@
+import { NoticeBoard } from './NoticeBoard';
 ﻿import * as THREE from 'three';
 import { Haystack } from './Haystack';
 import { config } from '../config/balance';
@@ -12,7 +13,7 @@ import { disposeTree } from '../core/dispose';
 import { presentation } from '../config/presentation';
 import { RewardChest } from './RewardChest';
 import type { ActiveChest } from '../systems/ChestEvent';
-export type Target = 'ground' | 'hay' | 'cart' | 'needle' | 'chest' | BarnTarget;
+export type Target = 'ground' | 'hay' | 'cart' | 'needle' | 'chest' | 'records' | BarnTarget;
 export class World {
   readonly scene = new THREE.Scene();
   readonly pickables: THREE.Object3D[] = [];
@@ -142,6 +143,7 @@ export class World {
     this.modelRequested = true;
     this.optionalTimer = setTimeout(() => {
       if (this.disposed) return;
+      const board = new NoticeBoard(); this.scene.add(board.group); this.pickables.push(board.hitbox);
       this.barn = new Barn(this.toolAssets); this.scene.add(this.barn.group); this.pickables.push(...this.barn.pickables);
       if (this.latestEconomy) this.barn.update(this.latestEconomy);
       this.barn.group.updateMatrixWorld(true); this.shadowDirty = true;

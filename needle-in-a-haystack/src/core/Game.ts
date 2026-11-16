@@ -1,4 +1,7 @@
-﻿import * as THREE from 'three';
+import { RunClock, RunRecords } from '../systems/RunRecords';
+import { Leaderboard } from '../ui/Leaderboard';
+import { recordsConfig } from '../config/records';
+import * as THREE from 'three';
 import { World } from '../world/World';
 import type { Target } from '../world/World';
 import { Player } from '../entities/Player';
@@ -37,7 +40,7 @@ export class Game {
   private player = new Player();
   private camera = new CameraController();
   private economy = new EconomySystem();
-  private movement = new MovementSystem([config.cart, ...barnWalls]);
+  private movement = new MovementSystem([config.cart, recordsConfig, ...barnWalls]);
   private locomotion = new Locomotion();
   private destination: 'ground' | 'hay' | 'cart' | 'needle' = 'ground';
   private collectionTimer = 0;
@@ -56,6 +59,9 @@ export class Game {
   private barnCard?: BarnCard;
   private guide = new Onboarding();
   private saleEvent = new SaleEvent();
+  private run = new RunClock();
+  private records = new RunRecords();
+  private leaderboard?: Leaderboard;
   private chests = new ChestEvent();
   private chestTimer?: ChestTimer;
   private chestSpawnPoint = new THREE.Vector2();
@@ -117,7 +123,7 @@ export class Game {
           const sourceTotal = saved.totalHay ?? 10000;
           const restoredRemaining = this.world.restore(saved.hay, sourceTotal - remaining - saved.inventory - (saved.pigEaten ?? 0), saved.won, saved.hayContactScale ?? 1, sourceTotal, saved.hayProfile ?? 0);
           this.runTotal = saved.won ? sourceTotal : config.totalHay;
-          this.dirty = saved.version !== 6 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
+          this.dirty = saved.version !== 7 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
           Object.assign(this.economy.levels, saved.levels);
           this.economy.remaining = restoredRemaining; this.economy.inventory = saved.inventory; this.economy.coins = saved.coins;
           this.economy.discoveryCoins = saved.discoveryCoins ?? 0;
@@ -129,6 +135,8 @@ export class Game {
           this.economy.chestRevenue = saved.chestRevenue ?? 0;
           for (let i = 0; i < this.economy.chestClaims.length; i++) this.economy.chestClaims[i] = saved.chestClaims?.[i] ?? 0;
           this.chests = new ChestEvent(saved.chestState);
+          this.run = new RunClock(saved.run, false);
+          if (!saved.run && saved.won) this.run.finish();
           this.economy.pigCount = saved.pigCount ?? 0; this.economy.pigEaten = saved.pigEaten ?? 0;
           this.economy.activeTool = saved.activeTool ?? saved.levels.tools;
           for (let i = 0; i < 4; i++) {
@@ -138,7 +146,7 @@ export class Game {
           this.player.group.position.set(saved.position[0], 0, saved.position[1]);
           this.player.movementSpeed = this.economy.movementSpeed;
           this.camera.yaw = saved.yaw; this.camera.pitch = saved.pitch; this.won = saved.won;
-          if (!restoredRemaining) this.movement = new MovementSystem([config.cart, ...barnWalls]);
+          if (!restoredRemaining) this.movement = new MovementSystem([config.cart, recordsConfig, ...barnWalls]);
           if (saved.layoutVersion !== config.layoutVersion || !this.movement.walkable(this.player.position)) {
             this.player.group.position.set(config.playerSpawn.x, 0, config.playerSpawn.z);
             this.camera.yaw = -Math.atan2(config.hay.x - config.playerSpawn.x, config.playerSpawn.z - config.hay.z);
@@ -147,6 +155,7 @@ export class Game {
           }
         } catch { this.saveSystem!.invalid = true; }
       }
+      if (this.won) this.records.record(this.run.state);
       this.syncChest();
       this.telemetry = new EconomyTelemetry(this.economy.remaining, !!options.settings?.economyTelemetry, !!saved);
       this.locomotion.height = this.world.surfaceHeight(this.player.group.position.x, this.player.group.position.z);
@@ -176,6 +185,7 @@ export class Game {
       this.barnCard = new BarnCard(this.economy, target => this.purchaseBarn(target), text => this.reject(text));
       const signal = this.controller.signal;
       const syncPause = () => {
+        this.run.setRunning(!this.disposed && !this.failed && !document.querySelector('dialog[open]') && !this.background && !this.contextLost && !this.won && !!this.metrics.readyMs);
         this.menuOpen = !!document.querySelector('dialog[open]');
         if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume();
         this.status.setAttribute('aria-live', this.menuOpen ? 'off' : 'polite');
@@ -185,19 +195,20 @@ export class Game {
         this.chestTimer?.hide();
         if (this.menuOpen) this.collectionTimer = 0;
         this.needsRender = true;
+        if (this.metrics.readyMs) { this.dirty = true; this.saveNow(); }
       };
       this.observer = new MutationObserver(syncPause);
       this.observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
       syncPause();
-      document.addEventListener('visibilitychange', () => { this.background = document.hidden; if (this.background) this.telemetry?.pause('background'); else if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); this.previous = performance.now(); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.chestTimer?.hide(); this.saveNow(); }, { signal });
-      window.addEventListener('blur', () => { this.background = true; this.telemetry?.pause('background'); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.chestTimer?.hide(); this.saveNow(); }, { signal });
-      window.addEventListener('focus', () => { this.background = document.hidden; if (!this.background) { if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); } this.previous = performance.now(); }, { signal });
+      document.addEventListener('visibilitychange', () => { this.background = document.hidden; this.run.setRunning(!this.paused && !!this.metrics.readyMs); if (this.background) this.telemetry?.pause('background'); else if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); this.previous = performance.now(); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.chestTimer?.hide(); this.saveNow(); }, { signal });
+      window.addEventListener('blur', () => { this.run.setRunning(false); this.background = true; this.telemetry?.pause('background'); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.chestTimer?.hide(); this.saveNow(); }, { signal });
+      window.addEventListener('focus', () => { this.background = document.hidden; this.run.setRunning(!this.paused && !!this.metrics.readyMs); if (!this.background) { if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); } this.previous = performance.now(); }, { signal });
       window.addEventListener('pagehide', () => this.saveNow(), { signal });
       this.renderer.domElement.addEventListener('webglcontextlost', event => {
-        event.preventDefault(); this.contextLost = true; this.input?.reset(); this.saveNow(); this.message('contextLost');
+        event.preventDefault(); this.run.setRunning(false); this.contextLost = true; this.input?.reset(); this.saveNow(); this.message('contextLost');
       }, { signal });
       this.renderer.domElement.addEventListener('webglcontextrestored', () => {
-        this.contextLost = false; this.previous = performance.now(); this.renderer.shadowMap.needsUpdate = true; this.needsRender = true;
+        this.contextLost = false; this.run.setRunning(!this.paused && !!this.metrics.readyMs); this.previous = performance.now(); this.renderer.shadowMap.needsUpdate = true; this.needsRender = true;
         this.message(this.won ? 'wonStatus' : this.economy.remaining === 0 ? 'discovered' : 'ready');
       }, { signal });
       this.message(this.saveSystem!.invalid ? 'saveInvalid' : this.won ? 'wonStatus' : this.economy.remaining === 0 ? 'discovered' : 'ready');
@@ -215,6 +226,7 @@ export class Game {
     if (this.paused) { this.options.audio?.setWalking(false); if (!this.needsRender) return; }
     try {
       if (!this.paused) {
+        this.run.settle();
         this.stepSoundStart.copy(this.player.position);
         this.moveManually(dt);
         if (this.economy.activeTool === 4 && !this.input?.holdingCollection()) this.collectionTimer = 0;
@@ -251,6 +263,7 @@ export class Game {
         this.metrics.readyMs = performance.now() - this.boot;
         this.metrics.startupMs = performance.now();
         this.metrics.initialTransferBytes = performance.getEntriesByType('resource').reduce((sum, item) => sum + (item as PerformanceResourceTiming).transferSize, 0);
+        this.run.setRunning(!this.paused);
         this.options.onReady?.();
         this.world.loadNoncriticalAssets();
       }
@@ -262,7 +275,7 @@ export class Game {
         this.frameSamples = 0; this.frameTotal = 0;
       }
     } catch (error) {
-      console.error(error); this.failed = true; this.input?.reset(); this.saveNow();
+      console.error(error); this.run.setRunning(false); this.failed = true; this.input?.reset(); this.saveNow();
       this.options.onError?.(t('error'));
     }
   }
@@ -375,6 +388,11 @@ export class Game {
   private command(target: Target, point: THREE.Vector3, instanceId?: number) {
     if (this.paused) return;
     if (target === 'ground') return;
+    if (target === 'records') {
+      if (this.player.group.position.y > recordsConfig.maxHeight || Math.hypot(this.player.position.x-recordsConfig.x,this.player.position.y-recordsConfig.z) > recordsConfig.reach) { this.reject(t('denyFar')); return; }
+      this.collectionTimer=0; this.input?.reset(); this.run.setRunning(false);
+      this.showRecords(); return;
+    }
     if (target === 'chest') { this.collectChest(); return; }
     if (isBarnTarget(target)) {
       if (!this.inBarnRange(target)) { this.reject(t('denyFar')); return; }
@@ -392,6 +410,7 @@ export class Game {
     if (target === 'ground') { this.message('arrived'); return; }
     if (target === 'needle') {
       if (this.economy.remaining > 0 || !this.inRange('needle') || this.won) return;
+      this.run.finish(); this.records.record(this.run.state);
       this.won = true; this.player.state = 'Winning'; this.world.hideNeedle(); this.message('wonStatus');
       this.guide.action('needle');
       this.telemetry?.finish();
@@ -441,7 +460,7 @@ export class Game {
         if (amount > 0 && this.economy.inventory === this.economy.capacity) { this.hud?.pulse('full'); this.feedback?.notice(t('sellHayHint')); }
         this.message(this.economy.remaining === 0 ? 'discovered' : this.economy.inventory === this.economy.capacity ? 'collectedFull' : 'collected', { n: amount });
         if (discovery?.bonus) this.message('rareFound', { amount, n: discoveryBonus, rarity: `${discovery.highest.badge} ${t(discovery.highest.id)}` });
-        if (this.economy.remaining === 0) this.movement = new MovementSystem([config.cart, ...barnWalls]);
+        if (this.economy.remaining === 0) this.movement = new MovementSystem([config.cart, recordsConfig, ...barnWalls]);
         this.dirty = true; this.refreshHUD();
       }
     }
@@ -484,14 +503,17 @@ export class Game {
     if (node) { node.textContent = t(this.saveSystem?.available ? 'saveNotice' : 'saveUnavailable'); node.dataset.warning = String(!this.saveSystem?.available); }
   }
   saveNow() {
-    if (!this.dirty || !this.saveSystem || this.disposed) return;
-    const data = { version: 6 as const, chestRevenue: this.economy.chestRevenue, chestClaims: [...this.economy.chestClaims], chestState: this.chests.snapshot(), eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
+    if (!this.saveSystem || this.disposed) return;
+    if (!this.paused && this.metrics.readyMs) this.dirty = true;
+    if (!this.dirty) return;
+    const data = { version: 7 as const, run: this.run.snapshot(), chestRevenue: this.economy.chestRevenue, chestClaims: [...this.economy.chestClaims], chestState: this.chests.snapshot(), eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
     if (this.saveSystem.write(data)) this.dirty = false;
     this.updateSaveNotice();
   }
   private updateAimLabel() {
     const node = document.querySelector('#aim-label');
+    if (node && this.aimTarget === 'records') { node.textContent=t('recordsAim'); return; }
     if (node && this.aimTarget === 'chest') { node.textContent = this.chests.active ? t('chestAim', { n: chestBalance.rewards[this.chests.active.stage] }) : ''; return; }
     if (node && this.aimTarget && isBarnTarget(this.aimTarget)) {
       const offer = this.economy.barnOffer(this.aimTarget);
@@ -504,10 +526,12 @@ export class Game {
   refreshLanguage() {
     this.refreshHUD();
     this.refreshEvent();
+    this.leaderboard?.render();
     if (this.statusKey === 'bought' && this.lastBought) this.statusVars.effect = this.economy.effect(this.lastBought);
     this.status.textContent = t(this.statusKey, this.statusVars); this.updateSaveNotice(); this.updateAimLabel();
     this.renderer.domElement.setAttribute('aria-label', t('world'));
   }
+  showRecords() { this.run.setRunning(false); this.leaderboard ??= new Leaderboard(this.records); this.leaderboard.show(); }
   setEconomyTelemetry(value: boolean) { this.telemetry?.setEnabled(value, this.economy.remaining); if (value && this.menuOpen) this.telemetry?.pause('menu'); }
   downloadEconomyMetrics() { return this.telemetry?.download(); }
   resetEconomyMetrics() { this.telemetry?.reset(this.economy.remaining); }
@@ -519,7 +543,7 @@ export class Game {
     this.options.audio?.stopEffects();
     this.telemetry?.dispose();
     this.disposed = true; this.controller.abort(); this.resizeObserver?.disconnect(); this.observer?.disconnect();
-    this.input?.dispose(); this.shop?.dispose(); this.barnCard?.dispose(); this.chestTimer?.dispose(); this.guide.dispose(); this.hud?.dispose(); this.renderer?.setAnimationLoop(null);
+    this.input?.dispose(); this.shop?.dispose(); this.barnCard?.dispose(); this.leaderboard?.dispose(); this.chestTimer?.dispose(); this.guide.dispose(); this.hud?.dispose(); this.renderer?.setAnimationLoop(null);
     this.world.dispose(); this.viewModel?.dispose(); this.feedback?.dispose(); disposeTree(this.player.group);
     this.renderer?.renderLists.dispose(); this.renderer?.forceContextLoss(); this.renderer?.dispose(); this.renderer?.domElement.remove();
   }

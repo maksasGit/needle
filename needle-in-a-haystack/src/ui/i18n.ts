@@ -1,5 +1,7 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  recordsTitle: 'Рекорды', recordsLocal: 'Локально', recordsGlobal: 'Глобально', recordsYou: 'Ты', recordsAim: 'Доска рекордов',
+  recordsDemo: 'Демо · вымышленные результаты', recordsRule: 'Топ-5 · активное время до иголки', recordsEmpty: 'Заверши новый заход — здесь появится результат.', recordsUnsaved: 'Рекорды доступны только в этом сеансе: сохранение недоступно.',
   chest: 'Сундук', chestTime: 'Время до исчезновения сундука', chestAppeared: 'Сундук появился!', chestGone: 'Сундук исчез', chestAim: 'Сундук · +{n} монет',
   chestReward: 'Сундук: +{n} монет',
   denyFar: 'Слишком далеко', denyFull: 'Сумка полна', denyEmpty: 'Нечего продать', denyAirborne: 'В воздухе',
@@ -72,6 +74,8 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  recordsTitle: 'Records', recordsLocal: 'Local', recordsGlobal: 'Global', recordsYou: 'You', recordsAim: 'Records board',
+  recordsDemo: 'Demo · fictional results', recordsRule: 'Top 5 · active time to the needle', recordsEmpty: 'Finish a new run to set your first record.', recordsUnsaved: 'Records last for this session only: saving unavailable.',
   chest: 'Chest', chestTime: 'Time until the chest disappears', chestAppeared: 'A chest appeared!', chestGone: 'Chest expired', chestAim: 'Chest · +{n} coins',
   chestReward: 'Chest: +{n} coins',
   denyFar: 'Too far away', denyFull: 'Bag full', denyEmpty: 'Nothing to sell', denyAirborne: 'In the air',

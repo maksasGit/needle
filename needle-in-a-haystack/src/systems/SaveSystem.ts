@@ -1,3 +1,5 @@
+import { validateRun } from './RunRecords';
+import type { RunState } from './RunRecords';
 import { config, upgrades, upgradePrice, previousUpgradePrice } from '../config/balance';
 import type { UpgradeId } from '../config/balance';
 import type { Language } from '../ui/i18n';
@@ -14,7 +16,7 @@ export const SAVE_KEY = 'needle.save.v1';
 export type LegacyProgress = { levels: Record<UpgradeId, number>; toolVolumes: number[]; toolSpecials: number[]; pigCount: number };
 export type PriceBaseline = LegacyProgress & { pigPortionLevel: number; pigSpeedLevel: number };
 export type SaveData = {
-  version: 1 | 2 | 3 | 4 | 5 | 6; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
   position: [number, number]; yaw: number; pitch: number; won: boolean;
   hayContactScale?: number;
   totalHay?: number;
@@ -36,6 +38,7 @@ export type SaveData = {
   eventRevenue?: number;
   eventRemainder?: number;
   saleEvent?: SaleEventState;
+  run?: RunState;
   chestRevenue?: number;
   chestClaims?: number[];
   chestState?: ChestState;
@@ -65,7 +68,7 @@ export function decodeHay(value: string): Int16Array {
 export function validateSave(value: unknown): SaveData {
   if (!value || typeof value !== 'object') throw new Error('Invalid save');
   const source = value as SaveData;
-  if (![1, 2, 3, 4, 5, 6].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
+  if (![1, 2, 3, 4, 5, 6, 7].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
   const s: SaveData = { ...source, levels: { ...source.levels, sale: source.levels.sale ?? 0 } };
   if (s.layoutVersion !== undefined && !integer(s.layoutVersion, 0, config.layoutVersion)) throw new Error('Invalid map layout');
   if (s.rarityVersion !== undefined && s.rarityVersion !== rarityVersion) throw new Error('Unsupported rarity version');
@@ -151,6 +154,8 @@ export function validateSave(value: unknown): SaveData {
   if (!Number.isSafeInteger(income) || !Number.isSafeInteger(s.coins + spent) || s.coins + spent !== income) throw new Error('Unbalanced economy');
   if (!Array.isArray(s.position) || s.position.length !== 2 || s.position.some(v => !Number.isFinite(v) || Math.abs(v) > config.worldHalfSize)) throw new Error('Invalid position');
   if (!Number.isFinite(s.yaw) || !Number.isFinite(s.pitch) || Math.abs(s.pitch) > 1.25 || typeof s.won !== 'boolean' || (s.won && remaining > 0)) throw new Error('Invalid camera/progress');
+  if (source.version < 7 && s.run !== undefined) throw new Error('Unexpected legacy run');
+  validateRun(s.run, s.won);
   return s;
 }
 export class SaveSystem {
