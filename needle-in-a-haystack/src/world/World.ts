@@ -10,7 +10,9 @@ import type { BarnTarget } from '../config/progression';
 import type { EconomySystem } from '../systems/EconomySystem';
 import { disposeTree } from '../core/dispose';
 import { presentation } from '../config/presentation';
-export type Target = 'ground' | 'hay' | 'cart' | 'needle' | BarnTarget;
+import { RewardChest } from './RewardChest';
+import type { ActiveChest } from '../systems/ChestEvent';
+export type Target = 'ground' | 'hay' | 'cart' | 'needle' | 'chest' | BarnTarget;
 export class World {
   readonly scene = new THREE.Scene();
   readonly pickables: THREE.Object3D[] = [];
@@ -33,6 +35,7 @@ export class World {
   private selectedBarn?: BarnTarget;
   private latestEconomy?: EconomySystem;
   private optionalTimer?: ReturnType<typeof setTimeout>;
+  private chest?: RewardChest;
   private pigs = new PigHerd(this.toolAssets);
   private pigSurface = (x: number, z: number) => this.surfaceHeight(x, z);
   private pigFeed = (point: THREE.Vector2) => this.hay.feedingPoint(point);
@@ -112,6 +115,14 @@ export class World {
     mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
   updateBarn(economy: EconomySystem) { this.latestEconomy = economy; this.barn?.update(economy); }
+  setChest(active?: Readonly<ActiveChest>) {
+    if (!this.chest && active) { this.chest = new RewardChest(); this.scene.add(this.chest.group); }
+    if (!this.chest) return;
+    this.chest.set(active);
+    const index = this.pickables.indexOf(this.chest.hitbox);
+    if (active && index < 0) this.pickables.push(this.chest.hitbox);
+    if (!active && index >= 0) this.pickables.splice(index, 1);
+  }
   highlightBarn(target?: BarnTarget) {
     if (target === this.selectedBarn) return;
     this.selectedBarn = target;

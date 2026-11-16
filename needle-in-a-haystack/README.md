@@ -216,3 +216,16 @@ Settings now offer optional local economy measurements, disabled by default, plu
 ### Visible rejection reasons
 
 TEAM-01 routes every gameplay deny sound through Game.reject with a short localized reason. World actions use the existing popup pool; menu actions use the active dialog feedback. Denial text/audio share a 450 ms cooldown. Busy collection stays silent. No prices, ranges or saves changed; manual desktop/touch review is pending and no automatic game checks/build/screenshots were run.
+
+### Случайные сундуки — TEAM-02
+
+Один сундук каждые 3–5 минут активной игры, на сбор 30 секунд. Награда по разобранному сену: <25% — 50, <50% — 100, <75% — 300, иначе 1000 монет. Над ним полоса времени. Подойти и нажать/коснуться; полная сумка не мешает. В меню/фоне время стоит, reload сохраняет остаток; ×2 продажи не применяется. SaveData v6 поддерживает старые сохранения.
+
+Ручная проверка владельцем (автоматические запуски не выполнялись):
+- [ ] Появление, четыре стадии наград, исчезновение спустя 30 секунд.
+- [ ] Касание на телефоне и E/действие на ПК; дальний отказ с объяснением, сбор с полной сумкой.
+- [ ] Двойной ввод даёт одну награду; reload после сбора не возвращает сундук.
+- [ ] Меню/фон/reload сохраняют время и сумму; старое v5 сохранение загружается.
+- [ ] Таймер читаем в portrait/landscape; точки появления доступны, ×2 не удваивает награду.
+
+Текущая симуляция экономики v2 предшествует сундукам; новый доход в ней ещё не моделировался, v2 остаётся неактивным.

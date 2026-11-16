@@ -26,6 +26,9 @@ import { Onboarding } from '../ui/Onboarding';
 import { SaleEvent } from '../systems/SaleEvent';
 import { EconomyTelemetry } from '../systems/EconomyTelemetry';
 import type { AudioManager } from './AudioManager';
+import { ChestEvent } from '../systems/ChestEvent';
+import { chestBalance } from '../config/chests';
+import { ChestTimer } from '../ui/ChestTimer';
 
 type Options = { audio?: AudioManager; settings?: Settings; onReady?: () => void; onWin?: () => void; onError?: (message: string) => void };
 export class Game {
@@ -53,6 +56,15 @@ export class Game {
   private barnCard?: BarnCard;
   private guide = new Onboarding();
   private saleEvent = new SaleEvent();
+  private chests = new ChestEvent();
+  private chestTimer?: ChestTimer;
+  private chestSpawnPoint = new THREE.Vector2();
+  private chestViewport = new THREE.Vector2(1, 1);
+  private canSpawnChest = (index: number) => {
+    const [x,z] = chestBalance.positions[index];
+    this.chestSpawnPoint.set(x,z);
+    return this.movement.walkable(this.chestSpawnPoint) && Math.hypot(x - config.hay.x, z - config.hay.z) > config.hay.radius + 1 && Math.hypot(x - config.cart.x, z - config.cart.z) > config.cart.radius + 1 && this.player.position.distanceTo(this.chestSpawnPoint) > 2;
+  };
   private telemetry?: EconomyTelemetry;
   private measurePig = (mode: 'wander' | 'approach' | 'waiting', dt: number) => this.telemetry?.pigActivity(mode, dt);
   private saveSystem?: SaveSystem = new SaveSystem();
@@ -105,7 +117,7 @@ export class Game {
           const sourceTotal = saved.totalHay ?? 10000;
           const restoredRemaining = this.world.restore(saved.hay, sourceTotal - remaining - saved.inventory - (saved.pigEaten ?? 0), saved.won, saved.hayContactScale ?? 1, sourceTotal, saved.hayProfile ?? 0);
           this.runTotal = saved.won ? sourceTotal : config.totalHay;
-          this.dirty = saved.version !== 5 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
+          this.dirty = saved.version !== 6 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
           Object.assign(this.economy.levels, saved.levels);
           this.economy.remaining = restoredRemaining; this.economy.inventory = saved.inventory; this.economy.coins = saved.coins;
           this.economy.discoveryCoins = saved.discoveryCoins ?? 0;
@@ -114,6 +126,9 @@ export class Game {
           this.economy.saleRemainder = saved.saleRemainder ?? 0; this.economy.legacyProgress = saved.legacyProgress; this.economy.priceBaseline = saved.priceBaseline;
           this.economy.eventRevenue = saved.eventRevenue ?? 0; this.economy.eventRemainder = saved.eventRemainder ?? 0;
           this.saleEvent = new SaleEvent(saved.saleEvent);
+          this.economy.chestRevenue = saved.chestRevenue ?? 0;
+          for (let i = 0; i < this.economy.chestClaims.length; i++) this.economy.chestClaims[i] = saved.chestClaims?.[i] ?? 0;
+          this.chests = new ChestEvent(saved.chestState);
           this.economy.pigCount = saved.pigCount ?? 0; this.economy.pigEaten = saved.pigEaten ?? 0;
           this.economy.activeTool = saved.activeTool ?? saved.levels.tools;
           for (let i = 0; i < 4; i++) {
@@ -132,6 +147,7 @@ export class Game {
           }
         } catch { this.saveSystem!.invalid = true; }
       }
+      this.syncChest();
       this.telemetry = new EconomyTelemetry(this.economy.remaining, !!options.settings?.economyTelemetry, !!saved);
       this.locomotion.height = this.world.surfaceHeight(this.player.group.position.x, this.player.group.position.z);
       this.player.group.position.y = this.locomotion.height;
@@ -151,11 +167,11 @@ export class Game {
       this.resizeObserver = new ResizeObserver(() => {
         const { width, height } = host.getBoundingClientRect();
         if (width <= 0 || height <= 0) return;
-        this.camera.resize(width, height); this.renderer.setSize(width, height);
+        this.camera.resize(width, height); this.renderer.setSize(width, height); this.chestViewport.set(width, height);
         this.needsRender = true;
       });
       this.resizeObserver.observe(host);
-      const { width, height } = host.getBoundingClientRect(); this.camera.resize(width, height); this.renderer.setSize(width, height);
+      const { width, height } = host.getBoundingClientRect(); this.camera.resize(width, height); this.renderer.setSize(width, height); this.chestViewport.set(width, height);
       this.refreshHUD(); this.shop = new Shop(this.economy, id => this.buy(id), text => this.reject(text));
       this.barnCard = new BarnCard(this.economy, target => this.purchaseBarn(target), text => this.reject(text));
       const signal = this.controller.signal;
@@ -166,14 +182,15 @@ export class Game {
         this.previous = performance.now();
         this.input?.reset();
         this.hud?.stop(); this.feedback?.stop(); this.guide.hide();
+        this.chestTimer?.hide();
         if (this.menuOpen) this.collectionTimer = 0;
         this.needsRender = true;
       };
       this.observer = new MutationObserver(syncPause);
       this.observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
       syncPause();
-      document.addEventListener('visibilitychange', () => { this.background = document.hidden; if (this.background) this.telemetry?.pause('background'); else if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); this.previous = performance.now(); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.saveNow(); }, { signal });
-      window.addEventListener('blur', () => { this.background = true; this.telemetry?.pause('background'); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.saveNow(); }, { signal });
+      document.addEventListener('visibilitychange', () => { this.background = document.hidden; if (this.background) this.telemetry?.pause('background'); else if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); this.previous = performance.now(); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.chestTimer?.hide(); this.saveNow(); }, { signal });
+      window.addEventListener('blur', () => { this.background = true; this.telemetry?.pause('background'); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.chestTimer?.hide(); this.saveNow(); }, { signal });
       window.addEventListener('focus', () => { this.background = document.hidden; if (!this.background) { if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); } this.previous = performance.now(); }, { signal });
       window.addEventListener('pagehide', () => this.saveNow(), { signal });
       this.renderer.domElement.addEventListener('webglcontextlost', event => {
@@ -207,6 +224,13 @@ export class Game {
         if (this.metrics.readyMs) this.telemetry?.tick(elapsed / 1000, this.stepSoundStart.distanceTo(this.player.position), collecting, this.economy.activeTool, this.economy.remaining, this.saleEvent.active, dt);
         if (this.saleEvent.update(dt, this.guide.completed)) { this.dirty = true; this.refreshEvent(); this.saveNow(); }
         if (this.guide.completed || this.saleEvent.active) this.dirty = true;
+        const chestChange = this.chests.update(dt, this.economy.remaining, this.runTotal, this.canSpawnChest);
+        this.dirty = true;
+        if (chestChange) {
+          this.syncChest();
+          if (chestChange === 'spawn') { this.feedback?.notice(t('chestAppeared')); this.message('chestAppeared'); }
+          this.saveNow();
+        }
         this.world.updatePigs(dt, this.economy.pigCount, this.onPigEat, this.economy.pigIntervalMultiplier, this.options.settings?.economyTelemetry ? this.measurePig : undefined); this.world.updateHay(dt);
         this.player.group.position.y = this.locomotion.height;
         this.options.audio?.setWalking(this.locomotion.grounded && this.stepSoundStart.distanceToSquared(this.player.position) > .000001, this.economy.movementSpeed / config.movementSpeed);
@@ -215,6 +239,8 @@ export class Game {
         if (this.saveAge >= 5) { this.saveAge = 0; this.saveNow(); }
       }
       this.camera.follow(this.player.position, this.locomotion.height);
+      if (this.paused) this.chestTimer?.hide();
+      else this.chestTimer?.update(dt, this.chests.active, this.camera.camera, this.chestViewport.x, this.chestViewport.y);
       this.guide.update(dt, this.paused, this.economy, this.inRange('hay'), this.inRange('cart'), this.camera.camera, !!this.options.settings?.reducedMotion);
       this.world.scene.updateMatrixWorld(); this.input?.updateAim(dt, this.paused);
       this.renderer.shadowMap.needsUpdate = this.world.takeShadowUpdate();
@@ -252,6 +278,24 @@ export class Game {
   private inBarnRange(target: keyof typeof barnItems) {
     const item = barnItems[target];
     return Math.hypot(this.player.group.position.x - item.x, this.player.group.position.z - item.z) <= 1.9 && this.player.group.position.y <= 1;
+  }
+  private syncChest() {
+    this.world.setChest(this.chests.active);
+    if (this.chests.active && !this.chestTimer) this.chestTimer = new ChestTimer();
+    if (!this.chests.active) this.chestTimer?.hide();
+    this.updateAimLabel();
+  }
+  private collectChest() {
+    const active = this.chests.active;
+    if (!active) { this.reject(t('chestGone')); return; }
+    const [x,z] = chestBalance.positions[active.position];
+    if (this.player.group.position.y > chestBalance.maxPlayerHeight || Math.hypot(this.player.group.position.x - x, this.player.group.position.z - z) > chestBalance.pickupDistance) { this.reject(t('denyFar')); return; }
+    const earned = this.chests.claim(active.id, stage => this.economy.creditChest(stage));
+    if (!earned) { this.reject(t('denyUnavailable')); return; }
+    this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
+    this.syncChest(); this.feedback?.show('coins', earned); this.hud?.pulse('coins'); this.options.audio?.effect('sell');
+    this.telemetry?.chest(earned);
+    this.message('chestReward', { n: earned }); this.dirty = true; this.refreshHUD(); this.saveNow();
   }
   private reject(text: string) {
     if (this.disposed || this.failed) return;
@@ -331,6 +375,7 @@ export class Game {
   private command(target: Target, point: THREE.Vector3, instanceId?: number) {
     if (this.paused) return;
     if (target === 'ground') return;
+    if (target === 'chest') { this.collectChest(); return; }
     if (isBarnTarget(target)) {
       if (!this.inBarnRange(target)) { this.reject(t('denyFar')); return; }
       this.hud?.flush(); this.barnCard?.show(target); return;
@@ -440,13 +485,14 @@ export class Game {
   }
   saveNow() {
     if (!this.dirty || !this.saveSystem || this.disposed) return;
-    const data = { version: 5 as const, eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
+    const data = { version: 6 as const, chestRevenue: this.economy.chestRevenue, chestClaims: [...this.economy.chestClaims], chestState: this.chests.snapshot(), eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
     if (this.saveSystem.write(data)) this.dirty = false;
     this.updateSaveNotice();
   }
   private updateAimLabel() {
     const node = document.querySelector('#aim-label');
+    if (node && this.aimTarget === 'chest') { node.textContent = this.chests.active ? t('chestAim', { n: chestBalance.rewards[this.chests.active.stage] }) : ''; return; }
     if (node && this.aimTarget && isBarnTarget(this.aimTarget)) {
       const offer = this.economy.barnOffer(this.aimTarget);
       node.textContent = t(offer.owned ? 'barnOwnedAim' : offer.price === null ? 'barnMaxAim' : 'barnAim', { name: offer.name, price: offer.price ?? 0 }) + (offer.locked ? ` / ${t('previousTool')}` : '');
@@ -466,14 +512,14 @@ export class Game {
   downloadEconomyMetrics() { return this.telemetry?.download(); }
   resetEconomyMetrics() { this.telemetry?.reset(this.economy.remaining); }
   setReducedMotion(reduced: boolean) { this.world.reducedMotion = reduced; if (this.viewModel) this.viewModel.reducedMotion = reduced; if (this.feedback) { this.feedback.reducedMotion = reduced; if (reduced) this.feedback.stop(); } if (this.hud) { this.hud.reducedMotion = reduced; this.hud.stop(); } }
-  diagnostics() { return { ...this.metrics, remaining: this.economy.remaining, inventory: this.economy.inventory, coins: this.economy.coins, cargo: this.world.cargoCount, activeTool: this.economy.activeTool, pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, salePrice: this.economy.salePrice, won: this.won, paused: this.paused, position: [this.player.group.position.x, this.player.group.position.z], yaw: this.camera.yaw, pitch: this.camera.pitch, height: this.locomotion.height, grounded: this.locomotion.grounded, cartModelStatus: this.world.cartModelStatus, saleEvent: this.saleEvent.snapshot(), eventRevenue: this.economy.eventRevenue, tutorialCompleted: this.guide.completed }; }
+  diagnostics() { return { ...this.metrics, remaining: this.economy.remaining, inventory: this.economy.inventory, coins: this.economy.coins, cargo: this.world.cargoCount, activeTool: this.economy.activeTool, pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, salePrice: this.economy.salePrice, won: this.won, paused: this.paused, position: [this.player.group.position.x, this.player.group.position.z], yaw: this.camera.yaw, pitch: this.camera.pitch, height: this.locomotion.height, grounded: this.locomotion.grounded, cartModelStatus: this.world.cartModelStatus, saleEvent: this.saleEvent.snapshot(), eventRevenue: this.economy.eventRevenue, tutorialCompleted: this.guide.completed, chest: this.chests.snapshot(), chestRevenue: this.economy.chestRevenue }; }
   dispose(save = true) {
     if (this.disposed) return;
     if (save) this.saveNow();
     this.options.audio?.stopEffects();
     this.telemetry?.dispose();
     this.disposed = true; this.controller.abort(); this.resizeObserver?.disconnect(); this.observer?.disconnect();
-    this.input?.dispose(); this.shop?.dispose(); this.barnCard?.dispose(); this.guide.dispose(); this.hud?.dispose(); this.renderer?.setAnimationLoop(null);
+    this.input?.dispose(); this.shop?.dispose(); this.barnCard?.dispose(); this.chestTimer?.dispose(); this.guide.dispose(); this.hud?.dispose(); this.renderer?.setAnimationLoop(null);
     this.world.dispose(); this.viewModel?.dispose(); this.feedback?.dispose(); disposeTree(this.player.group);
     this.renderer?.renderLists.dispose(); this.renderer?.forceContextLoss(); this.renderer?.dispose(); this.renderer?.domElement.remove();
   }

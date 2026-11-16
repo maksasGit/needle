@@ -1,5 +1,7 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  chest: 'Сундук', chestTime: 'Время до исчезновения сундука', chestAppeared: 'Сундук появился!', chestGone: 'Сундук исчез', chestAim: 'Сундук · +{n} монет',
+  chestReward: 'Сундук: +{n} монет',
   denyFar: 'Слишком далеко', denyFull: 'Сумка полна', denyEmpty: 'Нечего продать', denyAirborne: 'В воздухе',
   denyFunds: 'Не хватает {n} монет', denyMax: 'Максимум', denyPrevious: 'Сначала предыдущий инструмент',
   denyNeedTool: 'Сначала купи инструмент', denyNeedPig: 'Сначала купи свинку', denyUnavailable: 'Недоступно',
@@ -70,6 +72,8 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  chest: 'Chest', chestTime: 'Time until the chest disappears', chestAppeared: 'A chest appeared!', chestGone: 'Chest expired', chestAim: 'Chest · +{n} coins',
+  chestReward: 'Chest: +{n} coins',
   denyFar: 'Too far away', denyFull: 'Bag full', denyEmpty: 'Nothing to sell', denyAirborne: 'In the air',
   denyFunds: 'Need {n} more coins', denyMax: 'Maximum', denyPrevious: 'Buy the previous tool first',
   denyNeedTool: 'Buy the tool first', denyNeedPig: 'Buy a pig first', denyUnavailable: 'Unavailable',

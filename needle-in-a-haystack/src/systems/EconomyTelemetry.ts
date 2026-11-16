@@ -12,7 +12,7 @@ export class EconomyTelemetry {
     return { version: 1, economy: economyVersion, startHay: remaining, remaining, completeCycle: remaining === 20000,
       activeSeconds: 0, gameSeconds: 0, collectingSeconds: 0, walkingSeconds: 0, idleSeconds: 0, menuSeconds: 0, backgroundSeconds: 0,
       distance: 0, tripDistance: 0, tripSeconds: 0, trips: 0, soldHay: 0, saleCoins: 0, rareCoins: 0, eventCoins: 0,
-      pigBites: 0, pigHay: 0, pigCoins: 0, pigWanderSeconds: 0, pigApproachSeconds: 0, pigWaitingSeconds: 0, eventSeconds: 0, eventSoldHay: 0,
+      pigBites: 0, pigHay: 0, pigCoins: 0, pigWanderSeconds: 0, pigApproachSeconds: 0, pigWaitingSeconds: 0, eventSeconds: 0, eventSoldHay: 0, chests: 0, chestCoins: 0,
       tools: Array.from({ length: 5 }, () => ({ seconds: 0, collected: 0, actions: 0 })),
       purchases: [] as Purchase[], loads: [] as { hay: number; seconds: number; distance: number }[], completed: false };
   }
@@ -59,6 +59,7 @@ export class EconomyTelemetry {
     if (!this.enabled) return;
     this.data[mode === 'wander' ? 'pigWanderSeconds' : mode === 'approach' ? 'pigApproachSeconds' : 'pigWaitingSeconds'] += dt;
   }
+  chest(coins: number) { if (this.enabled && coins > 0) { this.data.chests++; this.data.chestCoins += coins; this.save(); } }
   purchase(item: string, price: number, remaining: number, saleLevel: number) {
     if (!this.enabled) return;
     if (this.data.purchases.length < 200) this.data.purchases.push({ item, price, remaining, saleLevel, activeSeconds: this.data.activeSeconds });

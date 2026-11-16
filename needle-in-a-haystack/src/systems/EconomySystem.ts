@@ -7,6 +7,7 @@ import type { LegacyProgress, PriceBaseline } from './SaveSystem';
 import type { ToolUpgrade, BarnTarget } from '../config/progression';
 import { barnItems } from '../config/progression';
 import { capacityAt, movementAt, durationAt, amountAt, saleHundredthsAt, payoutAt } from './economyMath';
+import { chestBalance } from '../config/chests';
 
 /** Collection is command-driven; only an actively held vacuum repeats commands. */
 export class EconomySystem {
@@ -22,6 +23,8 @@ export class EconomySystem {
   saleRemainder = 0;
   eventRevenue = 0;
   eventRemainder = 0;
+  chestRevenue = 0;
+  readonly chestClaims = [0, 0, 0, 0];
   legacyProgress?: LegacyProgress;
   priceBaseline?: PriceBaseline;
   activeTool = 0;
@@ -99,6 +102,13 @@ export class EconomySystem {
   creditDiscovery(bonus: number) {
     if (!Number.isSafeInteger(bonus) || bonus < 0) throw new Error('Invalid discovery reward');
     this.discoveryCoins += bonus; this.coins += bonus;
+  }
+  creditChest(stage: number) {
+    if (!Number.isInteger(stage) || stage < 0 || stage >= chestBalance.rewards.length) return 0;
+    const amount = chestBalance.rewards[stage];
+    if (!Number.isSafeInteger(this.coins + amount) || !Number.isSafeInteger(this.chestRevenue + amount) || !Number.isSafeInteger(this.chestClaims[stage] + 1)) return 0;
+    this.coins += amount; this.chestRevenue += amount; this.chestClaims[stage]++;
+    return amount;
   }
   equip(tool: number) {
     if (!Number.isInteger(tool) || tool < 0 || tool > this.levels.tools) return false;

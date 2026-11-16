@@ -53,3 +53,7 @@ The existing rounded primitive is reused for 24 overlapping foothills and 18 dis
 ### Economy candidates and metrics (2026-11-16)
 
 No new audio/visual asset, external analytics SDK or third-party dependency was added. Candidate prices, deterministic synthetic simulation results and code-authored local measurement controls use the existing project stack. Metrics are disabled by default and stay local unless the player deliberately downloads JSON. Reports committed to the repository contain synthetic model output, not collected player data.
+
+### TEAM-02 reward chest (2026-11-16)
+
+Original project procedural geometry/materials in src/world/RewardChest.ts. No external model, texture, image or sound added; pickup reuses the existing sell effect.
