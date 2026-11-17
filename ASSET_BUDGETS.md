@@ -262,3 +262,7 @@
 ### Плейтест v3 — 2026-11-17
 
 Новых visual/audio assets и draw calls нет. Дополнительно11 stage rows,5 tool rows,до64 pig/level groups,8 viewport rows,12 terminal fields; coin purchase details ограничены200. Vite добавляет один маленький technical-build.json, считаемый в total/count output, только lazy opt-in чтение production. Фактические размеры/нагрузка не измерялись (build не запускался); новые targets не выдумываются, недоступные замеры unknown.
+
+### Refinements r1,2026-11-17
+
+Фактический production output5873676bytes (5.60MiB),16files, max cart3129416bytes, max JS352606bytes; музыка1759581bytes. Два прежних preferred512KiB exceptions, hard limits соблюдены. Shadow proxy+1геометрия/материал132tri вместо20k-straw shadow pass; возможен служебный colorWrite=false проход. Save helper buffers ограничены20k записями (до≈1.05MiB raw с fallback buffer)+одна кешированная base64 строка; это не растущий журнал. Widget3DOM nodes/20Hz, новых аудио/текстур/внешних зависимостей нет. Heap/FPS реального телефона ещё не измерены.

@@ -1,0 +1,106 @@
+{
+  "scope": "Production nested-URL Chrome/headless SwiftShader desktop and emulated touch; no screenshots; not real mobile or hardware GPU FPS",
+  "desktop": {
+    "build": "2026-11-17-refinements-r1",
+    "landscapeInventory": null,
+    "cachedPreparationAverageMs": 0.09999996423721313,
+    "triangles": 243147,
+    "calls": 73,
+    "inventory": 1,
+    "realTimerDelta": 1.2361000000000004,
+    "productionInventory": {
+      "source": "production output, uncompressed, totals include inventory; byExtension excludes inventory",
+      "byExtension": {
+        ".js": {
+          "count": 6,
+          "bytes": 825537
+        },
+        ".glb": {
+          "count": 1,
+          "bytes": 3129416
+        },
+        ".mp3": {
+          "count": 5,
+          "bytes": 1891089
+        },
+        ".css": {
+          "count": 1,
+          "bytes": 25017
+        },
+        ".html": {
+          "count": 1,
+          "bytes": 1144
+        },
+        ".txt": {
+          "count": 1,
+          "bytes": 1091
+        }
+      },
+      "fileCount": 16,
+      "totalBytes": 5873676,
+      "largestFileBytes": 3129416
+    },
+    "save": {
+      "count": 2,
+      "failures": 0,
+      "peakUtf8Bytes": 428245,
+      "snapshotTotalMs": 29.19999998807907,
+      "serializationTotalMs": 2.099999964237213,
+      "storageTotalMs": 4.299999952316284,
+      "totalMs": 41.39999997615814,
+      "maxTotalMs": 31.69999998807907
+    }
+  },
+  "touch": {
+    "build": "2026-11-17-refinements-r1",
+    "landscapeInventory": 2,
+    "cachedPreparationAverageMs": 0,
+    "triangles": 242545,
+    "calls": 34,
+    "inventory": 1,
+    "realTimerDelta": 0.4235000000000113,
+    "productionInventory": {
+      "source": "production output, uncompressed, totals include inventory; byExtension excludes inventory",
+      "byExtension": {
+        ".js": {
+          "count": 6,
+          "bytes": 825537
+        },
+        ".glb": {
+          "count": 1,
+          "bytes": 3129416
+        },
+        ".mp3": {
+          "count": 5,
+          "bytes": 1891089
+        },
+        ".css": {
+          "count": 1,
+          "bytes": 25017
+        },
+        ".html": {
+          "count": 1,
+          "bytes": 1144
+        },
+        ".txt": {
+          "count": 1,
+          "bytes": 1091
+        }
+      },
+      "fileCount": 16,
+      "totalBytes": 5873676,
+      "largestFileBytes": 3129416
+    },
+    "save": {
+      "count": 2,
+      "failures": 0,
+      "peakUtf8Bytes": 428234,
+      "snapshotTotalMs": 28.100000023841858,
+      "serializationTotalMs": 4.100000023841858,
+      "storageTotalMs": 3.699999988079071,
+      "totalMs": 42,
+      "maxTotalMs": 25.19999998807907
+    }
+  },
+  "errors": []
+}

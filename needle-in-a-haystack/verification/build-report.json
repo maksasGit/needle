@@ -1,9 +1,9 @@
 {
-  "totalBytes": 3835774,
-  "fileCount": 9,
+  "totalBytes": 5873676,
+  "fileCount": 16,
   "files": [
     {
-      "file": "assets/cartModel-DDkXwB1j.js",
+      "file": "assets/cartModel-BO6JS6II.js",
       "bytes": 551,
       "gzipBytes": 395,
       "preferredFileLimit": true
@@ -15,39 +15,81 @@
       "preferredFileLimit": false
     },
     {
-      "file": "assets/index-CFEYj5Mq.css",
-      "bytes": 10134,
-      "gzipBytes": 2865,
+      "file": "assets/collect_hay-Hb6DnPbl.mp3",
+      "bytes": 25389,
+      "gzipBytes": 24682,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/index-YNvli1gG.js",
-      "bytes": 67977,
-      "gzipBytes": 22800,
+      "file": "assets/FarmDecor-DOEXpeNM.js",
+      "bytes": 2202,
+      "gzipBytes": 1100,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/model-loader-k9SjJ7FZ.js",
-      "bytes": 46445,
-      "gzipBytes": 13566,
+      "file": "assets/index-B98rRco9.css",
+      "bytes": 25017,
+      "gzipBytes": 5832,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/three-core-DNJrnzan.js",
-      "bytes": 226385,
-      "gzipBytes": 59503,
+      "file": "assets/index-BwX1SAKl.js",
+      "bytes": 192257,
+      "gzipBytes": 59285,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/three-renderer-CZo2U34P.js",
-      "bytes": 352631,
-      "gzipBytes": 83724,
+      "file": "assets/inventory_is_full-C4ydDaAt.mp3",
+      "bytes": 25389,
+      "gzipBytes": 24484,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/model-loader-R4NtgU4i.js",
+      "bytes": 46448,
+      "gzipBytes": 13531,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/needlebackground_2-dkDVes0f.mp3",
+      "bytes": 1759581,
+      "gzipBytes": 1757683,
+      "preferredFileLimit": false
+    },
+    {
+      "file": "assets/sell_sound-DgrPZFea.mp3",
+      "bytes": 25389,
+      "gzipBytes": 24468,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/steps_loop-B_g9RYjm.mp3",
+      "bytes": 55341,
+      "gzipBytes": 54700,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/three-core-DBz6O7WM.js",
+      "bytes": 231473,
+      "gzipBytes": 61207,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/three-renderer-soPuJ9f9.js",
+      "bytes": 352606,
+      "gzipBytes": 83737,
       "preferredFileLimit": true
     },
     {
       "file": "index.html",
       "bytes": 1144,
       "gzipBytes": 694,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "technical-build.json",
+      "bytes": 382,
+      "gzipBytes": 224,
       "preferredFileLimit": true
     },
     {
@@ -62,6 +104,12 @@
       "file": "assets/cart_colored-rCI2l03Y.glb",
       "bytes": 3129416,
       "gzipBytes": 3044957,
+      "preferredFileLimit": false
+    },
+    {
+      "file": "assets/needlebackground_2-dkDVes0f.mp3",
+      "bytes": 1759581,
+      "gzipBytes": 1757683,
       "preferredFileLimit": false
     }
   ],

@@ -7,6 +7,7 @@ export class SaleEvent {
   private next() { return saleEvent.minWait + Math.random() * (saleEvent.maxWait - saleEvent.minWait); }
   get active() { return this.state.remaining > 0; }
   get remainingSeconds() { return Math.ceil(this.state.remaining); }
+  get remainingTime() { return this.state.remaining; }
   update(dt: number, enabled: boolean) {
     if (!enabled && !this.active) return false;
     const before = this.active;

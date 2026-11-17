@@ -84,3 +84,7 @@ Runtime network содержит только суммы/count доступно�
 
 Реальные мобильные/production/10 рестартов/профилирование по-прежнему требуют отдельного разрешения на проверки и фактических замеров.
 CPU-поля используют performance.now вокруг синхронных участков: это wall time на главном потоке (включая возможные GC/driver waits), не занятость процессора. Network encoded/decoded body bytes относятся к HTTP, не к памяти текстур/GPU.
+
+## Semantics refinements-r1 (2026-11-17)
+
+Build2026-11-17-refinements-r1 / revision foreground-time-shadow-proxy-pig-return-v1 помечает foreground-wall таймеры событий/сбора/свинок и proxy hay shadow. gameSeconds остаётся limited physics clock; разница с activeSeconds больше не означает, что события тоже используют capped dt. eventSeconds клипуется оставшимся временем×2. Тестовый production inventory уже создан/проверен (≈5.60MiB,16files); это не cold-cache mobile/itch verification. Свинки speed уменьшают cooldown и3×.9^level порог прогулки, маршруты/ходьба прежние. Сравнивать отчёты r1 и старые v3 с учётом изменившихся часов/AI/shadow policy. Фактические адресные результаты — needle-in-a-haystack/verification/REFINEMENTS_2026-11-17.md.

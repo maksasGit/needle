@@ -12,7 +12,9 @@
     "check:build": "node scripts/check-build.mjs",
     "verify": "npm run typecheck && npm test && npm run build && npm run check:build && npm run test:browser",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:refinements": "node scripts/check-refinements.mjs",
+    "test:refinements:browser": "node scripts/check-refinements-browser.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",

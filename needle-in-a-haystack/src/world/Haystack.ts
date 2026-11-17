@@ -6,6 +6,10 @@ import { decodeHay } from '../systems/SaveSystem';
 import { createStrawOutline } from './strawOutline';
 import { strawRarity } from '../config/rarity';
 
+export function quantizedAngle(value: number) {
+  return Math.max(-3141, Math.min(3141, Math.round(Math.atan2(Math.sin(value), Math.cos(value)) * 1000)));
+}
+
 type Piece = { id: number; position: THREE.Vector3; target: THREE.Vector3; rotation: THREE.Euler; velocity: number; slot: number; column: number; color: THREE.Color };
 type Column = { x: number; z: number; phase: number; bias: number; pieces: Piece[]; neighbours: number[] };
 
@@ -25,6 +29,14 @@ export class Haystack {
   private flying: THREE.InstancedMesh;
   private randomSeed = 42;
   private initialized = false;
+  private snapshotCache?: string;
+  private snapshotBuffer = new Int16Array(config.totalHay * 8);
+  private rotationEncoding = new Int16Array(config.totalHay * 3);
+  private rotationReady = new Uint8Array(config.totalHay);
+  private binaryBuffer?: Uint16Array;
+  private binaryDecoder?: TextDecoder;
+  private shadowProxy: THREE.Mesh;
+  private shadowHeight = 1;
   private supportHeight = config.hayVisual.layerHeight * config.hayVisual.contactScale;
   get count() { return this.pieces.length; }
   get activeCount() { return this.active.size; }
@@ -60,7 +72,11 @@ export class Haystack {
     this.mesh = new THREE.InstancedMesh(geometry, material, config.totalHay);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.mesh.userData.target = 'hay';
-    this.mesh.castShadow = true; this.mesh.receiveShadow = true;
+    this.mesh.castShadow = false; this.mesh.receiveShadow = false;
+    // A bounded mound casts the ground shadow, avoiding a second pass over 20k straws.
+    this.shadowProxy = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
+    this.shadowProxy.castShadow = true;
+    this.group.add(this.shadowProxy);
     // A fixed bound avoids recalculating a bounding sphere for every moving stalk.
     this.mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 1.5, 0), 3);
     this.flying = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ color: 0xffd83d, roughness: 1 }), settings.maxFlights);
@@ -104,6 +120,8 @@ export class Haystack {
     }
     this.mesh.instanceMatrix.needsUpdate = true;
     this.initialized = true;
+    for (const column of this.columns) this.shadowHeight = Math.max(this.shadowHeight, column.pieces.at(-1)?.target.y ?? 0);
+    this.updateShadow();
     this.installRaycast();
   }
   private installRaycast() {
@@ -148,20 +166,45 @@ export class Haystack {
       c.z + (this.random() - 0.5) * s.horizontalJitter);
   }
   private write(piece: Piece) {
+    // Cache quantized rotations; settling invalidates only the bounded set of moving pieces.
+    if (!this.rotationReady[piece.id]) {
+      const offset = piece.id * 3;
+      this.rotationEncoding[offset] = quantizedAngle(piece.rotation.x); this.rotationEncoding[offset + 1] = quantizedAngle(piece.rotation.y); this.rotationEncoding[offset + 2] = quantizedAngle(piece.rotation.z);
+      this.rotationReady[piece.id] = 1;
+    }
     this.dummy.position.copy(piece.position); this.dummy.rotation.copy(piece.rotation); this.dummy.scale.setScalar(1); this.dummy.updateMatrix();
     this.mesh.setMatrixAt(piece.slot, this.dummy.matrix); this.mesh.setColorAt(piece.slot, piece.color);
     if (this.initialized) this.mesh.instanceMatrix.addUpdateRange(piece.slot * 16, 16);
   }
   snapshot(): string {
-    const data = new Int16Array(this.count * 8);
-    const angle = (v: number) => Math.max(-3141, Math.min(3141, Math.round(Math.atan2(Math.sin(v), Math.cos(v)) * 1000)));
-    this.pieces.forEach((p, i) => data.set([p.id, p.column, Math.round(p.target.x * 1000), Math.round(p.target.y * 1000), Math.round(p.target.z * 1000), angle(p.rotation.x), angle(p.rotation.y), angle(p.rotation.z)], i * 8));
-    const bytes = new Uint8Array(data.buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
-    return btoa(binary);
+    if (this.snapshotCache !== undefined) return this.snapshotCache;
+    const data = this.snapshotBuffer;
+    for (let i = 0; i < this.count; i++) {
+      const p = this.pieces[i], offset = i * 8;
+      data[offset] = p.id; data[offset + 1] = p.column;
+      data[offset + 2] = Math.round(p.target.x * 1000); data[offset + 3] = Math.round(p.target.y * 1000); data[offset + 4] = Math.round(p.target.z * 1000);
+      const angles = p.id * 3;
+      data[offset + 5] = this.rotationEncoding[angles]; data[offset + 6] = this.rotationEncoding[angles + 1]; data[offset + 7] = this.rotationEncoding[angles + 2];
+    }
+    const bytes = new Uint8Array(data.buffer, 0, this.count * 16);
+    const native = (bytes as Uint8Array & {toBase64?:()=>string}).toBase64;
+    if (typeof native === 'function') return this.snapshotCache = native.call(bytes);
+    // Each code unit is 0…255. UTF-16 decoding avoids large JS argument spreads;
+    // unlike a latin1 decoder it preserves bytes 0x80…0x9f for btoa.
+    this.binaryBuffer ??= new Uint16Array(config.totalHay * 16);
+    this.binaryDecoder ??= new TextDecoder('utf-16le');
+    for (let i = 0; i < bytes.length; i++) this.binaryBuffer[i] = bytes[i];
+    const binary = this.binaryDecoder.decode(new Uint8Array(this.binaryBuffer.buffer, 0, bytes.length * 2));
+    return this.snapshotCache = btoa(binary);
+  }
+  private updateShadow() {
+    const scale = Math.cbrt(this.count / config.totalHay);
+    this.shadowProxy.visible = this.count > 0;
+    this.shadowProxy.scale.set(config.hayVisual.radius * scale, this.shadowHeight * scale, config.hayVisual.radius * scale);
   }
   restore(encoded: string, sourceContactScale: number = config.hayVisual.contactScale, sourceTotal: number = config.totalHay, sourceProfile: number = config.hayVisual.profileVersion) {
+    this.snapshotCache = undefined;
+    this.rotationReady.fill(0);
     if (!Number.isFinite(sourceContactScale) || sourceContactScale < 0.25 || sourceContactScale > 1) throw new Error('Invalid hay contact scale');
     if (!Number.isSafeInteger(sourceTotal) || sourceTotal < 1 || sourceTotal > config.totalHay) throw new Error('Invalid source hay total');
     if (!Number.isInteger(sourceProfile) || sourceProfile < 0 || sourceProfile > config.hayVisual.profileVersion) throw new Error('Invalid hay profile');
@@ -200,6 +243,7 @@ export class Haystack {
       column.pieces.push(piece); this.pieces.push(piece); this.byId.set(id, piece); this.write(piece);
     }
     this.mesh.count = this.count; this.flying.count = 0;
+    this.updateShadow();
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }
@@ -219,6 +263,7 @@ export class Haystack {
   }
   strawPosition(id: number, out: THREE.Vector3) { const straw=this.byId.get(id); if(!straw)return false; out.copy(straw.position).add(this.group.position); return true; }
   remove(amount: number, worldPoint: THREE.Vector3, receiver: THREE.Vector3, selectedId?: number, discoveryMultiplier = 1) {
+    if (amount > 0) this.snapshotCache = undefined;
     const diamonds: number[] = [];
     let bonus = 0, rareCount = 0, highest = strawRarity();
     const local = worldPoint.clone().sub(this.group.position);
@@ -270,6 +315,7 @@ export class Haystack {
       }
     }
     this.mesh.count = this.count;
+    this.updateShadow();
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
     return { bonus, rareCount, highest, diamonds };
@@ -287,10 +333,11 @@ export class Haystack {
       piece.position.x += (piece.target.x - piece.position.x) * blend;
       piece.position.z += (piece.target.z - piece.position.z) * blend;
       piece.rotation.x += rollDistance / settings.stalkLength + piece.velocity * dt * 0.5;
+      this.rotationReady[piece.id] = 0;
       if (piece.position.distanceToSquared(piece.target) < 0.00004) { piece.position.copy(piece.target); this.active.delete(piece); }
       this.write(piece); changed = true;
     }
-    if (changed) this.mesh.instanceMatrix.needsUpdate = true;
+    if (changed) { this.snapshotCache = undefined; this.mesh.instanceMatrix.needsUpdate = true; }
     const hadFlights = this.flights.length > 0;
     let live = 0;
     for (const flight of this.flights) { flight.age += dt; if (flight.age < settings.flightSeconds) this.flights[live++] = flight; }

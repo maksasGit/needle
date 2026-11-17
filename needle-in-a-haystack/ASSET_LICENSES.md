@@ -65,3 +65,7 @@ Original project procedural farm board in src/world/NoticeBoard.ts; no Witcher a
 ### TEAM-04 well and diamonds (2026-11-16)
 
 Original project procedural geometry/materials in Well.ts and Diamonds.ts. No external textures, models, characters, sounds or fonts added; existing licensed/original sell/deny audio reused.
+
+### Hay shadow proxy / collection feedback (2026-11-17)
+
+Original procedural hemisphere and native HTML/CSS feedback, authored in project code. No external models, images, fonts or audio added. Production now emits the existing Three.js license before its build inventory is counted.

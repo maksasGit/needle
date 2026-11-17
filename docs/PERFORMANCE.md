@@ -32,3 +32,7 @@
 ## Инструментация плейтеста v3 (2026-11-17)
 
 PLAYTEST_REPORT_V3.md описывает новые наблюдения: stage frame histograms/CPU, приближённые percentile bucket bounds, longtasks, sampled JS heap/renderer, раздельные save timings/UTF-8 sizes и production output inventory из scripts/technical-build.mjs. Это не согласованный baseline и не замена протоколу выше. GPU/process memory, cold-cache TTI, crash rate, mobile/itch/orientation/10 restart stability остаются unknown без фактических проверок. Build и игровые измерения в задаче не запускались.
+
+### Пункты1/2/3/5/7/9 — реализация2026-11-17
+
+Выполнены foreground-wall таймеры отдельно от capped physics; совместимый быстрый encoder+кеш snapshot с корректной invalidation settling; RU/EN ready/progress под прицелом; подтверждённое владельцем сокращение cooldown и прогулки свинок; lightweight ground-shadow proxy вместо shadow pass20k стеблей; production inventory/build-budget и адресные проверки. Подробности, фактические метрики и границы — needle-in-a-haystack/verification/REFINEMENTS_2026-11-17.md. Новый marker отчёта2026-11-17-refinements-r1. Production5873676bytes/16files; Node и browser component checks/typecheck/build/check:build прошли. Headless/touch emulation не заменяет настоящий телефон/visual acceptance/itch.io. Визуальная геометрия сена, цены/уровни, сохранённые покупки, формат SaveData v9 и кандидат v2 не менялись. Полный legacy suite не объявляется пройденным.

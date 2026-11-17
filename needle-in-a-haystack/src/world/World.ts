@@ -144,8 +144,8 @@ export class World {
     else this.barnHighlight.setFromObject(object);
     this.barnHighlight.visible = true;
   }
-  updatePigs(dt: number, count: number, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void, intervalMultiplier = 1, measure?: (mode: 'wander' | 'approach' | 'waiting', dt: number,index:number) => void) {
-    this.pigs.update(dt, count, this.pigSurface, this.pigFeed, onEat, intervalMultiplier, measure);
+  updatePigs(dt: number, count: number, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void, intervalMultiplier = 1, measure?: (mode: 'wander' | 'approach' | 'waiting', dt: number,index:number) => void, activeDt = dt) {
+    this.pigs.update(dt, count, this.pigSurface, this.pigFeed, onEat, intervalMultiplier, measure, activeDt);
   }
   hayIdAt(slot?: number) { return this.hay.idAt(slot); }
   loadNoncriticalAssets() {
@@ -215,7 +215,6 @@ export class World {
     this.shadowDirty = true; this.cargo.deposit(amount);
   }
   updateHay(dt: number) {
-    if (this.hay.activeCount) this.shadowDirty = true;
     this.hay.update(dt); this.needle.update(dt, this.reducedMotion);
   }
   takeShadowUpdate() { const dirty = this.shadowDirty; this.shadowDirty = false; return dirty; }

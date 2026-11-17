@@ -1,4 +1,4 @@
-import { readdir, stat, writeFile } from 'node:fs/promises';
+import { readdir, stat, writeFile, readFile } from 'node:fs/promises';
 import { resolve, join, extname } from 'node:path';
 import { Buffer } from 'node:buffer';
 
@@ -6,6 +6,7 @@ import { Buffer } from 'node:buffer';
 export default function technicalBuildInventory() {
   return { name: 'technical-build-inventory', apply: 'build', async writeBundle(options) {
     const root = resolve(options.dir ?? 'dist');
+    await writeFile(join(root, 'THIRD_PARTY_LICENSES.txt'), 'Three.js\n\n' + await readFile(new URL('../node_modules/three/LICENSE', import.meta.url), 'utf8'));
     let count = 0, total = 0, largest = 0;
     const byExtension = {};
     const scan = async dir => {

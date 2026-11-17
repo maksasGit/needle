@@ -1,5 +1,6 @@
 export type Language = 'ru' | 'en';
 const ru = {
+  collectionReady: '✓ Готово', collectionWorking: 'Сбор…',
   metamemory: 'Мышечная память', metamemoryEffect: 'Сохраняет все улучшения в новом заходе',
   well: 'Колодец', diamonds: 'Алмазы', diamondFound: '◆ +1 алмаз', metaNextRun: 'Действует со следующего захода', metaMissing: 'Не хватает {n} алмазов', metaStart: 'Старт:',
   metalegs: 'Быстрые ноги', metalegsEffect: 'Скорость ×1,5', metaluck: 'Удачный фермер', metaluckEffect: 'Сундуки вдвое чаще', metagold: 'Золотое сено', metagoldEffect: '×2 продажи: 90 секунд', metafriends: 'Друзья', metafriendsEffect: 'Одна свинка на старте',
@@ -78,6 +79,7 @@ const ru = {
 } as const;
 type Key = keyof typeof ru;
 const en: Record<Key, string> = {
+  collectionReady: '✓ Ready', collectionWorking: 'Collecting…',
   metamemory: 'Muscle memory', metamemoryEffect: 'Keep all upgrades in new runs',
   well: 'Wishing well', diamonds: 'Diamonds', diamondFound: '◆ +1 diamond', metaNextRun: 'Applies next run', metaMissing: 'Need {n} more diamonds', metaStart: 'Start:',
   metalegs: 'Quick feet', metalegsEffect: 'Movement ×1.5', metaluck: 'Lucky farmer', metaluckEffect: 'Chests twice as often', metagold: 'Golden hay', metagoldEffect: 'Double sales: 90 seconds', metafriends: 'Friends', metafriendsEffect: 'Start with one pig',
