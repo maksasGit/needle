@@ -1,11 +1,12 @@
 import { saleEvent } from '../config/presentation';
 export type SaleEventState = { wait: number; remaining: number };
-/** Active-play time only. No offline rewards, urgency countdown or reward reroll. */
+/** Active-play time only. No offline rewards or reward reroll. */
 export class SaleEvent {
   private state: SaleEventState;
   constructor(saved?: SaleEventState, private durationMultiplier = 1) { this.state = saved ? { ...saved } : { wait: this.next(), remaining: 0 }; }
   private next() { return saleEvent.minWait + Math.random() * (saleEvent.maxWait - saleEvent.minWait); }
   get active() { return this.state.remaining > 0; }
+  get remainingSeconds() { return Math.ceil(this.state.remaining); }
   update(dt: number, enabled: boolean) {
     if (!enabled && !this.active) return false;
     const before = this.active;

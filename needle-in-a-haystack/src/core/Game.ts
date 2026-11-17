@@ -64,6 +64,7 @@ export class Game {
   private barnCard?: BarnCard;
   private guide = new Onboarding();
   private saleEvent = new SaleEvent();
+  private displayedEventSeconds = -1;
   private meta = new MetaProgress();
   private buffs:MetaBuffs=emptyBuffs();
   private gems=freshGems();
@@ -256,6 +257,7 @@ export class Game {
         this.updateGameplay(dt);
         if (this.metrics.readyMs) this.telemetry?.tick(elapsed / 1000, this.stepSoundStart.distanceTo(this.player.position), collecting, this.economy.activeTool, this.economy.remaining, this.saleEvent.active, dt);
         if (this.saleEvent.update(dt, this.guide.completed)) { this.dirty = true; this.refreshEvent(); this.saveNow(); }
+        this.refreshEvent(false);
         if (this.guide.completed || this.saleEvent.active) this.dirty = true;
         const chestChange = this.chests.update(dt, this.economy.remaining, this.runTotal, this.canSpawnChest);
         this.dirty = true;
@@ -309,7 +311,9 @@ export class Game {
   private inRange(target: 'hay' | 'cart' | 'needle') {
     const object = config[target];
     if (target !== 'hay' && this.player.group.position.y > (target === 'cart' ? 1.8 : 1)) return false;
-    return this.player.position.distanceTo(this.step ? this.step.set(object.x, object.z) : new THREE.Vector2(object.x, object.z)) <= object.radius + config.playerRadius + config.interactionGap + config.interactionTolerance + (target === 'hay' ? this.economy.collectionReach : 0);
+    const baseRange = object.radius + config.playerRadius + config.interactionGap + config.interactionTolerance;
+    const reach = target === 'hay' ? baseRange * config.collectionRangeMultiplier + this.economy.collectionReach : baseRange;
+    return this.player.position.distanceTo(this.step ? this.step.set(object.x, object.z) : new THREE.Vector2(object.x, object.z)) <= reach;
   }
   private inBarnRange(target: keyof typeof barnItems) {
     const item = barnItems[target];
@@ -375,9 +379,12 @@ export class Game {
     this.message(offer.owned ? 'equipped' : 'boughtItem', { name: offer.name });
     this.refreshHUD(); this.saveNow(); return true;
   }
-  private refreshEvent() {
+  private refreshEvent(force = true) {
+    const seconds = this.saleEvent.remainingSeconds;
+    if (!force && seconds === this.displayedEventSeconds) return;
+    this.displayedEventSeconds = seconds;
     const node = document.querySelector<HTMLElement>('#sale-event');
-    if (node) { node.hidden = !this.saleEvent.active; node.textContent = t('saleEventActive'); }
+    if (node) { node.hidden = !this.saleEvent.active; node.textContent = `${t('saleEventActive')} · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; }
   }
   replayGuide() { this.guide.replay(); }
   private jump() {

@@ -312,6 +312,7 @@ html[data-reduced-motion="true"] button { transition:none; }
 .records-hint { font-size:.9rem; }
 #records-dialog { width:min(420px,calc(100vw - 32px)); box-sizing:border-box; max-height:calc(100dvh - 32px); overflow:auto; }
 .diamond-icon,.diamond-wallet { color:#007a9e; font-weight:900; }
+#sale-event { font-variant-numeric:tabular-nums; }
 .diamond-icon { font-size:28px; }
 #well-dialog { width:min(460px,calc(100vw - 32px)); box-sizing:border-box; max-height:calc(100dvh - 32px); overflow:auto; }
 .well-upgrade { display:grid; grid-template-columns:1fr auto; gap:4px 12px; padding:12px 0; border-bottom:2px solid #e2d7aa; }
