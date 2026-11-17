@@ -8,9 +8,9 @@ export class CollectionFeedback {
   private age=Infinity;
   private state='';
   private labelStamp='';
-  constructor(){this.node.id='collection-feedback';this.progress.max=1;this.node.append(this.label,this.progress);document.querySelector('#app')!.append(this.node);this.hide();}
-  update(dt:number,busy:boolean,fraction:number,ready:boolean){
-    const state=busy?'busy':ready?'ready':'hidden';this.age+=dt;
+  constructor(){this.node.id='collection-feedback';this.label.className='sr-only';this.progress.max=1;this.node.append(this.label,this.progress);document.querySelector('#app')!.append(this.node);this.hide();}
+  update(dt:number,busy:boolean,fraction:number,_ready:boolean){
+    const state=busy?'busy':'hidden';this.age+=dt;
     if(state===this.state&&this.age<.05)return;this.age=0;this.state=state;
     const hidden=state==='hidden';if(this.node.hidden!==hidden)this.node.hidden=hidden;if(hidden)return;
     const text=t(busy?'collectionWorking':'collectionReady'),stamp=state+text;

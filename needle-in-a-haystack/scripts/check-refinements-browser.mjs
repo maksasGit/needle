@@ -19,7 +19,7 @@ try{
     await context.addInitScript(({fixture})=>{localStorage.setItem('needle.save.v1',JSON.stringify(fixture));localStorage.setItem('needle.settings.v1',JSON.stringify({language:'en',musicEnabled:false,effectsEnabled:false,economyTelemetry:true}));localStorage.setItem('needle.tutorial.v1','done');},{fixture});
     const page=await context.newPage();page.on('pageerror',error=>errors.push(String(error)));
     await page.goto(url);await page.bringToFront();await page.waitForFunction(()=>window.needleDiagnostics?.().samples>=1,{timeout:30000});
-    await page.waitForFunction(()=>document.querySelector('#collection-feedback')?.dataset.state==='ready'&&!document.querySelector('#collection-feedback').hidden,null,{timeout:3000});
+    await page.waitForFunction(()=>document.querySelector('.crosshair')?.classList.contains('has-target'),null,{timeout:3000});
     if(touch)await page.tap('#interact');else await page.keyboard.press('KeyE');
     await page.waitForFunction(()=>document.querySelector('#collection-feedback')?.dataset.state==='busy',{timeout:3000});
     const before=await page.evaluate(()=>window.needleDiagnostics());
@@ -28,7 +28,7 @@ try{
     const after=await page.evaluate(()=>window.needleDiagnostics());
     if(!touch){assert.ok(before.saleEvent.remaining-after.saleEvent.remaining>=1.1);assert.ok(before.chest.active.remaining-after.chest.active.remaining>=1.1);}
     assert.ok(after.triangles<300000,`Expected lightweight shadow/render path, got ${after.triangles}`);
-    let landscapeInventory=null;if(touch){await page.setViewportSize({width:844,height:390});await page.waitForFunction(()=>document.querySelector('#collection-feedback')?.dataset.state==='ready'&&!document.querySelector('#collection-feedback').hidden,null,{timeout:3000});await page.tap('#interact');await page.waitForFunction(()=>window.needleDiagnostics().inventory===2);landscapeInventory=await page.evaluate(()=>window.needleDiagnostics().inventory);}
+    let landscapeInventory=null;if(touch){await page.setViewportSize({width:844,height:390});await page.waitForFunction(()=>document.querySelector('.crosshair')?.classList.contains('has-target'),null,{timeout:3000});await page.tap('#interact');await page.waitForFunction(()=>window.needleDiagnostics().inventory===2);landscapeInventory=await page.evaluate(()=>window.needleDiagnostics().inventory);}
     await page.click('#settings');const paused=await page.evaluate(()=>window.needleDiagnostics().saleEvent.remaining);await page.waitForTimeout(400);assert.equal(await page.evaluate(()=>window.needleDiagnostics().saleEvent.remaining),paused);
     const reportData=await page.evaluate(async()=>{const button=document.querySelector('#export-economy-metrics');button.click();await new Promise(r=>setTimeout(r,30));return JSON.parse(document.querySelector('#economy-metrics-text').value);});
     assert.equal(reportData.build,'2026-11-17-compact-map-r2');

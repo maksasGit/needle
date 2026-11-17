@@ -8,7 +8,8 @@ const paths = iconPaths;
 /** Four reusable DOM elements; rapid actions never create an unbounded queue. */
 export class FloatingFeedback {
   private items: { node: HTMLDivElement; icon: SVGSVGElement; path: SVGPathElement; label: HTMLSpanElement; animation?: Animation }[] = [];
-  private cursor = 0;
+  private totals = { hay: 0, coins: 0 };
+  private windows = { hay: -Infinity, coins: -Infinity };
   private lastFull = -Infinity;
   reducedMotion = false;
   private motion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -27,22 +28,25 @@ export class FloatingFeedback {
       if (now - this.lastFull < 450) return;
       this.lastFull = now;
     } else if (kind !== 'notice' && amount <= 0) return;
-    const slot = this.cursor++ % this.items.length, item = this.items[slot];
+    // Each feedback kind owns a fixed lane; rapid rewards merge, never stack.
+    const slot = kind === 'hay' ? 0 : kind === 'coins' ? 1 : kind === 'notice' ? 2 : 3, item = this.items[slot];
+    if (kind === 'hay' || kind === 'coins') {
+      if (now - this.windows[kind] > presentation.messageMs) { this.windows[kind] = now; this.totals[kind] = 0; }
+      this.totals[kind] += amount; amount = this.totals[kind];
+    }
     item.animation?.cancel(); item.node.dataset.kind = kind;
     item.icon.style.display = kind === 'full' || kind === 'notice' ? 'none' : '';
     if (kind === 'hay' || kind === 'coins') item.path.setAttribute('d', paths[kind]);
     item.label.textContent = kind === 'full' ? t('inventoryFull') : kind === 'notice' ? text : `+${amount}`;
-    const x = kind === 'full' || kind === 'notice' ? 0 : (slot - 1.5) * 24;
-    const y = kind === 'hay' ? 24 : kind === 'coins' ? -20 : 0;
     const reduced = this.reducedMotion || this.motion.matches;
     item.animation = item.node.animate([
-      { opacity: 0, transform: `translate(calc(-50% + ${x}px), ${y + (reduced ? 0 : 8)}px) scale(${reduced ? 1 : .9})` },
-      { opacity: 1, transform: `translate(calc(-50% + ${x}px), ${y}px) scale(1)`, offset: 0.14 },
-      { opacity: 1, transform: `translate(calc(-50% + ${x}px), ${y + (reduced ? 0 : -22)}px) scale(1)`, offset: 0.6 },
-      { opacity: 0, transform: `translate(calc(-50% + ${x}px), ${y + (reduced ? 0 : -48)}px) scale(1)` },
+      { opacity: 0, transform: `translateY(${reduced ? 0 : 5}px)` },
+      { opacity: 1, transform: 'translateY(0)', offset: 0.14 },
+      { opacity: 1, transform: 'translateY(0)', offset: 0.7 },
+      { opacity: 0, transform: `translateY(${reduced ? 0 : -5}px)` },
     ], { duration: kind === 'full' ? presentation.fullMessageMs : presentation.messageMs, easing: presentation.easing, fill: 'forwards' });
   }
-  stop() { for (const item of this.items) item.animation?.cancel(); }
+  stop() { for (const item of this.items) item.animation?.cancel(); this.windows.hay = this.windows.coins = -Infinity; }
   dispose() {
     for (const item of this.items) { item.animation?.cancel(); item.node.remove(); }
     this.items.length = 0;

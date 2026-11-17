@@ -274,3 +274,7 @@
 ### Production compact-map-r2 — 2026-11-17
 
 После импортаGLB и меню выполнены build/check:build по разовому разрешению владельца: около13,13MiB,21файл. Актуальные точные размеры: needle-in-a-haystack/verification/build-report.json. Модели/музыка остаются исключениями к предпочтительным512KiB; hard ceilings соблюдены. Screenshot artifacts в verification не входят в dist. Это не mobile/cold-cache/GPU-memory измерение.
+
+### Barn sign atlas update — 2026-11-17
+
+Runtime CanvasTexture changed1024×256→1536×512 to preserve text proportions and readability. RGBA base allocation≈3MiB, with full mipmaps≈4MiB (previous≈1/1.33MiB). Six signs still share one atlas/material; no new transferred image. Static redraw key is unchanged, not per-frame. Production inventory has not been rebuilt for this correction.

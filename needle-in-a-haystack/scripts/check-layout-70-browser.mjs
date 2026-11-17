@@ -40,9 +40,10 @@ try{
   await context.close();
  }
  const {context,page}=await seeded({width:390,height:844},[-3.5,0],[-3.5,-3.5,-.18],true);
- await page.waitForFunction(()=>!document.querySelector('#collection-feedback').hidden);
+ const actionBox=await page.locator('#interact').boundingBox();await page.mouse.move(actionBox.x+actionBox.width/2,actionBox.y+actionBox.height/2);await page.mouse.down();
+ await page.waitForFunction(()=>document.querySelector('#collection-feedback').dataset.state==='busy'&&!document.querySelector('#collection-feedback').hidden);
  const overlap=await page.evaluate(()=>{const a=document.querySelector('#collection-feedback').getBoundingClientRect(),b=document.querySelector('#aim-label').getBoundingClientRect();return a.bottom>b.top&&a.top<b.bottom&&a.right>b.left&&a.left<b.right;});assert.equal(overlap,false);report.checks.push({collectionFeedbackOverlapsAim:false});
- await shot(page,'mobile-game');await page.tap('#shop');await shot(page,'mobile-shop');await page.tap('[data-tab="tool4"]');await shot(page,'mobile-shop-vacuum');
+ await shot(page,'mobile-game');await page.mouse.up();await page.tap('#shop');await shot(page,'mobile-shop');await page.tap('[data-tab="tool4"]');await shot(page,'mobile-shop-vacuum');
  await page.setViewportSize({width:844,height:390});await shot(page,'mobile-landscape-shop');
  const geometry=await page.locator('#shop-dialog').evaluate(n=>({width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height,viewport:[innerWidth,innerHeight],bodyScroll:n.querySelector('.shop-body').scrollHeight,bodyHeight:n.querySelector('.shop-body').clientHeight}));report.checks.push({mobileShop:geometry});assert.ok(geometry.width<=844&&geometry.height<=390);
  await context.close();assert.deepEqual(report.errors,[]);

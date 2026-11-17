@@ -5,7 +5,7 @@ import type { EconomySystem } from '../systems/EconomySystem';
 import { t } from '../ui/i18n';
 import { ToolAssets } from './ToolAssets';
 
-/** Authored barn backdrop, accessible outdoor displays and shared price-sign atlas. */
+/** Tools mounted inside the open porch, with a shared parchment-sign atlas. */
 export class Barn {
   readonly group = new THREE.Group();
   readonly pickables: THREE.Object3D[] = [];
@@ -28,10 +28,9 @@ export class Barn {
     }
     assets.box(this.group, [5.3, .17, .18], [1.8, 2.6, -3.18], 0xfff2cd);
     this.fallback = this.group.children.slice();
-    // Independent rack keeps tools accessible in front of a closed GLB shell.
-    for (const x of [-.65, 4.25]) assets.box(this.group, [.12, 2.4, .12], [x, 1.2, -2.65], 0x6d3c24);
-    assets.box(this.group, [5.05, .85, .12], [1.8, 1.4, -2.65], 0xb86b38);
-    this.canvas.width = 1024; this.canvas.height = 256;
+    // Mount inside the porch, behind the front posts, rather than outside the barn.
+    assets.box(this.group, [4.75, .85, .10], [1.8, 1.4, -4.05], 0x99613d);
+    this.canvas.width = 1536; this.canvas.height = 512;
     this.texture = new THREE.CanvasTexture(this.canvas); this.texture.colorSpace = THREE.SRGBColorSpace;
     const material = new THREE.MeshBasicMaterial({ map: this.texture, toneMapped: false, alphaTest: .5 });
     const targetMaterial = new THREE.MeshBasicMaterial({ visible: false });
@@ -47,7 +46,7 @@ export class Barn {
       hitbox.position.set(item.x, target === 'pig' ? .4 : 1.25, item.z + .08);
       hitbox.userData.target = target; this.group.add(hitbox); this.pickables.push(hitbox);
       display.traverse(object => { if (object instanceof THREE.Mesh) { object.userData.target = target; this.pickables.push(object); } });
-      const geometry = new THREE.PlaneGeometry(.85, .42), uv = geometry.getAttribute('uv');
+      const geometry = new THREE.PlaneGeometry(.85, .85 * 2 / 3), uv = geometry.getAttribute('uv');
       for (let v = 0; v < uv.count; v++) uv.setXY(v, (i % 4 + uv.getX(v)) / 4, 1 - (Math.floor(i / 4) + 1 - uv.getY(v)) / 2);
       const sign = new THREE.Mesh(geometry, material);
       sign.position.set(item.x, target === 'pig' ? 1.15 : 2.12, item.z + .12);
@@ -71,17 +70,24 @@ export class Barn {
     if (state === this.lastState) return;
     this.lastState = state;
     const ctx = this.canvas.getContext('2d'); if (!ctx) return;
-    ctx.setTransform(1, 0, 0, .5, 0, 0); ctx.clearRect(0, 0, 1024, 512);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     (Object.keys(barnItems) as BarnTarget[]).forEach((target, i) => {
-      const x = i % 4 * 256, y = Math.floor(i / 4) * 256, offer = economy.barnOffer(target);
-      ctx.fillStyle = offer.owned ? '#b4f49b' : offer.locked ? '#d9deeb' : '#fff0bd'; ctx.fillRect(x + 5, y + 18, 246, 220);
-      ctx.strokeStyle = '#20212a'; ctx.lineWidth = 8; ctx.strokeRect(x + 5, y + 18, 246, 220);
-      ctx.fillStyle = '#20212a'; ctx.textAlign = 'center'; ctx.font = 'bold 27px sans-serif';
-      ctx.fillText(offer.name, x + 128, y + 93, 226);
-      ctx.font = 'bold 37px sans-serif';
-      ctx.fillText(offer.owned ? t('owned') : offer.price === null ? t('maxShort') : `${offer.price} ${t('coinShort')}`, x + 128, y + 158, 226);
-      ctx.font = 'bold 22px sans-serif';
-      ctx.fillText(offer.locked ? t('previousTool') : offer.owned ? t('equip') : offer.price === null ? t('maxShort') : t('buy'), x + 128, y + 207, 226);
+      const x = i % 4 * 384, y = Math.floor(i / 4) * 256, offer = economy.barnOffer(target);
+      const equipped = !!barnItems[target].tool && offer.owned && economy.activeTool === barnItems[target].tool;
+      const rounded = (px:number,py:number,w:number,h:number,r:number) => {ctx.beginPath();ctx.roundRect(x+px,y+py,w,h,r);ctx.fill();};
+      ctx.fillStyle='#5e351b'; rounded(8,15,368,232,18);
+      const wood=ctx.createLinearGradient(0,y+16,0,y+240);wood.addColorStop(0,'#d39a4c');wood.addColorStop(1,'#8a4e24');ctx.fillStyle=wood;rounded(12,12,360,226,16);
+      const paper=ctx.createLinearGradient(0,y+76,0,y+228);paper.addColorStop(0,'#fff0c1');paper.addColorStop(1,'#eac583');ctx.fillStyle=paper;rounded(22,24,340,204,10);
+      ctx.fillStyle=equipped?'#286b66':'#825024';rounded(22,24,340,58,10);
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff0c1';
+      let font=29;ctx.font=`bold ${font}px "Trebuchet MS",sans-serif`;
+      while(ctx.measureText(offer.name).width>314&&font>20){font--;ctx.font=`bold ${font}px "Trebuchet MS",sans-serif`;}
+      ctx.fillText(offer.name,x+192,y+54);
+      ctx.font='bold 40px "Trebuchet MS",sans-serif';ctx.fillStyle=offer.locked?'#866b4b':'#57321b';
+      ctx.fillText(equipped?t('equipped'):offer.owned?t('owned'):offer.price===null?t('maxShort'):`${offer.price} ${t('coinShort')}`,x+192,y+132,312);
+      ctx.fillStyle=offer.locked?'#ddcbaa':offer.owned?'#c4dca0':'#b6d991';rounded(44,178,296,34,9);
+      ctx.fillStyle=offer.locked?'#6e573c':'#395526';ctx.font='bold 21px "Trebuchet MS",sans-serif';
+      ctx.fillText(offer.locked?t('previousTool'):equipped?'✓':offer.owned?t('equip'):offer.price===null?'—':t('buy'),x+192,y+196,276);
     });
     this.texture.needsUpdate = true;
   }

@@ -323,3 +323,7 @@ SaveData v9 читает1–9. MetaProfile.memoryProgress хранит один 
 ### Compact layout2 — 2026-11-17
 
 The map is18.2×18.2 (70% each side), centers/configured chest positions and local roads updated. SaveSystem permits former-map positions for migration; Game resets old-layout player position, maps layout1 dropped gems and retains hay snapshots/ledgers. New diagnostics include layoutVersion/worldHalfSize/farmModelStatus. Barn has accessible exterior item hitboxes and a solid rotated collision footprint. Notice-board GLB is rotated inward; decorative instances avoid interaction zones. See verification/LAYOUT_70_2026-11-17.md for actual checks and screenshots, not a release-ready claim.
+
+### Уточнение размещения амбара — 2026-11-17
+
+По замечанию владельца инструменты/рюкзак перенесены с наружной стойки внутрь открытого навеса: local z=-3.9 (+0.8 от центра), монтажная доска на+0.65, без наружных опор. Навигационный solid footprint сдвинут назад и укорочен, оставляя переднюю часть навеса доступной. Цены, доступность предметов и их невидимые зоны выбора сохранены; world-координаты выводятся из общего barnLocalItems. Новых моделей/текстурных файлов нет. Ручная проверка ожидается; прошлые screenshots/layout-70 устарели для этой детали.

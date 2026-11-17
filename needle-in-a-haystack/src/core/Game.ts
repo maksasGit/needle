@@ -619,6 +619,7 @@ export class Game {
   }
   private updateAimLabel() {
     const node = document.querySelector('#aim-label');
+    if(node&&this.aimTarget==='hay'){node.textContent='';return;}
     if(node&&this.aimTarget==='well'){node.textContent=t('well');return;}
     if(node&&this.aimTarget==='diamond'){node.textContent=t('diamonds');return;}
     if (node && this.aimTarget === 'records') { node.textContent=t('recordsAim'); return; }
@@ -628,8 +629,7 @@ export class Game {
       node.textContent = t(offer.owned ? 'barnOwnedAim' : offer.price === null ? 'barnMaxAim' : 'barnAim', { name: offer.name, price: offer.price ?? 0 }) + (offer.locked ? ` / ${t('previousTool')}` : '');
       return;
     }
-    if (node) node.textContent = this.aimTarget === 'hay' ? t('aimHay') : this.aimTarget === 'cart' ? t('aimCartCount', { n: this.world.cargoCount }) : this.aimTarget === 'needle' ? t('needle') : '';
-    if (node && this.aimTarget === 'hay' && this.aimRarity.bonus) node.textContent = t('aimRare', { rarity: `${this.aimRarity.badge} ${t(this.aimRarity.id)}`, n: Math.ceil(this.aimRarity.bonus * this.economy.discoveryMultiplier) });
+    if (node) node.textContent = this.aimTarget === 'cart' ? t('aimCartCount', { n: this.world.cargoCount }) : this.aimTarget === 'needle' ? t('needle') : '';
   }
   refreshLanguage() {
     this.refreshHUD();
