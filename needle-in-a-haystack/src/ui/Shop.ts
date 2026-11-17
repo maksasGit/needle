@@ -6,6 +6,7 @@ import { t, toolName } from './i18n';
 import { icon } from './icons';
 import type { IconName } from './icons';
 import { presentation } from '../config/presentation';
+import parchmentUrl from '../assets/ui/shop-parchment.jpg?url';
 
 export type ShopAction = { kind: 'character'; id: 'movement' | 'collection' | 'sale' } | { kind: 'volume' | 'special' | 'equip'; tool: number } | { kind: 'pig'; upgrade: 'portion' | 'speed' };
 export class Shop {
@@ -15,7 +16,7 @@ export class Shop {
   private busy = false;
   private timer?: ReturnType<typeof setTimeout>;
   constructor(private economy: EconomySystem, private onBuy: (action: ShopAction) => boolean, private onReject: (text: string) => void = () => {}) {
-    document.querySelector<HTMLButtonElement>('#shop')!.onclick = () => { const feedback = this.dialog.querySelector<HTMLElement>('[data-book-feedback]')!; feedback.textContent = ''; delete feedback.dataset.feedbackState; this.render(true); if (!this.dialog.open) this.dialog.showModal(); };
+    document.querySelector<HTMLButtonElement>('#shop')!.onclick = () => { this.dialog.style.setProperty('--shop-parchment', `url("${parchmentUrl}")`); const feedback = this.dialog.querySelector<HTMLElement>('[data-book-feedback]')!; feedback.textContent = ''; delete feedback.dataset.feedbackState; this.render(true); if (!this.dialog.open) this.dialog.showModal(); };
     this.dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = () => this.dialog.close();
     this.dialog.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -48,13 +49,13 @@ export class Shop {
   }
   private buyButton(price: number | null, attrs: string) {
     const disabled = price === null || this.economy.coins < price;
-    return `<button ${attrs} aria-disabled="${disabled}" data-unavailable="${disabled}" data-reason="${price === null ? 'max' : 'funds'}" data-price="${price ?? ''}">${price === null ? t('max') : `${t('buy')} &middot; ${price} ${t('money')}`}</button>`;
+    return `<button class="shop-buy" ${attrs} aria-disabled="${disabled}" data-unavailable="${disabled}" data-reason="${price === null ? 'max' : 'funds'}" data-price="${price ?? ''}">${price === null ? `${icon('check')}${t('max')}` : `<span>${t('buy')}</span><span class="shop-price">${icon('coins')}${price}</span>`}</button>`;
   }
   private characterPage() {
     const avatar = '<svg class="book-avatar" viewBox="0 0 64 80" aria-hidden="true"><rect x="20" y="4" width="24" height="24" rx="7" fill="#ffcf8b"/><rect x="14" y="31" width="36" height="30" rx="7" fill="#23b8ff"/><rect x="5" y="34" width="8" height="25" rx="4" fill="#ffcf8b"/><rect x="51" y="34" width="8" height="25" rx="4" fill="#ffcf8b"/><path d="M19 65h11v13H19zM34 65h11v13H34z" fill="#526985"/></svg>';
-    return `<div class="character-summary">${avatar}<p>${t('characterHint')}</p></div>` + (['movement','collection','sale'] as const).map(id => {
+    return `<div class="character-summary">${avatar}<strong>${t('character')}</strong></div>` + (['movement','collection','sale'] as const).map(id => {
       const level = this.economy.levels[id], price = this.economy.price(id);
-      return `<article class="upgrade"><h3>${t(id)} <small>${level} / ${upgrades[id].maxLevel}</small></h3><p>${this.economy.effect(id)}${price === null ? '' : ` &rarr; ${this.economy.effect(id, true)}`}</p>${this.buyButton(price, `data-action="character" data-upgrade="${id}"`)}</article>`;
+      return `<article class="upgrade"><div class="upgrade-symbol" aria-hidden="true">${icon(id === 'movement' ? 'arrow' : id === 'collection' ? 'hay' : 'coins')}</div><div class="upgrade-detail"><h3>${t(id)} <small>${level} / ${upgrades[id].maxLevel}</small></h3><p>${this.economy.effect(id)}${price === null ? '' : ` &rarr; ${this.economy.effect(id, true)}`}</p></div>${this.buyButton(price, `data-action="character" data-upgrade="${id}"`)}</article>`;
     }).join('');
   }
   private featureValue(tool: number, level: number) {
@@ -98,7 +99,7 @@ export class Shop {
     }
   }
   private pigPage() {
-    return `<h3>${t('pigs')}</h3><p>${t('pigsInfo', { n: this.economy.pigCount, eaten: this.economy.pigEaten })}</p><p>${t('pigUpgradeHint')}</p>` + (['portion', 'speed'] as const).map(kind => {
+    return `<h3>${t('pigs')}</h3><p>${t('pigsInfo', { n: this.economy.pigCount, eaten: this.economy.pigEaten })}</p>` + (['portion', 'speed'] as const).map(kind => {
       const level = kind === 'portion' ? this.economy.pigPortionLevel : this.economy.pigSpeedLevel;
       const price = level >= pigUpgrades.maxLevel ? null : pigUpgradePrice(kind, level);
       const value = (n: number) => kind === 'portion'
