@@ -309,18 +309,14 @@ dialog[open] { animation:toy-panel-enter var(--ui-panel-ms) var(--ui-ease,ease-o
 #collection-feedback[data-state="ready"] progress { accent-color:#54d845; }
 #collection-feedback[data-state="ready"] progress::-webkit-progress-value { background:#54d845; }
 #collection-feedback[data-state="ready"] progress::-moz-progress-bar { background:#54d845; }
-#barn-dialog { width:min(580px,calc(100vw - 24px)); height:min(530px,90dvh); }
+#barn-dialog { width:min(580px,calc(100vw - 24px)); height:min(410px,90dvh); }
 .barn-offer { text-align:center; }
-.barn-card-heading { display:flex; justify-content:center; padding-top:10px; }
-.barn-card-heading [data-barn-icon] { display:grid; place-items:center; width:96px; height:96px; flex-shrink:0; background:linear-gradient(#ffe7a0,#e9bd64); border:3px solid #a26a2e; border-radius:20px; box-shadow:inset 0 3px #fff0ba,0 4px #a26a2e33; color:#86562f; }
-.barn-card-heading .ui-icon { width:60px; height:60px; }
 .barn-price-tag { display:flex; align-items:center; justify-content:center; gap:8px; }
 .barn-price-tag > .ui-icon { color:#86601a; fill:#ffdc65; }
 .barn-card-price { font-size:25px; color:#70441f; font-variant-numeric:tabular-nums; }
 .barn-wallet { color:#fff2b4; font-size:15px; font-variant-numeric:tabular-nums; white-space:nowrap; }
 #barn-dialog .shop-buy { width:100%; }
 #barn-dialog .shop-buy[aria-disabled="true"] { opacity:1; color:#725e42; background:#ddcfaf; border-color:#a59374; box-shadow:0 2px #978367; }
-#barn-dialog[data-success="true"] .barn-card-heading [data-barn-icon] { border-color:#527b2e; background:#c8e79a; }
 .book-tabs .ui-icon { width:20px; height:20px; margin-right:5px; }
 .coin-flights { position:fixed; inset:0; pointer-events:none; z-index:5; overflow:hidden; }
 .flight-coin { position:absolute; top:0; left:0; opacity:0; color:#ffe14a; width:25px; height:25px; filter:drop-shadow(0 2px 0 #20212a); }

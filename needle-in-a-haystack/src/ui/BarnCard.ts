@@ -5,8 +5,6 @@ import { upgrades } from '../config/balance';
 import { presentation } from '../config/presentation';
 import type { EconomySystem } from '../systems/EconomySystem';
 import { t } from './i18n';
-import { icon } from './icons';
-import type { IconName } from './icons';
 import parchmentUrl from '../assets/ui/shop-parchment.jpg?url';
 
 export class BarnCard {
@@ -39,7 +37,6 @@ export class BarnCard {
     if (!this.target || (!force && !this.dialog.open)) return;
     const offer = this.economy.barnOffer(this.target), tool = barnItems[this.target].tool;
     this.dialog.querySelector('[data-barn-name]')!.textContent = offer.name;
-    this.dialog.querySelector('[data-barn-icon]')!.innerHTML = icon(this.target as IconName);
     const detail = this.dialog.querySelector('[data-barn-detail]')!;
     detail.textContent = tool ? t((`trait${tool}`) as 'trait1') : this.target === 'backpack' ? this.economy.effect('capacity') + (offer.price === null ? '' : ` → ${this.economy.effect('capacity', true)}`) : t('pigCardHint');
     if (tool) {
