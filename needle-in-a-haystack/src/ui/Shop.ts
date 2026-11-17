@@ -83,14 +83,12 @@ export class Shop {
     this.dialog.querySelector('[data-wallet]')!.textContent = `${this.economy.coins} ${t('money')}`;
     const tabs = [{ id: 'character', name: t('character') }];
     for (let tool = 1; tool <= this.economy.levels.tools; tool++) tabs.push({ id: `tool${tool}`, name: toolName(tool) });
-    if (this.economy.levels.capacity > 0) tabs.push({ id: 'backpack', name: t('backpack') });
     if (this.economy.pigCount > 0) tabs.push({ id: 'pigs', name: t('pigs') });
     if (!tabs.some(tab => tab.id === this.tab)) this.tab = 'character';
     const nav = this.dialog.querySelector('[data-book-tabs]')!;
-    nav.innerHTML = tabs.map(tab => `<button role="tab" aria-selected="${tab.id === this.tab}" data-tab="${tab.id}">${icon((tab.id === "character" ? "book" : tab.id === "pigs" ? "pig" : tab.id === "backpack" ? "backpack" : ["rake","fork","widefork","vacuum"][Number(tab.id.slice(4)) - 1]) as IconName)}${tab.name}</button>`).join('');
+    nav.innerHTML = tabs.map(tab => `<button role="tab" aria-selected="${tab.id === this.tab}" data-tab="${tab.id}">${icon((tab.id === "character" ? "book" : tab.id === "pigs" ? "pig" : ["rake","fork","widefork","vacuum"][Number(tab.id.slice(4)) - 1]) as IconName)}${tab.name}</button>`).join('');
     const list = this.dialog.querySelector('[data-upgrades]')!;
     if (this.tab === 'character') list.innerHTML = this.characterPage();
-    else if (this.tab === 'backpack') list.innerHTML = `<h3>${t('backpack')}</h3><p>${t('backpackInfo', { n: this.economy.capacity })}</p><p>${t('atBarn')}</p>`;
     else if (this.tab === 'pigs') list.innerHTML = this.pigPage();
     else list.innerHTML = this.toolPage(Number(this.tab.slice(4)));
     if (focusSelector) {
