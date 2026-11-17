@@ -7,6 +7,7 @@ import type { EconomySystem } from '../systems/EconomySystem';
 import { t } from './i18n';
 import { icon } from './icons';
 import type { IconName } from './icons';
+import parchmentUrl from '../assets/ui/shop-parchment.jpg?url';
 
 export class BarnCard {
   private dialog = document.querySelector<HTMLDialogElement>('#barn-dialog')!;
@@ -33,7 +34,7 @@ export class BarnCard {
       this.timer = setTimeout(() => { this.busy = false; delete this.dialog.dataset.success; this.render(); }, presentation.purchaseGuardMs);
     }, { signal: this.controller.signal });
   }
-  show(target: BarnTarget) { this.target = target; const feedback = this.dialog.querySelector<HTMLElement>('[data-barn-feedback]')!; feedback.textContent = ''; delete feedback.dataset.feedbackState; this.render(true); if (!this.dialog.open) this.dialog.showModal(); }
+  show(target: BarnTarget) { this.dialog.style.setProperty('--shop-parchment', `url("${parchmentUrl}")`); this.target = target; const feedback = this.dialog.querySelector<HTMLElement>('[data-barn-feedback]')!; feedback.textContent = ''; delete feedback.dataset.feedbackState; this.render(true); if (!this.dialog.open) this.dialog.showModal(); }
   render(force = false) {
     if (!this.target || (!force && !this.dialog.open)) return;
     const offer = this.economy.barnOffer(this.target), tool = barnItems[this.target].tool;
@@ -46,6 +47,7 @@ export class BarnCard {
       detail.textContent += ` · ${this.economy.collectionAmount} → ${amount} ${t(tool === 4 ? 'perCycle' : 'perTap')}`;
     }
     this.dialog.querySelector('[data-barn-price]')!.textContent = offer.owned ? t('owned') : offer.price === null ? t('max') : `${offer.price} ${t('money')}`;
+    this.dialog.querySelector('.barn-price-tag > svg')!.toggleAttribute('hidden', offer.owned || offer.price === null);
     this.dialog.querySelector('[data-barn-wallet]')!.textContent = `${this.economy.coins} ${t('money')}`;
     const button = this.dialog.querySelector<HTMLButtonElement>('[data-barn-confirm]')!;
     const equipped = !!tool && offer.owned && this.economy.activeTool === tool;
