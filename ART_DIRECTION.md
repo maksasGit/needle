@@ -101,6 +101,8 @@ Current code for the adopted feedback direction is mapped in GAME_REQUIREMENTS.m
 
 ### Shop reference adopted — 2026-11-17
 
+At the owner's request the records board dialog also uses this shared theme: wood header, parchment, teal selected Local/Global buttons, ranked rows and clear time values. Keep buff badges, the local top-five rules and explicit fictional/demo status of global results. No leaderboard backend or scoring changes are implied. Manual acceptance remains pending.
+
 The owner also requested this treatment for barn item purchase cards: shared parchment and wooden heading, large original item SVG, wallet, price and a single purchase/equip action. Preserve locked/owned/equipped/funds feedback and immediate transaction semantics. No new asset download beyond the same lazily requested JPEG; visual acceptance remains manual.
 
 The owner subsequently authorized applying the same parchment/wood design to well upgrades. WellMenu reuses the same lazy image URL and shared CSS theme, with a diamond wallet/prices and the existing next-run notice. No additional artwork, fonts, sounds or economy changes. Manual visual acceptance is pending; no automatic testing was requested.
