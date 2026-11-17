@@ -144,7 +144,7 @@ export class World {
     else this.barnHighlight.setFromObject(object);
     this.barnHighlight.visible = true;
   }
-  updatePigs(dt: number, count: number, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void, intervalMultiplier = 1, measure?: (mode: 'wander' | 'approach' | 'waiting', dt: number) => void) {
+  updatePigs(dt: number, count: number, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void, intervalMultiplier = 1, measure?: (mode: 'wander' | 'approach' | 'waiting', dt: number,index:number) => void) {
     this.pigs.update(dt, count, this.pigSurface, this.pigFeed, onEat, intervalMultiplier, measure);
   }
   hayIdAt(slot?: number) { return this.hay.idAt(slot); }

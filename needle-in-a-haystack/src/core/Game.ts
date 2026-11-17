@@ -49,6 +49,8 @@ export class Game {
   private locomotion = new Locomotion();
   private destination: 'ground' | 'hay' | 'cart' | 'needle' = 'ground';
   private collectionTimer = 0;
+  private collectionTool=0;
+  private collectionInput='pointer';
   private collectionDuration = 0;
   private lastRejectionAt = -Infinity;
   private shop?: Shop;
@@ -86,7 +88,7 @@ export class Game {
   };
   private telemetry?: EconomyTelemetry;
   private telemetryDialog='';
-  private measurePig = (mode: 'wander' | 'approach' | 'waiting', dt: number) => this.telemetry?.pigActivity(mode, dt);
+  private measurePig = (mode: 'wander' | 'approach' | 'waiting', dt: number,index:number) => this.telemetry?.pigActivity(mode, dt,index,this.economy.pigPortionLevel,this.economy.pigSpeedLevel);
   private saveSystem?: SaveSystem = new SaveSystem();
   private dirty = false;
   private saveAge = 0;
@@ -189,12 +191,13 @@ export class Game {
       if(saved&&!saved.gems)for(let i=0;i<20;i++)if(!this.world.hasStraw(500+i*1000))this.gems.claimed|=1<<i;
       if (this.won) this.records.record(this.run.state);
       this.syncChest();
+      if(options.settings?.economyTelemetry)this.startTelemetrySegment();
       this.telemetry = new EconomyTelemetry(this.economy.remaining, !!options.settings?.economyTelemetry, !!saved,()=>this.playtestContext());
       this.locomotion.height = this.world.surfaceHeight(this.player.group.position.x, this.player.group.position.z);
       this.player.group.position.y = this.locomotion.height;
       this.camera.follow(this.player.position, this.locomotion.height);
       this.input = new InputManager(this.renderer.domElement, this.camera.camera, this.world.pickables,
-        (target, point, instanceId) => this.command(target, point, instanceId),
+        (target, point, instanceId,source) => this.command(target, point, instanceId,source),
         (dx, dy) => { this.camera.look(dx, dy); this.dirty = true; },
         (instanceId, target) => {
           this.world.highlightHay(this.paused ? undefined : this.collectionTimer > 0 ? this.harvestId : this.world.hayIdAt(instanceId));
@@ -208,7 +211,7 @@ export class Game {
       this.resizeObserver = new ResizeObserver(() => {
         const { width, height } = host.getBoundingClientRect();
         if (width <= 0 || height <= 0) return;
-        this.camera.resize(width, height); this.renderer.setSize(width, height); this.chestViewport.set(width, height);this.telemetry?.event('resize');
+        this.camera.resize(width, height); this.renderer.setSize(width, height); this.chestViewport.set(width, height);this.telemetry?.event('resize');this.telemetry?.viewport(width,height);
         this.needsRender = true;
       });
       this.resizeObserver.observe(host);
@@ -227,7 +230,7 @@ export class Game {
         this.input?.reset();
         this.hud?.stop(); this.feedback?.stop(); this.guide.hide();
         this.chestTimer?.hide();
-        if (this.menuOpen) this.collectionTimer = 0;
+        if (this.menuOpen) this.cancelCollection('state-change');
         this.needsRender = true;
         if (this.metrics.readyMs) { this.dirty = true; this.saveNow(); }
       };
@@ -237,12 +240,12 @@ export class Game {
       document.addEventListener('visibilitychange', () => { this.background = document.hidden; this.run.setRunning(!this.paused && !!this.metrics.readyMs); if (this.background) this.telemetry?.pause('background'); else if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); this.previous = performance.now(); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.chestTimer?.hide(); this.saveNow(); }, { signal });
       window.addEventListener('blur', () => { this.run.setRunning(false); this.background = true; this.telemetry?.pause('background'); this.input?.reset(); this.hud?.stop(); this.feedback?.stop(); this.guide.hide(); this.chestTimer?.hide(); this.saveNow(); }, { signal });
       window.addEventListener('focus', () => { this.background = document.hidden; this.run.setRunning(!this.paused && !!this.metrics.readyMs); if (!this.background) { if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); } this.previous = performance.now(); }, { signal });
-      window.addEventListener('pagehide', () => this.saveNow(), { signal });
+      window.addEventListener('pagehide', () => {this.telemetry?.final('endReason','pagehide');this.saveNow();this.telemetry?.save();}, { signal });
       this.renderer.domElement.addEventListener('webglcontextlost', event => {
-        event.preventDefault();this.telemetry?.event('webglContextLost'); this.run.setRunning(false); this.contextLost = true; this.input?.reset(); this.saveNow(); this.message('contextLost');
+        event.preventDefault();this.telemetry?.event('webglContextLost');this.telemetry?.webgl('lost'); this.run.setRunning(false); this.contextLost = true; this.input?.reset(); this.saveNow(); this.message('contextLost');
       }, { signal });
       this.renderer.domElement.addEventListener('webglcontextrestored', () => {
-        this.telemetry?.event('webglContextRestored');this.contextLost = false; this.run.setRunning(!this.paused && !!this.metrics.readyMs); this.previous = performance.now(); this.renderer.shadowMap.needsUpdate = true; this.needsRender = true;
+        this.telemetry?.event('webglContextRestored');this.telemetry?.webgl('restored');this.contextLost = false; this.run.setRunning(!this.paused && !!this.metrics.readyMs); this.previous = performance.now(); this.renderer.shadowMap.needsUpdate = true; this.needsRender = true;
         this.message(this.won ? 'wonStatus' : this.economy.remaining === 0 ? 'discovered' : 'ready');
       }, { signal });
       this.message(this.saveSystem!.invalid ? 'saveInvalid' : this.won ? 'wonStatus' : this.economy.remaining === 0 ? 'discovered' : 'ready');
@@ -259,12 +262,13 @@ export class Game {
     if (this.background || this.contextLost || this.failed) { this.options.audio?.setWalking(false); return; }
     if (this.paused) { this.options.audio?.setWalking(false); if (!this.needsRender) return; }
     try {
+      const cpuStart=this.telemetry?.isEnabled&&!this.paused&&this.metrics.readyMs?performance.now():null;
       if (!this.paused) {
         if(this.metrics.readyMs)this.telemetry?.frame(elapsed);
         this.run.settle();
         this.stepSoundStart.copy(this.player.position);
         this.moveManually(dt);
-        if (this.economy.activeTool === 4 && !this.input?.holdingCollection()) this.collectionTimer = 0;
+        if (this.economy.activeTool === 4 && !this.input?.holdingCollection()) this.cancelCollection('state-change');
         this.input?.updateHeld(dt, this.collectionTimer === 0 && this.economy.inventory < this.economy.capacity && this.economy.remaining > 0 && this.inRange('hay'));
         const collecting = this.collectionTimer > 0;
         this.updateGameplay(dt);
@@ -280,7 +284,7 @@ export class Game {
           if (chestChange === 'spawn') { this.feedback?.notice(t('chestAppeared')); this.message('chestAppeared'); }
           this.saveNow();
         }
-        this.world.updatePigs(dt, this.economy.pigCount, this.onPigEat, this.economy.pigIntervalMultiplier, this.options.settings?.economyTelemetry ? this.measurePig : undefined); this.world.updateHay(dt);
+        this.world.updatePigs(dt, this.economy.pigCount, this.onPigEat, this.economy.pigIntervalMultiplier, this.telemetry?.isEnabled ? this.measurePig : undefined); this.world.updateHay(dt);
         this.gemAge+=dt;if(this.gemAge>=.1){this.gemAge=0;this.world.updateDiamonds(this.gems);}
         this.player.group.position.y = this.locomotion.height;
         this.options.audio?.setWalking(this.locomotion.grounded && this.stepSoundStart.distanceToSquared(this.player.position) > .000001, this.economy.movementSpeed / config.movementSpeed);
@@ -290,12 +294,16 @@ export class Game {
       }
       this.camera.follow(this.player.position, this.locomotion.height);
       if (this.paused) this.chestTimer?.hide();
-      else this.chestTimer?.update(dt, this.chests.active, this.camera.camera, this.chestViewport.x, this.chestViewport.y);
+      else {this.chestTimer?.update(dt, this.chests.active, this.camera.camera, this.chestViewport.x, this.chestViewport.y);this.telemetry?.chestVisible(this.chests.active?.id,this.chestTimer?.visible??false);}
       this.guide.update(dt, this.paused, this.economy, this.inRange('hay'), this.inRange('cart'), this.camera.camera, !!this.options.settings?.reducedMotion);
+      const pickingStart=cpuStart!==null?performance.now():0;
       this.world.scene.updateMatrixWorld(); this.input?.updateAim(dt, this.paused);
+      const pickingMs=cpuStart!==null?performance.now()-pickingStart:0;
       this.renderer.shadowMap.needsUpdate = this.world.takeShadowUpdate();
       this.renderer.info.autoReset = false; this.renderer.info.reset();
+      const renderStart=cpuStart!==null?performance.now():0;
       this.renderer.render(this.world.scene, this.camera.camera); this.viewModel?.render(this.renderer, this.camera.camera);
+      if(cpuStart!==null)this.telemetry?.cpu(performance.now()-cpuStart,pickingMs,performance.now()-renderStart);
       this.needsRender = false;
       if (!this.metrics.readyMs) {
         this.metrics.readyMs = performance.now() - this.boot;
@@ -304,7 +312,7 @@ export class Game {
         this.run.setRunning(!this.paused);
         this.options.onReady?.();
         this.world.loadNoncriticalAssets();this.world.updateDiamonds(this.gems);
-        if(this.options.newGame){this.dirty=true;this.saveNow();}
+        if(this.options.newGame||this.telemetry?.isEnabled){this.dirty=true;this.saveNow();}
       }
       this.frameTotal += elapsed; this.frameSamples++;
       if (this.frameSamples >= 60) {
@@ -315,7 +323,7 @@ export class Game {
         this.frameSamples = 0; this.frameTotal = 0;
       }
     } catch (error) {
-      this.telemetry?.event('gameLoopError');console.error(error); this.run.setRunning(false); this.failed = true; this.input?.reset(); this.saveNow();
+      this.telemetry?.event('gameLoopError');this.telemetry?.final('endReason','game-loop-error');console.error(error); this.run.setRunning(false); this.failed = true; this.input?.reset(); this.saveNow();
       this.options.onError?.(t('error'));
     }
   }
@@ -347,7 +355,7 @@ export class Game {
     if (this.player.group.position.y > chestBalance.maxPlayerHeight || Math.hypot(this.player.group.position.x - x, this.player.group.position.z - z) > chestBalance.pickupDistance) { this.reject(t('denyFar')); return; }
     const earned = this.chests.claim(active.id, stage => this.economy.creditChest(stage));
     if (!earned) { this.reject(t('denyUnavailable')); return; }
-    this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
+    this.cancelCollection('state-change'); this.player.command([]); this.destination = 'ground';
     this.syncChest(); this.feedback?.show('coins', earned); this.hud?.pulse('coins'); this.options.audio?.effect('sell');
     this.telemetry?.chest(earned);
     this.message('chestReward', { n: earned }); this.dirty = true; this.refreshHUD(); this.saveNow();
@@ -386,10 +394,11 @@ export class Game {
     if (this.disposed || this.failed) return false;
     if (!this.inBarnRange(target)) { this.reject(t('denyFar')); return false; }
     const offer = this.economy.barnOffer(target);
+    const purchaseBefore=this.telemetry?.isEnabled?this.purchaseState():undefined;
     const before = this.economy.coins;
     if (!this.economy.buyAtBarn(target)) { this.reject(offer.locked ? t('denyPrevious') : this.priceRejection(offer.price)); return false; }
-    this.collectionTimer = 0; this.player.command([]); this.destination = 'ground'; this.dirty = true;
-    if (!offer.owned) { this.guide.action('upgrade'); this.hud?.pulse('purchase'); this.telemetry?.purchase(target, before - this.economy.coins, this.economy.remaining, this.economy.levels.sale); }
+    this.cancelCollection('state-change'); this.player.command([]); this.destination = 'ground'; this.dirty = true;
+    if (!offer.owned) { this.guide.action('upgrade'); this.hud?.pulse('purchase'); this.telemetry?.purchase(target, before - this.economy.coins, this.economy.remaining, this.economy.levels.sale,purchaseBefore?{before:purchaseBefore,after:this.purchaseState()}:undefined); }
     this.feedback?.notice(offer.owned ? `${t('equipped')}: ${offer.name}` : t('boughtItem', { name: offer.name }));
     this.message(offer.owned ? 'equipped' : 'boughtItem', { name: offer.name });
     this.refreshHUD(); this.saveNow(); return true;
@@ -407,12 +416,12 @@ export class Game {
     if (this.paused) return;
     if (!this.locomotion.jump()) { this.reject(t('denyAirborne')); return; }
     this.options.audio?.setWalking(false);
-    this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
+    this.cancelCollection('state-change'); this.player.command([]); this.destination = 'ground';
   }
   private moveManually(dt: number) {
     const input = this.input!.movement();
     if (input.lengthSq()) {
-      if (this.economy.activeTool !== 4){if(this.collectionTimer>0)this.telemetry?.event('collectionCancelledByMovement');this.collectionTimer = 0;}
+      if (this.economy.activeTool !== 4){if(this.collectionTimer>0)this.telemetry?.event('collectionCancelledByMovement');this.cancelCollection('state-change');}
       this.player.command([]); this.destination = 'ground'; this.dirty = true;
     }
     const yaw = this.camera.yaw;
@@ -431,13 +440,14 @@ export class Game {
     }
     if (this.locomotion) this.player.group.position.y = this.locomotion.height;
   }
-  private command(target: Target, point: THREE.Vector3, instanceId?: number) {
+  private cancelCollection(reason:string){if(this.collectionTimer>0){this.telemetry?.tool(this.collectionTool,'cancelled');this.telemetry?.event(`collectionCancelled:${reason}`);}this.collectionTimer=0;}
+  private command(target: Target, point: THREE.Vector3, instanceId?: number,source='pointer') {
     if (this.paused) return;
     this.telemetry?.event(`command:${target}`);
     if (target === 'ground') return;
     if(target==='well'){
       if(this.player.group.position.y>1.5||Math.hypot(this.player.position.x-wellConfig.x,this.player.position.y-wellConfig.z)>wellConfig.reach){this.reject(t('denyFar'));return;}
-      this.collectionTimer=0;this.input?.reset();this.run.setRunning(false);this.wellMenu??=new WellMenu(this.meta,id=>this.purchaseMeta(id));this.wellMenu.show();return;
+      this.cancelCollection('menu');this.input?.reset();this.run.setRunning(false);this.wellMenu??=new WellMenu(this.meta,id=>this.purchaseMeta(id));this.wellMenu.show();return;
     }
     if(target==='diamond'){
       if(instanceId===undefined||!Number.isInteger(instanceId)||instanceId<0||instanceId>=20)return;
@@ -447,7 +457,7 @@ export class Game {
     }
     if (target === 'records') {
       if (this.player.group.position.y > recordsConfig.maxHeight || Math.hypot(this.player.position.x-recordsConfig.x,this.player.position.y-recordsConfig.z) > recordsConfig.reach) { this.reject(t('denyFar')); return; }
-      this.collectionTimer=0; this.input?.reset(); this.run.setRunning(false);
+      this.cancelCollection('menu'); this.input?.reset(); this.run.setRunning(false);
       this.showRecords(); return;
     }
     if (target === 'chest') { this.collectChest(); return; }
@@ -455,11 +465,12 @@ export class Game {
       if (!this.inBarnRange(target)) { this.reject(t('denyFar')); return; }
       this.hud?.flush(); this.barnCard?.show(target); return;
     }
-    if (target === 'hay' && this.collectionTimer > 0){this.telemetry?.event('busyCollectionIgnored');return;}
+    if(target==='hay'&&this.economy.inventory>=this.economy.capacity)this.telemetry?.tool(this.economy.activeTool,'fullAttempts',source);
+    if (target === 'hay' && this.collectionTimer > 0){this.telemetry?.event('busyCollectionIgnored');this.telemetry?.tool(this.economy.activeTool,'busy',source);return;}
     if (this.won || (target === 'needle' && this.economy.remaining > 0)) return;
     if (!this.inRange(target)) { this.reject(t('denyFar')); return; }
-    if (target === 'hay') { this.harvestPoint = point.clone(); this.harvestId = this.world.hayIdAt(instanceId); }
-    this.collectionTimer = 0; this.player.command([]); this.destination = target;
+    if (target === 'hay') { this.collectionInput=source;this.harvestPoint = point.clone(); this.harvestId = this.world.hayIdAt(instanceId); }
+    this.cancelCollection('state-change'); this.player.command([]); this.destination = target;
     this.interact();
   }
   private interact() {
@@ -467,11 +478,11 @@ export class Game {
     if (target === 'ground') { this.message('arrived'); return; }
     if (target === 'needle') {
       if (this.economy.remaining > 0 || !this.inRange('needle') || this.won) return;
-      this.run.finish(); this.records.record(this.run.state);
-      this.won = true; this.player.state = 'Winning'; this.world.hideNeedle(); this.message('wonStatus');
+      this.run.finish();this.telemetry?.final('needleFoundRunSeconds',this.run.state.activeMs/1000);const recorded=this.records.record(this.run.state);this.telemetry?.final('recordResult',recorded===undefined?'ineligible':recorded?'stored':'storage-failed');
+      this.won = true;this.telemetry?.final('victoryRunSeconds',this.run.state.activeMs/1000); this.player.state = 'Winning'; this.world.hideNeedle(); this.message('wonStatus');
       this.guide.action('needle');
       this.telemetry?.finish();
-      this.dirty = true; this.saveNow(); this.options?.onWin?.(); return;
+      this.dirty = true; this.saveNow();this.telemetry?.save(); this.options?.onWin?.(); return;
     }
     if (target === 'hay' && this.economy.remaining === 0) { this.message('discovered'); return; }
     if (target === 'hay' && this.economy.inventory >= this.economy.capacity) { this.reject(t('denyFull')); return; }
@@ -479,6 +490,7 @@ export class Game {
     const object = config[target];
     this.player.group.rotation.y = Math.atan2(object.x - this.player.group.position.x, object.z - this.player.group.position.z);
     if (target === 'hay') {
+      this.collectionTool=this.economy.activeTool;this.telemetry?.tool(this.collectionTool,'started',this.collectionInput);
       this.collectionTimer = this.collectionDuration = this.economy.collectionSeconds;
       this.player.action('Collecting', this.collectionTimer); this.message('collecting');
     } else {
@@ -504,6 +516,8 @@ export class Game {
       this.collectionTimer = Math.max(0, this.collectionTimer - dt);
       if (this.collectionTimer === 0 && this.inRange('hay')) {
         const amount = this.economy.collect();
+        if(!amount){this.telemetry?.tool(this.collectionTool,'cancelled');this.telemetry?.event('collectionEndedEmpty');}
+        if(amount>0)this.telemetry?.final('firstSuccessfulCollectionNavigationMs',performance.now());
         if (amount > 0) this.options.audio?.effect('collect');
         if (amount > 0) { this.hud?.pulse('hay'); const done = this.guide.completed; this.guide.action('collect'); if (!done && this.guide.completed) this.feedback?.notice(t('guideComplete')); }
         const receiver = this.viewModel ? this.viewModel.releasePoint(this.camera.camera) : this.player.group.position;
@@ -518,10 +532,11 @@ export class Game {
         if (amount > 0 && this.economy.inventory === this.economy.capacity) { this.hud?.pulse('full'); this.feedback?.notice(t('sellHayHint')); }
         this.message(this.economy.remaining === 0 ? 'discovered' : this.economy.inventory === this.economy.capacity ? 'collectedFull' : 'collected', { n: amount });
         if (discovery?.bonus) this.message('rareFound', { amount, n: discoveryBonus, rarity: `${discovery.highest.badge} ${t(discovery.highest.id)}` });
+        if(!this.economy.remaining)this.telemetry?.final('hayClearedRunSeconds',this.run.state.activeMs/1000);
         if (this.economy.remaining === 0) this.movement = new MovementSystem([config.cart, recordsConfig, wellConfig, ...barnWalls]);
         this.dirty = true; this.refreshHUD();
         if(discovery.diamonds.length)this.saveNow();
-      }
+      }else if(this.collectionTimer===0){this.telemetry?.tool(this.collectionTool,'cancelled');this.telemetry?.event('collectionEndedOutOfRange');}
     }
     this.player.update(dt);
   }
@@ -530,10 +545,10 @@ export class Game {
     const payout = this.economy.feedPig(this.economy.pigPortion(index));
     const discovery = this.world.collectHay(payout.amount, point, mouth);
     for(const gem of discovery.diamonds)if(!(this.gems.claimed&(1<<gem)))this.gems.drops[gem]=[point.x,.18,point.z];
-    this.telemetry?.pig(payout.amount, payout.earned, discovery.bonus);
+    this.telemetry?.pig(payout.amount, payout.earned, discovery.bonus,index,this.economy.pigPortionLevel,this.economy.pigSpeedLevel);
     if (discovery.bonus) this.economy.creditDiscovery(discovery.bonus);
     this.feedback?.show('coins', payout.earned + discovery.bonus);
-    if (!this.economy.remaining) this.message('discovered');
+    if (!this.economy.remaining){this.telemetry?.final('hayClearedRunSeconds',this.run.state.activeMs/1000);this.message('discovered');}
     this.dirty = true; this.refreshHUD();
     if(discovery.diamonds.length){this.world.updateDiamonds(this.gems);this.saveNow();}
   };
@@ -555,6 +570,7 @@ export class Game {
   metaSnapshot(){this.captureMemory();return this.meta.snapshot();}
   private buy(action: ShopAction) {
     let success = false;
+    const purchaseBefore=this.telemetry?.isEnabled?this.purchaseState():undefined;
     const before = this.economy.coins;
     if (action.kind === 'character') {
       success = this.economy.buy(action.id); this.lastBought = action.id;
@@ -562,9 +578,9 @@ export class Game {
     else if (action.kind === 'equip') success = this.economy.equip(action.tool);
     else success = this.economy.upgradeTool(action.tool, action.kind);
     if (!success) { this.reject(this.purchaseRejection(action)); return false; }
-    this.collectionTimer = 0; this.player.command([]); this.destination = 'ground';
+    this.cancelCollection('state-change'); this.player.command([]); this.destination = 'ground';
     this.player.movementSpeed = this.economy.movementSpeed; this.dirty = true;
-    if (action.kind !== 'equip') { this.hud?.pulse('purchase'); this.guide.action('upgrade'); this.telemetry?.purchase(action.kind === 'character' ? action.id : action.kind === 'pig' ? `pig-${action.upgrade}` : `tool${action.tool}-${action.kind}`, before - this.economy.coins, this.economy.remaining, this.economy.levels.sale); }
+    if (action.kind !== 'equip') { this.hud?.pulse('purchase'); this.guide.action('upgrade'); this.telemetry?.purchase(action.kind === 'character' ? action.id : action.kind === 'pig' ? `pig-${action.upgrade}` : `tool${action.tool}-${action.kind}`, before - this.economy.coins, this.economy.remaining, this.economy.levels.sale,purchaseBefore?{before:purchaseBefore,after:this.purchaseState()}:undefined); }
     if (action.kind === 'character') this.message('bought', { effect: this.economy.effect(action.id) });
     else this.message(action.kind === 'equip' ? 'equipped' : 'boughtItem', { name: t(action.kind === 'volume' ? 'volumeUpgrade' : 'specialization') });
     this.refreshHUD(); this.saveNow(); return true;
@@ -580,15 +596,18 @@ export class Game {
     const node = document.querySelector<HTMLElement>('#save-notice');
     if (node) { node.textContent = t(this.saveSystem?.available ? 'saveNotice' : 'saveUnavailable'); node.dataset.warning = String(!this.saveSystem?.available); }
   }
+  private purchaseState():Record<string,unknown>{return {remaining:this.economy.remaining,inventory:this.economy.inventory,capacity:this.economy.capacity,coins:this.economy.coins,tool:this.economy.activeTool,amount:this.economy.collectionAmount,duration:this.economy.collectionSeconds,movement:this.economy.movementSpeed,salePrice:this.economy.salePrice,pigCount:this.economy.pigCount,pigPortionLevel:this.economy.pigPortionLevel,pigSpeedLevel:this.economy.pigSpeedLevel};}
   saveNow() {
     if (!this.saveSystem || this.disposed) return;
     if (!this.paused && this.metrics.readyMs) this.dirty = true;
     if (!this.dirty) return;
+    const prepareStart=this.telemetry?.isEnabled?performance.now():0;
     this.captureMemory();
     const data = { startProgress:this.startProgress?copyMemory(this.startProgress):undefined,version: 9 as const, pigPriceBaseline:this.economy.pigPriceBaseline, meta:this.meta.snapshot(),buffs:{...this.buffs},gems:{claimed:this.gems.claimed,drops:this.gems.drops.map(p=>p?[...p] as [number,number,number]:null)}, run: this.run.snapshot(), chestRevenue: this.economy.chestRevenue, chestClaims: [...this.economy.chestClaims], chestState: this.chests.snapshot(), eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
-    const saveStart=performance.now();const saved=this.saveSystem.write(data);
+    const saveStart=performance.now();const saved=this.saveSystem.write(data,!!this.telemetry?.isEnabled);
     this.telemetry?.event(saved?'saveSuccess':'saveFailure');this.telemetry?.event('saveTotalMs',performance.now()-saveStart);
+    if(this.telemetry?.isEnabled){const m=this.saveSystem.lastWriteMetrics;this.telemetry.saved(m.utf8Bytes,saveStart-prepareStart,m.serializationMs,m.storageMs,performance.now()-prepareStart,saved);}
     if(saved)this.dirty=false;
     this.updateSaveNotice();
   }
@@ -615,17 +634,18 @@ export class Game {
     this.renderer.domElement.setAttribute('aria-label', t('world'));
   }
   showRecords() { this.run.setRunning(false); this.leaderboard ??= new Leaderboard(this.records); this.leaderboard.show(); }
-  setEconomyTelemetry(value: boolean) { this.telemetry?.setEnabled(value, this.economy.remaining); if (value && this.menuOpen) this.telemetry?.pause('menu'); }
+  private startTelemetrySegment(){this.run.state.playtestId??=globalThis.crypto?.randomUUID?.()??Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);this.run.state.playtestSegment=(this.run.state.playtestSegment??0)+1;this.dirty=true;}
+  setEconomyTelemetry(value: boolean) {if(value&&!this.telemetry?.isEnabled)this.startTelemetrySegment(); this.telemetry?.setEnabled(value, this.economy.remaining); if(value&&this.background)this.telemetry?.pause('background');else if (value && this.menuOpen) this.telemetry?.pause('menu'); }
   downloadEconomyMetrics() { return this.telemetry?.download(); }
-  resetEconomyMetrics() { this.telemetry?.reset(this.economy.remaining); }
+  resetEconomyMetrics() {if(this.telemetry?.isEnabled)this.startTelemetrySegment(); this.telemetry?.reset(this.economy.remaining); }
   setReducedMotion(reduced: boolean) { this.world.reducedMotion = reduced; if (this.viewModel) this.viewModel.reducedMotion = reduced; if (this.feedback) { this.feedback.reducedMotion = reduced; if (reduced) this.feedback.stop(); } if (this.hud) { this.hud.reducedMotion = reduced; this.hud.stop(); } }
-  private playtestContext():Record<string,unknown>{return {revision:'pigs-x3-memory50-reach1.5',remaining:this.economy.remaining,inventory:this.economy.inventory,capacity:this.economy.capacity,coins:this.economy.coins,levels:{...this.economy.levels},toolVolumes:[...this.economy.toolVolumes],toolSpecials:[...this.economy.toolSpecials],activeTool:this.economy.activeTool,pigCount:this.economy.pigCount,pigPortionLevel:this.economy.pigPortionLevel,pigSpeedLevel:this.economy.pigSpeedLevel,buffs:{...this.buffs},diamonds:this.meta.diamonds,metaBought:{...this.meta.profile.bought},runActiveSeconds:this.run.state.activeMs/1000,runEligible:this.run.state.eligible,won:this.won,tutorial:this.guide.diagnostics,balance:{totalHay:this.runTotal,collectionRangeMultiplier:config.collectionRangeMultiplier,pigPrices:[...pigBalance.prices],pigPortions:[...pigBalance.portions],pigPortionStep:pigUpgrades.portionStep},startup:{readyMs:this.metrics.readyMs,initialTransferBytes:this.metrics.initialTransferBytes},cartModelStatus:this.world.cartModelStatus,saveAvailable:this.saveSystem?.available,saveInvalid:this.saveSystem?.invalid,viewport:[innerWidth,innerHeight],language:this.options.settings?.language,reducedMotion:this.options.settings?.reducedMotion};}
+  private playtestContext():Record<string,unknown>{return {revision:'pigs-x3-memory50-reach1.5',sessionLink:{runId:this.run.state.playtestId??null,segment:this.run.state.playtestSegment??null,runClockSeconds:this.run.state.activeMs/1000},chestActive:!!this.chests.active,remaining:this.economy.remaining,inventory:this.economy.inventory,capacity:this.economy.capacity,coins:this.economy.coins,levels:{...this.economy.levels},toolVolumes:[...this.economy.toolVolumes],toolSpecials:[...this.economy.toolSpecials],activeTool:this.economy.activeTool,pigCount:this.economy.pigCount,pigPortionLevel:this.economy.pigPortionLevel,pigSpeedLevel:this.economy.pigSpeedLevel,buffs:{...this.buffs},diamonds:this.meta.diamonds,metaBought:{...this.meta.profile.bought},runActiveSeconds:this.run.state.activeMs/1000,runEligible:this.run.state.eligible,won:this.won,tutorial:this.guide.diagnostics,balance:{totalHay:this.runTotal,collectionRangeMultiplier:config.collectionRangeMultiplier,pigPrices:[...pigBalance.prices],pigPortions:[...pigBalance.portions],pigPortionStep:pigUpgrades.portionStep},startup:{readyMs:this.metrics.readyMs,navigationFirstFrameMs:this.metrics.startupMs,initialTransferBytes:this.metrics.initialTransferBytes},cartModelStatus:this.world.cartModelStatus,saveAvailable:this.saveSystem?.available,saveInvalid:this.saveSystem?.invalid,viewport:[innerWidth,innerHeight],renderBuffer:[this.renderer.domElement.width,this.renderer.domElement.height],renderPixelRatio:this.renderer.getPixelRatio(),language:this.options.settings?.language,reducedMotion:this.options.settings?.reducedMotion};}
   diagnostics() { return { ...this.metrics, remaining: this.economy.remaining, inventory: this.economy.inventory, coins: this.economy.coins, cargo: this.world.cargoCount, activeTool: this.economy.activeTool, pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, salePrice: this.economy.salePrice, won: this.won, paused: this.paused, position: [this.player.group.position.x, this.player.group.position.z], yaw: this.camera.yaw, pitch: this.camera.pitch, height: this.locomotion.height, grounded: this.locomotion.grounded, cartModelStatus: this.world.cartModelStatus, saleEvent: this.saleEvent.snapshot(), eventRevenue: this.economy.eventRevenue, tutorialCompleted: this.guide.completed, chest: this.chests.snapshot(), chestRevenue: this.economy.chestRevenue }; }
   dispose(save = true) {
     if (this.disposed) return;
     if (save) this.saveNow();
     this.options.audio?.stopEffects();
-    this.telemetry?.dispose();
+    this.telemetry?.final('endReason',save?'dispose':this.metrics.readyMs?'new-game':'initialization-failure');this.telemetry?.dispose();
     this.disposed = true; this.controller.abort(); this.resizeObserver?.disconnect(); this.observer?.disconnect();
     this.input?.dispose(); this.shop?.dispose(); this.barnCard?.dispose(); this.leaderboard?.dispose(); this.wellMenu?.dispose(); this.chestTimer?.dispose(); this.guide.dispose(); this.hud?.dispose(); this.renderer?.setAnimationLoop(null);
     this.world.dispose(); this.viewModel?.dispose(); this.feedback?.dispose(); disposeTree(this.player.group);

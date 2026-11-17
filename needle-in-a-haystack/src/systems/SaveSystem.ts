@@ -200,11 +200,14 @@ export class SaveSystem {
       } catch { this.invalid = true; return; }
     } catch { this.available = false; return; }
   }
-  write(save: SaveData) {
+  lastWriteMetrics={utf8Bytes:0,serializationMs:0,storageMs:0};
+  write(save: SaveData,measure=false) {
+    const started=measure?performance.now():0;this.lastWriteMetrics={utf8Bytes:0,serializationMs:0,storageMs:0};
     try {
       const raw = JSON.stringify(save);
+      if(measure){this.lastWriteMetrics.serializationMs=performance.now()-started;this.lastWriteMetrics.utf8Bytes=new Blob([raw]).size;}
       if (raw.length > MAX_BYTES) throw new Error('Save too large');
-      localStorage.setItem(SAVE_KEY, raw); return true;
+      const storageStart=measure?performance.now():0;localStorage.setItem(SAVE_KEY, raw);if(measure)this.lastWriteMetrics.storageMs=performance.now()-storageStart;return true;
     } catch { this.available = false; return false; }
   }
   readSettings(): Settings {

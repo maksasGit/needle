@@ -258,3 +258,7 @@
 ### Общий отчёт плейтеста (2026-11-17)
 
 Без новых графических/аудио-ассетов, DOM-панелей, сетевых библиотек и draw calls. Вместо per-frame истории:7 buckets,64 aggregate keys,24 denial templates,11 milestones,2 bounded context snapshots;200 economy purchases/trips как раньше. Render/heap sample раз в60 кадров, snapshots при периодической записи/экспорте. Нагрузка/точный размер JSON не измерялись.
+
+### Плейтест v3 — 2026-11-17
+
+Новых visual/audio assets и draw calls нет. Дополнительно11 stage rows,5 tool rows,до64 pig/level groups,8 viewport rows,12 terminal fields; coin purchase details ограничены200. Vite добавляет один маленький technical-build.json, считаемый в total/count output, только lazy opt-in чтение production. Фактические размеры/нагрузка не измерялись (build не запускался); новые targets не выдумываются, недоступные замеры unknown.

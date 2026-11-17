@@ -24,7 +24,7 @@ export class PigHerd {
     }
     pig.target.copy(pig.point);
   }
-  update(dt: number, count: number, surface: (x: number, z: number) => number, feedingPoint: (point: THREE.Vector2) => THREE.Vector3 | undefined, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void, intervalMultiplier = 1, measure?: (mode: 'wander' | 'approach' | 'waiting', dt: number) => void) {
+  update(dt: number, count: number, surface: (x: number, z: number) => number, feedingPoint: (point: THREE.Vector2) => THREE.Vector3 | undefined, onEat: (index: number, point: THREE.Vector3, mouth: THREE.Vector3) => void, intervalMultiplier = 1, measure?: (mode: 'wander' | 'approach' | 'waiting', dt: number,index:number) => void) {
     while (this.pigs.length < count && this.pigs.length < 3) {
       const index = this.pigs.length, model = this.assets.pig();
       model.traverse(object => { if (object instanceof THREE.Mesh) object.castShadow = false; });
@@ -41,7 +41,7 @@ export class PigHerd {
       }
       this.delta.copy(pig.target).sub(pig.point);
       const distance = this.delta.length();
-      measure?.(!pig.eating ? 'wander' : distance > .55 ? 'approach' : 'waiting', dt);
+      measure?.(!pig.eating ? 'wander' : distance > .55 ? 'approach' : 'waiting', dt,index);
       if (distance > .06) {
         this.delta.multiplyScalar(Math.min(distance, pigBalance.speed * dt) / distance);
         this.candidate.set(pig.point.x + this.delta.x, pig.point.y);

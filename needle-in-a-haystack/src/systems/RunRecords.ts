@@ -2,7 +2,7 @@ import type { MetaBuffs } from '../config/meta';
 import { validBuffs } from './MetaProgress';
 import { recordsConfig } from '../config/records';
 
-export type RunState = { id: string; activeMs: number; eligible: boolean; finished: boolean; buffs?: MetaBuffs; rules: string };
+export type RunState = { id: string; activeMs: number; eligible: boolean; playtestId?:string; playtestSegment?:number; finished: boolean; buffs?: MetaBuffs; rules: string };
 type PersonalRecord = { id: string; activeMs: number; buffs?: MetaBuffs; rules: string };
 const KEY = 'needle.records.v1';
 let memory: PersonalRecord[] = [];
@@ -12,6 +12,7 @@ export function validateRun(value: unknown, won: boolean): asserts value is RunS
   if (value === undefined) return;
   const run = value as RunState;
   if (!run || typeof run !== 'object' || !validId(run.id) || !validTime(run.activeMs) || typeof run.eligible !== 'boolean' || run.finished !== won || run.rules !== recordsConfig.rules || (run.buffs!==undefined&&!validBuffs(run.buffs))) throw new Error('Invalid run timer');
+  if(run.playtestId!==undefined&&(!validId(run.playtestId)||!Number.isSafeInteger(run.playtestSegment)||(run.playtestSegment??0)<1))throw new Error('Invalid playtest link');
 }
 /** Active wall time, independent of capped physics delta. Settle at every lifecycle boundary. */
 export class RunClock {
@@ -42,7 +43,7 @@ export class RunRecords {
     if (!run.eligible || !run.finished || run.activeMs <= 0 || run.rules !== recordsConfig.rules) return;
     const result = { id: run.id, activeMs: Math.round(run.activeMs), buffs:run.buffs?{...run.buffs}:undefined, rules: run.rules };
     memory = [...this.list().filter(r => r.id !== run.id), result].sort((a,b) => a.activeMs - b.activeMs || a.id.localeCompare(b.id)).slice(0, recordsConfig.limit);
-    try { localStorage.setItem(KEY, JSON.stringify(memory)); this.available = true; } catch { this.available = false; }
+    try { localStorage.setItem(KEY, JSON.stringify(memory)); this.available = true;return true; } catch { this.available = false;return false; }
   }
 }
 export function recordTime(ms: number) {

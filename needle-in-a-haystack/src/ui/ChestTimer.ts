@@ -29,6 +29,7 @@ export class ChestTimer {
     this.fill.style.transform = `scaleX(${active.remaining / chestBalance.lifetime})`;
     this.bar.setAttribute('aria-valuenow', String(Math.ceil(active.remaining)));
   }
+  get visible(){return !this.node.hidden;}
   hide() { this.node.hidden = true; }
   dispose() { this.node.remove(); }
 }

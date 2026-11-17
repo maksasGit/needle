@@ -38,23 +38,23 @@ export class InputManager {
   private heldButtonClick = false;
   private heldCommand?: () => void;
   private down?: { x: number; y: number; lastX: number; lastY: number; id: number; dragged: boolean };
-  constructor(canvas: HTMLCanvasElement, private camera: Camera, private pickables: Object3D[], onCommand: (target: Target, point: Vector3, instanceId?: number) => void, onLook: (dx: number, dy: number) => void, private onAim: (instanceId?: number, target?: Target) => void, private isBlocked: () => boolean = () => !!document.querySelector('dialog[open]'), onJump: () => void = () => {}, private continuous: () => boolean = () => false, onInput:(kind:'touch'|'mouse'|'keyboard'|'action'|'joystick'|'look')=>void=()=>{}) {
+  constructor(canvas: HTMLCanvasElement, private camera: Camera, private pickables: Object3D[], onCommand: (target: Target, point: Vector3, instanceId?: number,source?:'pointer'|'keyboard'|'action'|'hold-start'|'hold-repeat') => void, onLook: (dx: number, dy: number) => void, private onAim: (instanceId?: number, target?: Target) => void, private isBlocked: () => boolean = () => !!document.querySelector('dialog[open]'), onJump: () => void = () => {}, private continuous: () => boolean = () => false, onInput:(kind:'touch'|'mouse'|'keyboard'|'action'|'joystick'|'look')=>void=()=>{}) {
     const blocked = this.isBlocked;
-    const cast = (x: number, y: number) => {
+    const cast = (x: number, y: number,source:'pointer'|'keyboard'|'action'='pointer') => {
       if (blocked()) return;
       const hit = this.pick(x, y);
-      if (hit && hit.object.userData.target !== 'ground') onCommand(hit.object.userData.target as Target, hit.point, hit.instanceId);
+      if (hit && hit.object.userData.target !== 'ground') onCommand(hit.object.userData.target as Target, hit.point, hit.instanceId,source);
     };
     const beginHold = (x: number, y: number, owner: number | "key") => {
       if (blocked() || !this.continuous() || this.held) return false;
       const hit = this.pick(x, y);
       if (hit?.object.userData.target !== 'hay') return false;
       this.held = true; this.holdOwner = owner; this.holdX = x; this.holdY = y; this.holdAge = 0;
-      onCommand('hay', hit.point, hit.instanceId); return true;
+      onCommand('hay', hit.point, hit.instanceId,'hold-start'); return true;
     };
     this.heldCommand = () => {
       const hit = this.pick(this.holdX, this.holdY);
-      if (hit?.object.userData.target === 'hay') onCommand('hay', hit.point, hit.instanceId);
+      if (hit?.object.userData.target === 'hay') onCommand('hay', hit.point, hit.instanceId,'hold-repeat');
     };
     this.listen(canvas, 'pointerdown', e => {
       if (this.down || e.button !== 0 || blocked()) return;
@@ -87,7 +87,7 @@ export class InputManager {
       if(!e.repeat&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight','Space','KeyE'].includes(e.code))onInput('keyboard');
       if (['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight'].includes(e.code)) { e.preventDefault(); this.keys.add(e.code); }
       if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) onJump(); }
-      if (e.code === 'KeyE' && !e.repeat && !beginHold(0, 0, "key")) cast(0, 0);
+      if (e.code === 'KeyE' && !e.repeat && !beginHold(0, 0, "key")) cast(0, 0,'keyboard');
     });
     this.listen(window, 'keyup', e => { this.keys.delete(e.code); if (e.code === 'KeyE' && this.holdOwner === 'key') this.held = false; });
     this.listen(window, 'blur', () => this.reset());
@@ -103,7 +103,7 @@ export class InputManager {
     this.listen(interact, 'pointerup', e => { if (this.holdOwner === e.pointerId) this.held = false; });
     this.listen(interact, 'pointercancel', e => { if (this.holdOwner === e.pointerId) this.held = false; this.heldButtonClick = false; });
     this.listen(interact, 'lostpointercapture', e => { if (this.holdOwner === e.pointerId) this.held = false; });
-    this.listen(interact, 'click', () => { if (!this.heldButtonClick) cast(0, 0); this.heldButtonClick = false; });
+    this.listen(interact, 'click', () => { if (!this.heldButtonClick) cast(0, 0,'action'); this.heldButtonClick = false; });
     this.listen(document.querySelector<HTMLButtonElement>('#jump')!, 'click', () => { if (!blocked()) onJump(); });
     this.joystick = new VirtualJoystick(document.querySelector<HTMLElement>('#joystick')!, blocked,()=>onInput('joystick'));
     this.observer = new MutationObserver(() => { if (blocked()) this.reset(); });

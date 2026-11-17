@@ -1,8 +1,8 @@
 import { PlaytestTelemetry } from './PlaytestTelemetry';
-import { economyVersion } from '../config/balance';
-/** Local, explicitly enabled measurements. No identifiers or network transport. */
+import { economyVersion, config } from '../config/balance';
+/** Local, explicitly enabled measurements. No player/device identifiers or network upload. Optional random run/report IDs link user-exported segments. */
 const KEY = 'needle.economy-playtest.v1';
-type Purchase = { item: string; activeSeconds: number; remaining: number; price: number; saleLevel: number };
+type Purchase = { details?:Record<string,unknown>; item: string; activeSeconds: number; remaining: number; price: number; saleLevel: number };
 export class EconomyTelemetry {
   private enabled = false;
   private age = 0;
@@ -11,7 +11,7 @@ export class EconomyTelemetry {
   private general:PlaytestTelemetry;
   constructor(remaining: number, enabled = false, resumed = false, context?:()=>Record<string,unknown>) { this.general=new PlaytestTelemetry(context);this.data = this.fresh(remaining); this.data.completeCycle &&= !resumed; this.enabled = enabled;if(enabled)this.general.start(); }
   private fresh(remaining: number) {
-    return { version: 2, build:'2026-11-17-playtest-v2', economy: economyVersion, startHay: remaining, remaining, completeCycle: remaining === 20000,
+    return { version: 3, build:'2026-11-17-playtest-v3',reportId:globalThis.crypto?.randomUUID?.()??Math.random().toString(36).slice(2), economy: economyVersion, startHay: remaining, remaining, completeCycle: remaining === 20000,
       activeSeconds: 0, gameSeconds: 0, collectingSeconds: 0, walkingSeconds: 0, idleSeconds: 0, menuSeconds: 0, backgroundSeconds: 0,
       distance: 0, tripDistance: 0, tripSeconds: 0, trips: 0, soldHay: 0, saleCoins: 0, rareCoins: 0, eventCoins: 0,
       pigBites: 0, pigHay: 0, pigCoins: 0, pigWanderSeconds: 0, pigApproachSeconds: 0, pigWaitingSeconds: 0, eventSeconds: 0, eventSoldHay: 0, chests: 0, chestCoins: 0,
@@ -35,8 +35,9 @@ export class EconomyTelemetry {
   }
   tick(dt: number, distance: number, collecting: boolean, tool: number, remaining: number, event: boolean, gameDt = dt, full = false) {
     if (!this.enabled || this.paused) return;
-    if(full)this.general.event('inventoryFullSeconds',dt);
-    this.general.progress(remaining,this.data.startHay,this.data.activeSeconds);
+    if(full){this.general.event('inventoryFullSeconds',dt);this.general.full(dt,distance>.0001);}
+    this.general.progress(remaining,config.totalHay,this.data.activeSeconds);
+    if(!remaining)this.general.final('hayClearedSegmentSeconds',this.data.activeSeconds);
     this.data.activeSeconds += dt; this.data.gameSeconds += gameDt; this.data.tripSeconds += dt; this.data.distance += distance; this.data.tripDistance += distance; this.data.remaining = remaining;
     this.data.tools[tool].seconds += dt;
     if (distance > .0001) this.data.walkingSeconds += dt;
@@ -48,6 +49,7 @@ export class EconomyTelemetry {
   collect(tool: number, amount: number, rareCoins: number) {
     if (!this.enabled) return;
     if(amount&&this.data.firstActions.collect===undefined)this.data.firstActions.collect=this.data.activeSeconds;
+    if(amount)this.general.tool(tool,'completed');
     this.data.tools[tool].collected += amount; if (amount) this.data.tools[tool].actions++; this.data.rareCoins += rareCoins;
   }
   sale(amount: number, coins: number, eventCoins: number) {
@@ -58,25 +60,35 @@ export class EconomyTelemetry {
     if (this.data.loads.length < 200) this.data.loads.push({ hay: amount, seconds: this.data.tripSeconds, distance: this.data.tripDistance });
     this.data.tripSeconds = this.data.tripDistance = 0; this.save();
   }
-  pig(hay: number, coins: number, rareCoins: number) {
+  pig(hay: number, coins: number, rareCoins: number,index=0,portion=0,speed=0) {
     if (!this.enabled || !hay) return;
     this.data.remaining = Math.max(0, this.data.remaining - hay);
+    this.general.pig('bite',0,index,portion,speed,hay,coins,rareCoins);
     this.data.pigBites++; this.data.pigHay += hay; this.data.pigCoins += coins; this.data.rareCoins += rareCoins;
   }
-  pigActivity(mode: 'wander' | 'approach' | 'waiting', dt: number) {
+  pigActivity(mode: 'wander' | 'approach' | 'waiting', dt: number,index=0,portion=0,speed=0) {
     if (!this.enabled) return;
+    this.general.pig(mode,dt,index,portion,speed);
     this.data[mode === 'wander' ? 'pigWanderSeconds' : mode === 'approach' ? 'pigApproachSeconds' : 'pigWaitingSeconds'] += dt;
   }
   chest(coins: number) { if (this.enabled && coins > 0) { this.data.chests++; this.data.chestCoins += coins; this.save(); } }
-  purchase(item: string, price: number, remaining: number, saleLevel: number) {
+  purchase(item: string, price: number, remaining: number, saleLevel: number,details?:Record<string,unknown>) {
     if (!this.enabled) return;
     if(this.data.firstActions.purchase===undefined)this.data.firstActions.purchase=this.data.activeSeconds;
-    if (this.data.purchases.length < 200) this.data.purchases.push({ item, price, remaining, saleLevel, activeSeconds: this.data.activeSeconds });
+    if (this.data.purchases.length < 200) this.data.purchases.push({ item, price, remaining, saleLevel, details, activeSeconds: this.data.activeSeconds });
     this.save();
   }
+  viewport(width:number,height:number){if(this.enabled)this.general.viewport(width,height);}
+  get isEnabled(){return this.enabled;}
+  tool(tool:number,outcome:'started'|'cancelled'|'busy'|'fullAttempts',source?:string){if(this.enabled){this.general.tool(tool,outcome,source);if(outcome==='fullAttempts')this.general.fullAttempt();}}
+  chestVisible(id:number|undefined,visible:boolean){if(this.enabled)this.general.chestVisible(id,visible);}
+  final(kind:string,value:unknown){if(this.enabled)this.general.final(kind,value);}
+  saved(bytes:number,snapshotMs:number,serializationMs:number,storageMs:number,totalMs:number,success:boolean){if(this.enabled)this.general.saved(bytes,snapshotMs,serializationMs,storageMs,totalMs,success);}
+  webgl(kind:'lost'|'restored'){if(this.enabled)this.general.webgl(kind);}
   event(key:string,amount=1){if(this.enabled)this.general.event(key,amount);}
   denial(text:string){if(this.enabled)this.general.denial(text);}
   frame(ms:number){if(this.enabled)this.general.frame(ms);}
+  cpu(total:number,picking:number,render:number){if(this.enabled)this.general.cpu(total,picking,render);}
   render(calls:number,triangles:number,geometries:number,textures:number){if(this.enabled)this.general.render(calls,triangles,geometries,textures);}
   finish() { if (this.enabled) { this.data.completed = true; this.save(); } }
   save() { if (this.enabled) try { localStorage.setItem(KEY, JSON.stringify({...this.data,playtest:this.general.snapshot()})); } catch { this.general.event('telemetryStorageFailure'); /* Telemetry cannot break gameplay. */ } }

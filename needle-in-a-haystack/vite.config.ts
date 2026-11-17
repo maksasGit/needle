@@ -1,5 +1,7 @@
+import technicalBuildInventory from './scripts/technical-build.mjs';
 import { defineConfig } from 'vite';
 export default defineConfig({
+  plugins:[technicalBuildInventory()],
   base: './',
   publicDir: false,
   build: {

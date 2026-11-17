@@ -28,3 +28,7 @@
 Существующие `verification/*report.json` — исторические наблюдения, не согласованный baseline текущей версии. Будущие согласованные эталоны хранить в `benchmarks/baselines/<scenario>.json`, новые измерения — в `benchmarks/results/<date>-<commit>/`. Создавать эти файлы только с фактическими данными; сейчас их нет.
 
 В отчёте нужны метаданные протокола, сырые samples или ссылка на них, агрегаты, ограничения и команда воспроизведения. Baseline обновлять отдельным видимым изменением с причиной. Сценарий, сборка и параметры должны совпадать; не подменять старый результат новым для сокрытия регрессии. Не оптимизировать визуал и архитектуру по предполагаемым FPS без замеров.
+
+## Инструментация плейтеста v3 (2026-11-17)
+
+PLAYTEST_REPORT_V3.md описывает новые наблюдения: stage frame histograms/CPU, приближённые percentile bucket bounds, longtasks, sampled JS heap/renderer, раздельные save timings/UTF-8 sizes и production output inventory из scripts/technical-build.mjs. Это не согласованный baseline и не замена протоколу выше. GPU/process memory, cold-cache TTI, crash rate, mobile/itch/orientation/10 restart stability остаются unknown без фактических проверок. Build и игровые измерения в задаче не запускались.
