@@ -1,5 +1,5 @@
 {
-  "totalBytes": 13762651,
+  "totalBytes": 13764197,
   "fileCount": 21,
   "files": [
     {
@@ -27,27 +27,27 @@
       "preferredFileLimit": true
     },
     {
-      "file": "assets/FarmDecor-DOEXpeNM.js",
-      "bytes": 2202,
-      "gzipBytes": 1100,
+      "file": "assets/FarmDecor-DNP_TdrX.js",
+      "bytes": 2632,
+      "gzipBytes": 1315,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/farmModels-vKtPZCdq.js",
-      "bytes": 911,
-      "gzipBytes": 565,
+      "file": "assets/farmModels-RAMAMbd3.js",
+      "bytes": 1020,
+      "gzipBytes": 619,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/index-Cow836VI.css",
-      "bytes": 31126,
-      "gzipBytes": 6992,
+      "file": "assets/index-Bh7Ui540.js",
+      "bytes": 196244,
+      "gzipBytes": 60462,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/index-gYk-4YSD.js",
-      "bytes": 195402,
-      "gzipBytes": 60210,
+      "file": "assets/index-DHhO_BxL.css",
+      "bytes": 31291,
+      "gzipBytes": 7023,
       "preferredFileLimit": true
     },
     {
@@ -113,13 +113,13 @@
     {
       "file": "index.html",
       "bytes": 1144,
-      "gzipBytes": 697,
+      "gzipBytes": 694,
       "preferredFileLimit": true
     },
     {
       "file": "technical-build.json",
       "bytes": 418,
-      "gzipBytes": 239,
+      "gzipBytes": 237,
       "preferredFileLimit": true
     },
     {

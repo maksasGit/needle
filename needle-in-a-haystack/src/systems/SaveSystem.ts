@@ -180,7 +180,9 @@ export function validateSave(value: unknown): SaveData {
   if(source.version<9&&(s.startProgress!==undefined||s.buffs?.memory||s.meta?.bought.memory))throw new Error('Unexpected legacy memory');
   const income = s.saleRevenue + discoveryCoins + s.eventRevenue + s.chestRevenue;
   if (!Number.isSafeInteger(income) || !Number.isSafeInteger(s.coins + spent) || s.coins + spent !== income) throw new Error('Unbalanced economy');
-  if (!Array.isArray(s.position) || s.position.length !== 2 || s.position.some(v => !Number.isFinite(v) || Math.abs(v) > config.worldHalfSize)) throw new Error('Invalid position');
+  // Accept former map coordinates so Game can safely relocate old saves.
+  const positionLimit = (s.layoutVersion ?? 0) < 2 ? 13 : config.worldHalfSize;
+  if (!Array.isArray(s.position) || s.position.length !== 2 || s.position.some(v => !Number.isFinite(v) || Math.abs(v) > positionLimit)) throw new Error('Invalid position');
   if (!Number.isFinite(s.yaw) || !Number.isFinite(s.pitch) || Math.abs(s.pitch) > 1.25 || typeof s.won !== 'boolean' || (s.won && remaining > 0)) throw new Error('Invalid camera/progress');
   if (source.version < 7 && s.run !== undefined) throw new Error('Unexpected legacy run');
   validateRun(s.run, s.won);

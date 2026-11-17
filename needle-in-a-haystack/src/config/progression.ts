@@ -12,7 +12,7 @@ export function previousToolUpgradePrice(tool: number, kind: ToolUpgrade, level:
 }
 export const preDiscountPigPrices = [560,1680,5040] as const;
 export const pigBalance = { prices: [476, 1428, 4284], intervals: [4.5, 4, 3.5], portions: [3, 6, 9], speed: 0.8 } as const;
-export const barnLayout = { x: 7, z: -9, yaw: -Math.PI / 6, localX: 1.8, localZ: -4.7 } as const;
+export const barnLayout = { x: 4.9, z: -6.3, yaw: -Math.PI / 6, localX: 1.8, localZ: -4.7 } as const;
 export function barnWorld(x: number, z: number) {
   const dx = x - barnLayout.localX, dz = z - barnLayout.localZ;
   const c = Math.cos(barnLayout.yaw), s = Math.sin(barnLayout.yaw);
@@ -38,7 +38,7 @@ export const barnLocalWalls = [
   { x: 4.38, z: -4.7, halfX: 0.12, halfZ: 1.5 },
   { x: 1.8, z: -6.2, halfX: 2.7, halfZ: 0.12 },
 ] as const;
-export const barnWalls = barnLocalWalls.map(wall => ({ ...place(wall), yaw: barnLayout.yaw }));
+export const barnWalls = [...barnLocalWalls, {x:1.8,z:-4.7,halfX:2.7,halfZ:1.9}].map(wall => ({ ...place(wall), yaw: barnLayout.yaw }));
 
 export type PigUpgrade = "portion" | "speed";
 export const pigUpgrades = { maxLevel: 12, portionStep: 3, intervalMultiplier: .9 } as const;

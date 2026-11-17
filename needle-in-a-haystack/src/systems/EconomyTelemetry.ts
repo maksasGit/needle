@@ -11,7 +11,7 @@ export class EconomyTelemetry {
   private general:PlaytestTelemetry;
   constructor(remaining: number, enabled = false, resumed = false, context?:()=>Record<string,unknown>) { this.general=new PlaytestTelemetry(context);this.data = this.fresh(remaining); this.data.completeCycle &&= !resumed; this.enabled = enabled;if(enabled)this.general.start(); }
   private fresh(remaining: number) {
-    return { version: 3, build:'2026-11-17-refinements-r1',reportId:globalThis.crypto?.randomUUID?.()??Math.random().toString(36).slice(2), economy: economyVersion, startHay: remaining, remaining, completeCycle: remaining === 20000,
+    return { version: 3, build:'2026-11-17-compact-map-r2',reportId:globalThis.crypto?.randomUUID?.()??Math.random().toString(36).slice(2), economy: economyVersion, startHay: remaining, remaining, completeCycle: remaining === 20000,
       activeSeconds: 0, gameSeconds: 0, collectingSeconds: 0, walkingSeconds: 0, idleSeconds: 0, menuSeconds: 0, backgroundSeconds: 0,
       distance: 0, tripDistance: 0, tripSeconds: 0, trips: 0, soldHay: 0, saleCoins: 0, rareCoins: 0, eventCoins: 0,
       pigBites: 0, pigHay: 0, pigCoins: 0, pigWanderSeconds: 0, pigApproachSeconds: 0, pigWaitingSeconds: 0, eventSeconds: 0, eventSoldHay: 0, chests: 0, chestCoins: 0,

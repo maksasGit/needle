@@ -319,3 +319,7 @@ SaveData v9 читает1–9. MetaProfile.memoryProgress хранит один 
 ### Новые модели фермы — 2026-11-17
 
 `world/farmModels.ts` загружает три локальных GLB после первой интерактивности через существующий World.loadNoncriticalAssets. Well, NoticeBoard и Barn меняют только визуальный fallback, lifecycle сохраняет disposeTree. Инструменты и рюкзак вынесены на наружную стойку; координаты взаимодействий синхронизированы через barnLocalItems. Старые collision walls пока сохранены. См. MODEL_IMPORTS_2026-11-17.md: размеры, текстуры, provenance и непроверенные визуальные/device условия. Сборка и тесты не запускались.
+
+### Compact layout2 — 2026-11-17
+
+The map is18.2×18.2 (70% each side), centers/configured chest positions and local roads updated. SaveSystem permits former-map positions for migration; Game resets old-layout player position, maps layout1 dropped gems and retains hay snapshots/ledgers. New diagnostics include layoutVersion/worldHalfSize/farmModelStatus. Barn has accessible exterior item hitboxes and a solid rotated collision footprint. Notice-board GLB is rotated inward; decorative instances avoid interaction zones. See verification/LAYOUT_70_2026-11-17.md for actual checks and screenshots, not a release-ready claim.

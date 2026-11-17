@@ -1,4 +1,4 @@
-export const wellConfig = { x: 9, z: 8, radius: 1, reach: 2.5, diamonds: 20 } as const;
+export const wellConfig = { x: 6.3, z: 5.6, radius: 1, reach: 2.5, diamonds: 20 } as const;
 export const metaPrices = { legs: 10, luck: 15, gold: 15, friends: 20, memory: 50, tool: [10,20,35,60] } as const;
 export type MetaId = 'legs' | 'luck' | 'gold' | 'friends' | 'memory' | 'tool';
 export type MetaBuffs = { legs: boolean; luck: boolean; gold: boolean; friends: boolean; memory?: boolean; tool: number };

@@ -1,14 +1,26 @@
 import * as THREE from 'three';
+import { config } from '../config/balance';
+import { wellConfig } from '../config/meta';
+import { recordsConfig } from '../config/records';
+import { barnLayout } from '../config/progression';
 
 /** Optional static dressing: shared resources, no colliders, lights or update loop. */
 export function createFarmDecor() {
   const group = new THREE.Group();
   const box = new THREE.BoxGeometry(1,1,1), rounded = new THREE.IcosahedronGeometry(1,0);
   const addInstances = (geometry: THREE.BufferGeometry, color: number, points: number[][]) => {
+    geometry.computeBoundingSphere();
+    points = points.filter(([x,,z,sx=1,,sz=1]) => {
+      if(Math.abs(x)>12||Math.abs(z)>12)return true;
+      const px=x*config.mapScale,pz=z*config.mapScale;
+      const footprint=(geometry.boundingSphere?.radius??0)*Math.max(sx,sz);
+      return [config.cart,wellConfig,recordsConfig,{...barnLayout,radius:3.4}].every(o=>Math.hypot(px-o.x,pz-o.z)>o.radius+footprint+.3);
+    });
     const mesh = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ color, roughness: .9 }), points.length);
     const dummy = new THREE.Object3D();
     points.forEach(([x, y, z, sx = 1, sy = 1, sz = 1, yaw = 0], i) => {
-      dummy.position.set(x, y, z); dummy.scale.set(sx, sy, sz); dummy.rotation.set(0, yaw, 0); dummy.updateMatrix(); mesh.setMatrixAt(i, dummy.matrix);
+      const local = Math.abs(x)<=12 && Math.abs(z)<=12;
+      dummy.position.set(local?x*config.mapScale:x, y, local?z*config.mapScale:z); dummy.scale.set(sx, sy, sz); dummy.rotation.set(0, yaw, 0); dummy.updateMatrix(); mesh.setMatrixAt(i, dummy.matrix);
     });
     mesh.receiveShadow = true; group.add(mesh); return mesh;
   };
@@ -16,8 +28,8 @@ export function createFarmDecor() {
   const roadGeometry = new THREE.BoxGeometry(1, .012, 1);
   for (const [ax, az, bx, bz] of [[-5,-2,-5,5],[-5,5,-8,8],[-4,-3,0,-3],[0,-3,6,-6]]) {
     const road = new THREE.Mesh(roadGeometry, roadMaterial);
-    road.position.set((ax + bx) / 2, -.022, (az + bz) / 2);
-    road.scale.set(1.2, 1, Math.hypot(bx - ax, bz - az) + .35); road.rotation.y = Math.atan2(bx - ax, bz - az);
+    road.position.set((ax + bx) / 2 * config.mapScale, -.022, (az + bz) / 2 * config.mapScale);
+    road.scale.set(1.2, 1, Math.hypot(bx - ax, bz - az) * config.mapScale + .35); road.rotation.y = Math.atan2(bx - ax, bz - az);
     road.receiveShadow = true; group.add(road);
   }
   addInstances(box, 0xb86b38, [[9,.36,-5,.72,.72,.72,.1],[9.8,.28,-5,.55,.55,.55,-.2],[-10,.35,8,.7,.7,.7,.15],[-10,.91,8,.45,.45,.45,-.1]]);

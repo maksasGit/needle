@@ -22,6 +22,15 @@ export async function loadFarmModel(kind: keyof typeof models) {
   model.position.x -= center.x * scale;
   model.position.y -= bounds.min.y * scale;
   model.position.z -= center.z * scale;
+  if (kind === 'board') {
+    const facing = new THREE.Group();
+    facing.add(model); facing.rotation.y = Math.PI;
+    return prepare(facing, kind);
+  }
+  return prepare(model, kind);
+}
+
+function prepare(model: THREE.Group, kind: keyof typeof models) {
   model.traverse(object => {
     if (!(object instanceof THREE.Mesh)) return;
     object.castShadow = kind === 'barn';

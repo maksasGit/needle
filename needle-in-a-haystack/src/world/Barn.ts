@@ -34,12 +34,18 @@ export class Barn {
     this.canvas.width = 1024; this.canvas.height = 256;
     this.texture = new THREE.CanvasTexture(this.canvas); this.texture.colorSpace = THREE.SRGBColorSpace;
     const material = new THREE.MeshBasicMaterial({ map: this.texture, toneMapped: false, alphaTest: .5 });
+    const targetMaterial = new THREE.MeshBasicMaterial({ visible: false });
+    const toolTarget = new THREE.BoxGeometry(.65, 1.4, .45);
+    const pigTarget = new THREE.BoxGeometry(.8, .8, .9);
     for (const [i, target] of (Object.keys(barnItems) as BarnTarget[]).entries()) {
       const item = barnItems[target];
       const display = item.tool ? assets.tool(item.tool) : target === 'backpack' ? assets.backpack() : assets.pig();
       display.position.set(item.x, target === 'pig' ? 0 : 1.02, item.z + .08);
       this.group.add(display);
       this.displays.set(target, display);
+      const hitbox = new THREE.Mesh(target === 'pig' ? pigTarget : toolTarget, targetMaterial);
+      hitbox.position.set(item.x, target === 'pig' ? .4 : 1.25, item.z + .08);
+      hitbox.userData.target = target; this.group.add(hitbox); this.pickables.push(hitbox);
       display.traverse(object => { if (object instanceof THREE.Mesh) { object.userData.target = target; this.pickables.push(object); } });
       const geometry = new THREE.PlaneGeometry(.85, .42), uv = geometry.getAttribute('uv');
       for (let v = 0; v < uv.count; v++) uv.setXY(v, (i % 4 + uv.getX(v)) / 4, 1 - (Math.floor(i / 4) + 1 - uv.getY(v)) / 2);

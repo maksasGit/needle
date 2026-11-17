@@ -4,8 +4,8 @@ export const chestBalance = {
   thresholds: [.25, .5, .75],
   pickupDistance: 1.8, maxPlayerHeight: 1.5,
   positions: [
-    [-9, -9], [-9, -1], [-8, 4], [-2, 7], [3, 7],
-    [8, 4], [8, -2], [1, -8], [0, -1], [5, 0],
+    [-6.3, -6.3], [-6.3, -.7], [-5.6, 2.8], [-1.4, 4.9], [2.1, 4.9],
+    [5.6, 2.8], [5.6, -1.4], [.7, -5.6], [0, -.7], [3.5, 0],
   ],
 } as const;
 export function chestStage(remaining: number, total: number) {

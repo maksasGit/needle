@@ -29,6 +29,7 @@ export class World {
   private disposed = false;
   private modelRequested = false;
   cartModelStatus: 'idle' | 'loading' | 'ready' | 'fallback' = 'idle';
+  readonly farmModelStatus: Record<'well'|'board'|'barn', 'idle'|'loading'|'ready'|'fallback'> = {well:'idle',board:'idle',barn:'idle'};
   private cart = new THREE.Group();
   private cartFallback = new THREE.Group();
   private materials = new Map<number, THREE.MeshStandardMaterial>();
@@ -163,13 +164,15 @@ export class World {
       void import('./farmModels').then(async module => {
         for (const [kind, owner] of [['well', well], ['board', board], ['barn', barn]] as const) {
           if (this.disposed) return;
+          this.farmModelStatus[kind] = 'loading';
           try {
             const model = await module.loadFarmModel(kind);
             if (this.disposed) { disposeTree(model); return; }
             owner.applyModel(model);
             owner.group.updateMatrixWorld(true);
+            this.farmModelStatus[kind] = 'ready';
             this.shadowDirty = true;
-          } catch { /* One failed model must not prevent the other replacements. */ }
+          } catch { this.farmModelStatus[kind] = 'fallback'; /* Keep other replacements independent. */ }
         }
       }).catch(() => { /* Optional imports never block gameplay. */ });
       void import('./FarmDecor').then(module => {

@@ -1,0 +1,108 @@
+{
+  "scope": "Desktop and touch emulation; screenshots authorized only for this task; no real mobile hardware",
+  "url": "http://127.0.0.1:5181/",
+  "errors": [],
+  "screenshots": [
+    "desktop-overview.png",
+    "desktop-shop.png",
+    "desktop-shop-vacuum.png",
+    "desktop-barn.png",
+    "desktop-barn-menu.png",
+    "desktop-well.png",
+    "desktop-well-menu.png",
+    "desktop-board.png",
+    "desktop-board-menu.png",
+    "desktop-records-global.png",
+    "desktop-cart.png",
+    "mobile-game.png",
+    "mobile-shop.png",
+    "mobile-shop-vacuum.png",
+    "mobile-landscape-shop.png",
+    "mobile-barn.png",
+    "mobile-landscape-barn.png",
+    "mobile-landscape-barn-bottom.png",
+    "mobile-well.png",
+    "mobile-well-bottom.png",
+    "mobile-landscape-well.png",
+    "mobile-records.png",
+    "mobile-records-global.png",
+    "mobile-landscape-records.png"
+  ],
+  "checks": [
+    {
+      "interaction": "barn",
+      "opened": true,
+      "aim": ""
+    },
+    {
+      "interaction": "well",
+      "opened": true,
+      "aim": ""
+    },
+    {
+      "interaction": "board",
+      "opened": true,
+      "aim": ""
+    },
+    {
+      "collectionFeedbackOverlapsAim": false
+    },
+    {
+      "mobileShop": {
+        "width": 780,
+        "height": 366.59375,
+        "viewport": [
+          844,
+          390
+        ],
+        "bodyScroll": 445,
+        "bodyHeight": 229
+      }
+    },
+    {
+      "touchMenu": "barn",
+      "bounds": {
+        "width": 580,
+        "height": 351,
+        "x": 132,
+        "y": 19.5,
+        "overflow": false
+      }
+    },
+    {
+      "touchMenu": "well",
+      "bounds": {
+        "width": 780,
+        "height": 366.59375,
+        "x": 32,
+        "y": 11.703125,
+        "overflow": false
+      }
+    },
+    {
+      "touchMenu": "records",
+      "bounds": {
+        "width": 620,
+        "height": 351,
+        "x": 112,
+        "y": 19.5,
+        "overflow": false
+      }
+    },
+    {
+      "characterPurchase": true,
+      "movement": true,
+      "jump": true,
+      "collectionInventory": 28
+    },
+    {
+      "cartSale": true
+    },
+    {
+      "barnPurchase": true
+    },
+    {
+      "legacySaveRelocated": true
+    }
+  ]
+}
