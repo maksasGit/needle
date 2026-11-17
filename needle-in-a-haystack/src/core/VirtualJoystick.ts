@@ -7,12 +7,12 @@ export class VirtualJoystick {
   private pointerId?: number;
   private value = new Vector2();
   private knob: HTMLElement;
-  constructor(private element: HTMLElement, private blocked: () => boolean) {
+  constructor(private element: HTMLElement, private blocked: () => boolean, onUse:()=>void=()=>{}) {
     this.knob = element.querySelector<HTMLElement>('.joystick-knob')!;
     const signal = this.controller.signal;
     element.addEventListener('pointerdown', event => {
       if (this.pointerId !== undefined || event.button !== 0 || this.blocked()) return;
-      event.preventDefault(); this.pointerId = event.pointerId;
+      onUse();event.preventDefault(); this.pointerId = event.pointerId;
       element.setPointerCapture(event.pointerId); element.dataset.active = 'true';
       this.move(event.clientX, event.clientY);
     }, { signal });

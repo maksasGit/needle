@@ -18,6 +18,7 @@ export class Onboarding {
   private point = new Point();
   private highlighted?: Element;
   constructor() { try { this.done = localStorage.getItem(KEY) === 'done'; } catch { /* Memory-only guidance. */ } this.learned = this.done; this.hide(); }
+  get diagnostics() {return {step:this.step,done:this.done,completed:this.learned};}
   get completed() { return this.learned; }
   replay() { this.step = 0; this.done = false; this.last = ''; this.age = Infinity; }
   action(kind: 'collect' | 'sell' | 'upgrade' | 'needle') {

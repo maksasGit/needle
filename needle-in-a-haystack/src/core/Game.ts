@@ -18,7 +18,7 @@ import { CameraController } from './CameraController';
 import { InputManager } from './InputManager';
 import { Shop } from '../ui/Shop';
 import type { ShopAction } from '../ui/Shop';
-import { barnItems, barnWalls, isBarnTarget, pigUpgrades, pigUpgradePrice, toolUpgradeLimits, toolUpgradePrice } from '../config/progression';
+import { barnItems, barnWalls, isBarnTarget, pigUpgrades, pigBalance, pigUpgradePrice, toolUpgradeLimits, toolUpgradePrice } from '../config/progression';
 import { presentation } from '../config/presentation';
 import type { UpgradeId } from '../config/balance';
 import { FirstPersonView } from '../entities/FirstPersonView';
@@ -85,6 +85,7 @@ export class Game {
     return this.movement.walkable(this.chestSpawnPoint) && Math.hypot(x - config.hay.x, z - config.hay.z) > config.hay.radius + 1 && Math.hypot(x - config.cart.x, z - config.cart.z) > config.cart.radius + 1 && this.player.position.distanceTo(this.chestSpawnPoint) > 2;
   };
   private telemetry?: EconomyTelemetry;
+  private telemetryDialog='';
   private measurePig = (mode: 'wander' | 'approach' | 'waiting', dt: number) => this.telemetry?.pigActivity(mode, dt);
   private saveSystem?: SaveSystem = new SaveSystem();
   private dirty = false;
@@ -188,7 +189,7 @@ export class Game {
       if(saved&&!saved.gems)for(let i=0;i<20;i++)if(!this.world.hasStraw(500+i*1000))this.gems.claimed|=1<<i;
       if (this.won) this.records.record(this.run.state);
       this.syncChest();
-      this.telemetry = new EconomyTelemetry(this.economy.remaining, !!options.settings?.economyTelemetry, !!saved);
+      this.telemetry = new EconomyTelemetry(this.economy.remaining, !!options.settings?.economyTelemetry, !!saved,()=>this.playtestContext());
       this.locomotion.height = this.world.surfaceHeight(this.player.group.position.x, this.player.group.position.z);
       this.player.group.position.y = this.locomotion.height;
       this.camera.follow(this.player.position, this.locomotion.height);
@@ -203,11 +204,11 @@ export class Game {
           const rarity = next === 'hay' ? strawRarity(this.world.hayIdAt(instanceId)) : strawRarity();
           if (this.aimTarget !== next || this.aimRarity.id !== rarity.id) { this.aimTarget = next; this.aimRarity = rarity; this.updateAimLabel(); }
         },
-        () => this.paused, () => this.jump(), () => this.economy.activeTool === 4);
+        () => this.paused, () => this.jump(), () => this.economy.activeTool === 4,kind=>this.telemetry?.event(`input:${kind}`));
       this.resizeObserver = new ResizeObserver(() => {
         const { width, height } = host.getBoundingClientRect();
         if (width <= 0 || height <= 0) return;
-        this.camera.resize(width, height); this.renderer.setSize(width, height); this.chestViewport.set(width, height);
+        this.camera.resize(width, height); this.renderer.setSize(width, height); this.chestViewport.set(width, height);this.telemetry?.event('resize');
         this.needsRender = true;
       });
       this.resizeObserver.observe(host);
@@ -218,7 +219,9 @@ export class Game {
       const syncPause = () => {
         this.run.setRunning(!this.disposed && !this.failed && !document.querySelector('dialog[open]') && !this.background && !this.contextLost && !this.won && !!this.metrics.readyMs);
         this.menuOpen = !!document.querySelector('dialog[open]');
-        if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume();
+        const dialogId=Array.from(document.querySelectorAll('dialog[open]')).at(-1)?.id??'';
+        if(dialogId&&dialogId!==this.telemetryDialog)this.telemetry?.event(`menu:${dialogId}`);this.telemetryDialog=dialogId;
+        if(this.background)this.telemetry?.pause('background');else if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume();
         this.status.setAttribute('aria-live', this.menuOpen ? 'off' : 'polite');
         this.previous = performance.now();
         this.input?.reset();
@@ -236,10 +239,10 @@ export class Game {
       window.addEventListener('focus', () => { this.background = document.hidden; this.run.setRunning(!this.paused && !!this.metrics.readyMs); if (!this.background) { if (this.menuOpen) this.telemetry?.pause('menu'); else this.telemetry?.resume(); } this.previous = performance.now(); }, { signal });
       window.addEventListener('pagehide', () => this.saveNow(), { signal });
       this.renderer.domElement.addEventListener('webglcontextlost', event => {
-        event.preventDefault(); this.run.setRunning(false); this.contextLost = true; this.input?.reset(); this.saveNow(); this.message('contextLost');
+        event.preventDefault();this.telemetry?.event('webglContextLost'); this.run.setRunning(false); this.contextLost = true; this.input?.reset(); this.saveNow(); this.message('contextLost');
       }, { signal });
       this.renderer.domElement.addEventListener('webglcontextrestored', () => {
-        this.contextLost = false; this.run.setRunning(!this.paused && !!this.metrics.readyMs); this.previous = performance.now(); this.renderer.shadowMap.needsUpdate = true; this.needsRender = true;
+        this.telemetry?.event('webglContextRestored');this.contextLost = false; this.run.setRunning(!this.paused && !!this.metrics.readyMs); this.previous = performance.now(); this.renderer.shadowMap.needsUpdate = true; this.needsRender = true;
         this.message(this.won ? 'wonStatus' : this.economy.remaining === 0 ? 'discovered' : 'ready');
       }, { signal });
       this.message(this.saveSystem!.invalid ? 'saveInvalid' : this.won ? 'wonStatus' : this.economy.remaining === 0 ? 'discovered' : 'ready');
@@ -257,6 +260,7 @@ export class Game {
     if (this.paused) { this.options.audio?.setWalking(false); if (!this.needsRender) return; }
     try {
       if (!this.paused) {
+        if(this.metrics.readyMs)this.telemetry?.frame(elapsed);
         this.run.settle();
         this.stepSoundStart.copy(this.player.position);
         this.moveManually(dt);
@@ -264,13 +268,14 @@ export class Game {
         this.input?.updateHeld(dt, this.collectionTimer === 0 && this.economy.inventory < this.economy.capacity && this.economy.remaining > 0 && this.inRange('hay'));
         const collecting = this.collectionTimer > 0;
         this.updateGameplay(dt);
-        if (this.metrics.readyMs) this.telemetry?.tick(elapsed / 1000, this.stepSoundStart.distanceTo(this.player.position), collecting, this.economy.activeTool, this.economy.remaining, this.saleEvent.active, dt);
-        if (this.saleEvent.update(dt, this.guide.completed)) { this.dirty = true; this.refreshEvent(); this.saveNow(); }
+        if (this.metrics.readyMs) this.telemetry?.tick(elapsed / 1000, this.stepSoundStart.distanceTo(this.player.position), collecting, this.economy.activeTool, this.economy.remaining, this.saleEvent.active, dt,this.economy.inventory>=this.economy.capacity);
+        if (this.saleEvent.update(dt, this.guide.completed)) { this.telemetry?.event(this.saleEvent.active?'saleEventStarted':'saleEventEnded');this.dirty = true; this.refreshEvent(); this.saveNow(); }
         this.refreshEvent(false);
         if (this.guide.completed || this.saleEvent.active) this.dirty = true;
         const chestChange = this.chests.update(dt, this.economy.remaining, this.runTotal, this.canSpawnChest);
         this.dirty = true;
         if (chestChange) {
+          this.telemetry?.event(`chest:${chestChange}`);
           this.syncChest();
           if (chestChange === 'spawn') { this.feedback?.notice(t('chestAppeared')); this.message('chestAppeared'); }
           this.saveNow();
@@ -306,10 +311,11 @@ export class Game {
         // Plain data for diagnostics; no per-frame DOM telemetry.
         this.metrics = { samples: this.metrics.samples + 1, frameMs: this.frameTotal / this.frameSamples, calls: this.renderer.info.render.calls, triangles: this.renderer.info.render.triangles,
           geometries: this.renderer.info.memory.geometries, textures: this.renderer.info.memory.textures, readyMs: this.metrics.readyMs || performance.now() - this.boot, startupMs: this.metrics.startupMs, initialTransferBytes: this.metrics.initialTransferBytes };
+        if(!this.paused)this.telemetry?.render(this.metrics.calls,this.metrics.triangles,this.metrics.geometries,this.metrics.textures);
         this.frameSamples = 0; this.frameTotal = 0;
       }
     } catch (error) {
-      console.error(error); this.run.setRunning(false); this.failed = true; this.input?.reset(); this.saveNow();
+      this.telemetry?.event('gameLoopError');console.error(error); this.run.setRunning(false); this.failed = true; this.input?.reset(); this.saveNow();
       this.options.onError?.(t('error'));
     }
   }
@@ -350,7 +356,7 @@ export class Game {
     if (this.disposed || this.failed) return;
     const now = performance.now();
     if (now - this.lastRejectionAt < presentation.rejectionCooldownMs) return;
-    this.lastRejectionAt = now;
+    this.lastRejectionAt = now;this.telemetry?.denial(text);
     const focusedDialog = document.activeElement?.closest<HTMLDialogElement>('dialog[open]');
     const dialog = focusedDialog ?? Array.from(document.querySelectorAll<HTMLDialogElement>('dialog[open]')).at(-1);
     if (dialog) {
@@ -397,6 +403,7 @@ export class Game {
   }
   replayGuide() { this.guide.replay(); }
   private jump() {
+    this.telemetry?.event('jumpAttempt');
     if (this.paused) return;
     if (!this.locomotion.jump()) { this.reject(t('denyAirborne')); return; }
     this.options.audio?.setWalking(false);
@@ -405,7 +412,7 @@ export class Game {
   private moveManually(dt: number) {
     const input = this.input!.movement();
     if (input.lengthSq()) {
-      if (this.economy.activeTool !== 4) this.collectionTimer = 0;
+      if (this.economy.activeTool !== 4){if(this.collectionTimer>0)this.telemetry?.event('collectionCancelledByMovement');this.collectionTimer = 0;}
       this.player.command([]); this.destination = 'ground'; this.dirty = true;
     }
     const yaw = this.camera.yaw;
@@ -426,6 +433,7 @@ export class Game {
   }
   private command(target: Target, point: THREE.Vector3, instanceId?: number) {
     if (this.paused) return;
+    this.telemetry?.event(`command:${target}`);
     if (target === 'ground') return;
     if(target==='well'){
       if(this.player.group.position.y>1.5||Math.hypot(this.player.position.x-wellConfig.x,this.player.position.y-wellConfig.z)>wellConfig.reach){this.reject(t('denyFar'));return;}
@@ -447,7 +455,7 @@ export class Game {
       if (!this.inBarnRange(target)) { this.reject(t('denyFar')); return; }
       this.hud?.flush(); this.barnCard?.show(target); return;
     }
-    if (target === 'hay' && this.collectionTimer > 0) return;
+    if (target === 'hay' && this.collectionTimer > 0){this.telemetry?.event('busyCollectionIgnored');return;}
     if (this.won || (target === 'needle' && this.economy.remaining > 0)) return;
     if (!this.inRange(target)) { this.reject(t('denyFar')); return; }
     if (target === 'hay') { this.harvestPoint = point.clone(); this.harvestId = this.world.hayIdAt(instanceId); }
@@ -532,6 +540,7 @@ export class Game {
   private awardGem(index:number,persist=true){
     if(this.gems.claimed&(1<<index))return;
     if(!this.meta.award())return;this.gems.claimed|=1<<index;this.gems.drops[index]=null;
+    this.telemetry?.event('diamondCollected');
     this.feedback?.notice(t('diamondFound'));this.options.audio?.effect('sell');this.dirty=true;this.refreshHUD();
     if(persist){this.world.updateDiamonds(this.gems);this.saveNow();}
   }
@@ -539,7 +548,7 @@ export class Game {
     if(performance.now()-this.lastMetaPurchaseAt<presentation.purchaseGuardMs)return;
     const price=this.meta.price(id);if(price===null){this.reject(t('denyMax'));return;}
     if(price>this.meta.diamonds){this.reject(t('metaMissing',{n:price-this.meta.diamonds}));return;}
-    if(!this.meta.buy(id))return;this.lastMetaPurchaseAt=performance.now();this.dirty=true;this.saveNow();this.options.audio?.effect('sell');this.wellMenu?.render();this.wellMenu?.feedback(t('metaNextRun'));this.refreshHUD();
+    if(!this.meta.buy(id))return;this.lastMetaPurchaseAt=performance.now();this.telemetry?.event(`metaPurchase:${id}`);this.dirty=true;this.saveNow();this.options.audio?.effect('sell');this.wellMenu?.render();this.wellMenu?.feedback(t('metaNextRun'));this.refreshHUD();
   }
   private progressSnapshot():MemoryProgress{return {levels:{...this.economy.levels},toolVolumes:[...this.economy.toolVolumes],toolSpecials:[...this.economy.toolSpecials],pigCount:this.economy.pigCount,pigPortionLevel:this.economy.pigPortionLevel,pigSpeedLevel:this.economy.pigSpeedLevel};}
   private captureMemory(){if(this.meta.profile.bought.memory)this.meta.profile.memoryProgress=this.progressSnapshot();}
@@ -578,7 +587,9 @@ export class Game {
     this.captureMemory();
     const data = { startProgress:this.startProgress?copyMemory(this.startProgress):undefined,version: 9 as const, pigPriceBaseline:this.economy.pigPriceBaseline, meta:this.meta.snapshot(),buffs:{...this.buffs},gems:{claimed:this.gems.claimed,drops:this.gems.drops.map(p=>p?[...p] as [number,number,number]:null)}, run: this.run.snapshot(), chestRevenue: this.economy.chestRevenue, chestClaims: [...this.economy.chestClaims], chestState: this.chests.snapshot(), eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
-    if (this.saveSystem.write(data)) this.dirty = false;
+    const saveStart=performance.now();const saved=this.saveSystem.write(data);
+    this.telemetry?.event(saved?'saveSuccess':'saveFailure');this.telemetry?.event('saveTotalMs',performance.now()-saveStart);
+    if(saved)this.dirty=false;
     this.updateSaveNotice();
   }
   private updateAimLabel() {
@@ -608,6 +619,7 @@ export class Game {
   downloadEconomyMetrics() { return this.telemetry?.download(); }
   resetEconomyMetrics() { this.telemetry?.reset(this.economy.remaining); }
   setReducedMotion(reduced: boolean) { this.world.reducedMotion = reduced; if (this.viewModel) this.viewModel.reducedMotion = reduced; if (this.feedback) { this.feedback.reducedMotion = reduced; if (reduced) this.feedback.stop(); } if (this.hud) { this.hud.reducedMotion = reduced; this.hud.stop(); } }
+  private playtestContext():Record<string,unknown>{return {revision:'pigs-x3-memory50-reach1.5',remaining:this.economy.remaining,inventory:this.economy.inventory,capacity:this.economy.capacity,coins:this.economy.coins,levels:{...this.economy.levels},toolVolumes:[...this.economy.toolVolumes],toolSpecials:[...this.economy.toolSpecials],activeTool:this.economy.activeTool,pigCount:this.economy.pigCount,pigPortionLevel:this.economy.pigPortionLevel,pigSpeedLevel:this.economy.pigSpeedLevel,buffs:{...this.buffs},diamonds:this.meta.diamonds,metaBought:{...this.meta.profile.bought},runActiveSeconds:this.run.state.activeMs/1000,runEligible:this.run.state.eligible,won:this.won,tutorial:this.guide.diagnostics,balance:{totalHay:this.runTotal,collectionRangeMultiplier:config.collectionRangeMultiplier,pigPrices:[...pigBalance.prices],pigPortions:[...pigBalance.portions],pigPortionStep:pigUpgrades.portionStep},startup:{readyMs:this.metrics.readyMs,initialTransferBytes:this.metrics.initialTransferBytes},cartModelStatus:this.world.cartModelStatus,saveAvailable:this.saveSystem?.available,saveInvalid:this.saveSystem?.invalid,viewport:[innerWidth,innerHeight],language:this.options.settings?.language,reducedMotion:this.options.settings?.reducedMotion};}
   diagnostics() { return { ...this.metrics, remaining: this.economy.remaining, inventory: this.economy.inventory, coins: this.economy.coins, cargo: this.world.cargoCount, activeTool: this.economy.activeTool, pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, salePrice: this.economy.salePrice, won: this.won, paused: this.paused, position: [this.player.group.position.x, this.player.group.position.z], yaw: this.camera.yaw, pitch: this.camera.pitch, height: this.locomotion.height, grounded: this.locomotion.grounded, cartModelStatus: this.world.cartModelStatus, saleEvent: this.saleEvent.snapshot(), eventRevenue: this.economy.eventRevenue, tutorialCompleted: this.guide.completed, chest: this.chests.snapshot(), chestRevenue: this.economy.chestRevenue }; }
   dispose(save = true) {
     if (this.disposed) return;

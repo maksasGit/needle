@@ -38,7 +38,7 @@ export class InputManager {
   private heldButtonClick = false;
   private heldCommand?: () => void;
   private down?: { x: number; y: number; lastX: number; lastY: number; id: number; dragged: boolean };
-  constructor(canvas: HTMLCanvasElement, private camera: Camera, private pickables: Object3D[], onCommand: (target: Target, point: Vector3, instanceId?: number) => void, onLook: (dx: number, dy: number) => void, private onAim: (instanceId?: number, target?: Target) => void, private isBlocked: () => boolean = () => !!document.querySelector('dialog[open]'), onJump: () => void = () => {}, private continuous: () => boolean = () => false) {
+  constructor(canvas: HTMLCanvasElement, private camera: Camera, private pickables: Object3D[], onCommand: (target: Target, point: Vector3, instanceId?: number) => void, onLook: (dx: number, dy: number) => void, private onAim: (instanceId?: number, target?: Target) => void, private isBlocked: () => boolean = () => !!document.querySelector('dialog[open]'), onJump: () => void = () => {}, private continuous: () => boolean = () => false, onInput:(kind:'touch'|'mouse'|'keyboard'|'action'|'joystick'|'look')=>void=()=>{}) {
     const blocked = this.isBlocked;
     const cast = (x: number, y: number) => {
       if (blocked()) return;
@@ -58,6 +58,7 @@ export class InputManager {
     };
     this.listen(canvas, 'pointerdown', e => {
       if (this.down || e.button !== 0 || blocked()) return;
+      onInput(e.pointerType==='touch'?'touch':'mouse');
       canvas.focus({ preventScroll: true });
       this.down = { x: e.clientX, y: e.clientY, lastX: e.clientX, lastY: e.clientY, id: e.pointerId, dragged: false };
       canvas.setPointerCapture(e.pointerId);
@@ -67,7 +68,7 @@ export class InputManager {
     this.listen(canvas, 'pointermove', e => {
       const d = this.down;
       if (!d || d.id !== e.pointerId) return;
-      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8) d.dragged = true;
+      if (!d.dragged && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8){d.dragged=true;onInput('look');}
       if (d.dragged && !blocked()) onLook(e.clientX - d.lastX, e.clientY - d.lastY);
       d.lastX = e.clientX; d.lastY = e.clientY;
     });
@@ -83,6 +84,7 @@ export class InputManager {
     this.listen(canvas, 'contextmenu', e => e.preventDefault());
     this.listen(window, 'keydown', e => {
       if (blocked() || (e.target as HTMLElement)?.closest('input,textarea,select,[contenteditable="true"]')) return;
+      if(!e.repeat&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight','Space','KeyE'].includes(e.code))onInput('keyboard');
       if (['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight'].includes(e.code)) { e.preventDefault(); this.keys.add(e.code); }
       if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) onJump(); }
       if (e.code === 'KeyE' && !e.repeat && !beginHold(0, 0, "key")) cast(0, 0);
@@ -94,6 +96,7 @@ export class InputManager {
     this.listen(interact, 'contextmenu', e => e.preventDefault());
     this.listen(interact, 'pointerdown', e => {
       if (e.button !== 0) return;
+      if(!blocked())onInput('action');
       this.heldButtonClick = beginHold(0, 0, e.pointerId);
       if (this.heldButtonClick) interact.setPointerCapture(e.pointerId);
     });
@@ -102,7 +105,7 @@ export class InputManager {
     this.listen(interact, 'lostpointercapture', e => { if (this.holdOwner === e.pointerId) this.held = false; });
     this.listen(interact, 'click', () => { if (!this.heldButtonClick) cast(0, 0); this.heldButtonClick = false; });
     this.listen(document.querySelector<HTMLButtonElement>('#jump')!, 'click', () => { if (!blocked()) onJump(); });
-    this.joystick = new VirtualJoystick(document.querySelector<HTMLElement>('#joystick')!, blocked);
+    this.joystick = new VirtualJoystick(document.querySelector<HTMLElement>('#joystick')!, blocked,()=>onInput('joystick'));
     this.observer = new MutationObserver(() => { if (blocked()) this.reset(); });
     this.observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
   }
