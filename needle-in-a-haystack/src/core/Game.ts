@@ -123,7 +123,7 @@ export class Game {
       this.renderer.setPixelRatio(Math.min(devicePixelRatio, config.maxPixelRatio));
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.05;
-      this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFShadowMap;
       // Shadows only change while something in the world moves.
       this.renderer.shadowMap.autoUpdate = false;
       this.renderer.domElement.setAttribute('aria-label', t('world'));

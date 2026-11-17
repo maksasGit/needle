@@ -6,6 +6,7 @@ import type { PigUpgrade } from '../config/progression';
 import type { LegacyProgress, PriceBaseline } from './SaveSystem';
 import type { ToolUpgrade, BarnTarget } from '../config/progression';
 import { barnItems } from '../config/progression';
+import { t as offerText } from '../ui/i18n';
 import { capacityAt, movementAt, durationAt, amountAt, saleHundredthsAt, payoutAt } from './economyMath';
 import { chestBalance } from '../config/chests';
 
@@ -127,8 +128,8 @@ export class EconomySystem {
   barnOffer(target: BarnTarget) {
     const tool = barnItems[target].tool;
     if (tool) return { name: toolName(tool), price: tool <= this.levels.tools ? null : upgradePrice('tools', tool - 1), owned: tool <= this.levels.tools, locked: tool > this.levels.tools + 1 };
-    if (target === 'backpack') return { name: t('backpack'), price: this.price('capacity'), owned: false, locked: false };
-    return { name: t('pig'), price: pigBalance.prices[this.pigCount] ?? null, owned: false, locked: false };
+    if (target === 'backpack') return { name: offerText('backpack'), price: this.price('capacity'), owned: false, locked: false };
+    return { name: offerText('pig'), price: pigBalance.prices[this.pigCount] ?? null, owned: false, locked: false };
   }
   buyAtBarn(target: BarnTarget) {
     const offer = this.barnOffer(target), tool = barnItems[target].tool;
