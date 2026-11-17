@@ -373,6 +373,5 @@ html[data-reduced-motion="true"] button { transition:none; }
 .hud .diamond-icon { position:absolute; left:9px; top:50%; transform:translateY(-50%); width:23px; height:23px; overflow:visible; clip-path:none; font-size:23px; line-height:1; }
 #well-dialog .well-wallet { color:#a0eeff; font-size:21px; font-variant-numeric:tabular-nums; }
 #well-dialog .well-diamond { color:#076783; font-size:20px; }
-#well-dialog .well-next-run { margin:10px 0; padding:8px 12px; border:1px solid #b58a4d; border-radius:8px; background:#fff0c9b8; color:#63401f; font-size:13px; font-weight:800; }
 #well-dialog [data-well-feedback] { min-height:1.3em; margin:4px 0; color:#754021; font-size:13px; font-weight:800; }
 #well-dialog .shop-buy:disabled { opacity:1; }

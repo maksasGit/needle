@@ -16,7 +16,7 @@ export class WellMenu {
     const focused=(document.activeElement as HTMLElement | null)?.closest<HTMLButtonElement>('[data-meta]')?.dataset.meta;
     const scrollTop=this.dialog.querySelector('.shop-body')?.scrollTop ?? 0;
     const ids:MetaId[]=['legs','luck','gold','tool','friends','memory'];
-    this.dialog.innerHTML=`<div class="shop-heading"><h2 id="well-title">${t('well')}</h2><div class="shop-wallet well-wallet"><span aria-hidden="true">◆</span><strong>${this.meta.diamonds}</strong><span class="sr-only">${t('diamonds')}</span></div><button class="shop-close" data-well-close aria-label="${t('close')}">${icon('close')}</button></div><div class="shop-body"><p class="well-next-run">${t('metaNextRun')}</p><p data-well-feedback role="status"></p><div class="well-upgrades book-page"></div></div>`;
+    this.dialog.innerHTML=`<div class="shop-heading"><h2 id="well-title">${t('well')}</h2><div class="shop-wallet well-wallet"><span aria-hidden="true">◆</span><strong>${this.meta.diamonds}</strong><span class="sr-only">${t('diamonds')}</span></div><button class="shop-close" data-well-close aria-label="${t('close')}">${icon('close')}</button></div><div class="shop-body"><p data-well-feedback role="status"></p><div class="well-upgrades book-page"></div></div>`;
     const list=this.dialog.querySelector('.well-upgrades')!;
     const symbols:Record<MetaId,IconName>={legs:'arrow',luck:'coins',gold:'hay',tool:'fork',friends:'pig',memory:'book'};
     ids.forEach(id=>{

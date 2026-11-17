@@ -569,7 +569,7 @@ export class Game {
     if(performance.now()-this.lastMetaPurchaseAt<presentation.purchaseGuardMs)return;
     const price=this.meta.price(id);if(price===null){this.reject(t('denyMax'));return;}
     if(price>this.meta.diamonds){this.reject(t('metaMissing',{n:price-this.meta.diamonds}));return;}
-    if(!this.meta.buy(id))return;this.lastMetaPurchaseAt=performance.now();this.telemetry?.event(`metaPurchase:${id}`);this.dirty=true;this.saveNow();this.options.audio?.effect('sell');this.wellMenu?.render();this.wellMenu?.feedback(t('metaNextRun'));this.refreshHUD();
+    if(!this.meta.buy(id))return;this.lastMetaPurchaseAt=performance.now();this.telemetry?.event(`metaPurchase:${id}`);this.dirty=true;this.saveNow();this.options.audio?.effect('sell');this.wellMenu?.render();this.wellMenu?.feedback(t('upgradeDone'));this.refreshHUD();
   }
   private progressSnapshot():MemoryProgress{return {levels:{...this.economy.levels},toolVolumes:[...this.economy.toolVolumes],toolSpecials:[...this.economy.toolSpecials],pigCount:this.economy.pigCount,pigPortionLevel:this.economy.pigPortionLevel,pigSpeedLevel:this.economy.pigSpeedLevel};}
   private captureMemory(){if(this.meta.profile.bought.memory)this.meta.profile.memoryProgress=this.progressSnapshot();}
