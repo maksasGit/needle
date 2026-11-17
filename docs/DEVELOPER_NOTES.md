@@ -109,3 +109,12 @@ SaveData v9 читает1–9. MetaProfile.memoryProgress хранит один 
 ### Плейтест v3 и технические требования — 2026-11-17
 
 [PLAYTEST_REPORT_V3.md](PLAYTEST_REPORT_V3.md) обновляет прежнюю схему2. Реализованы случайный runId (только для забега, по явному запросу), номера сегментов/reportId, stages10% от totalHay, сбор по инструментам/источникам/исходам, full moving/stationary, свинки по уровням, purchase before/after, viewport-visible chest и отдельные очистка/иголка/победа/исход рекорда. Техническая часть: CPU/frame histogram/приближённые перцентили, longtasks, выборочный JS heap, WebGL recovery, UTF-8 save size и раздельные snapshot/serialize/storage timings. TechnicalTelemetry сопоставляет наблюдения с внутренними targets, не объявляя release pass; недоступные/ручные требования unknown. Следующая production-сборка Vite создаст technical-build.json с total/max/count output; dev→unknown, чтение локального manifest только opt-in. Основной SaveData остаётся9, link-поля RunState опциональны для старых saves. Нет user/device ID, raw URLs/UA/errors/input traces/upload; cap структуры ограничены. Код gameplay/баланс не менялся по намерению; helper отмены сбора добавляет только учёт. Typecheck/tests/build/browser/screenshots не запускались. Старые JSON не имеют этих метрик задним числом.
+
+### Наблюдения нового завершённого v3 плейтеста (2026-11-17)
+
+Подробный измеренный разбор — PLAYTEST_ANALYSIS_V3_2026-11-17.md, не исправления:
+- PERF-SAVE: средняя подготовка snapshot13.63ms из15.30ms/сохранение, max total43.8ms,546 записей. Исследовать подготовку, не приписывать всё localStorage.
+- TIME-CLAMP: active1608.54s vs game1461.70s, отставание146.83s; capped50ms dt и6.26% кадров>50ms. Четыре gold×2 заняли398.95s wall active,≈99.74s/событие вместо90s simulation. Требуется решение о раздельных foreground timers/стабильной физике, без подачи фонового delta.
+- STARTUP-SCOPE: readyMs≈65min совпадает с фоновым ожиданием; не считать cold-cache startup. Dev build sizes unknown. Часть финальных CPU/percentile полей v3 в файле отсутствует, обновить страницу перед следующей записью.
+
+Победа/рекорд подтверждены, кошельки сходятся, ошибок/отказов сохранения не записано. Исходный JSON не публиковался. Код/баланс/тесты/build этим анализом не затронуты.
