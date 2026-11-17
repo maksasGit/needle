@@ -1,0 +1,12 @@
+{
+  "scope": "Node persistence/components with fixed fixtures and clock; no Game/WebGL/browser/device coverage",
+  "checks": [
+    "v1-v9 validation, normalization and no input mutation",
+    "frozen legacy character/tool/pig prices and tenths-to-hundredths migration",
+    "old pig price 560, new price 476, no fictional coin",
+    "free starting pig, muscle memory levels and invariant rejection",
+    "separate chest/event/base ledgers, hundredths and one chest claim across reload",
+    "controlled foreground clock, finished reload, top-five and record deduplication",
+    "checkpoint storage failure, meta debit once and independent memory snapshot"
+  ]
+}

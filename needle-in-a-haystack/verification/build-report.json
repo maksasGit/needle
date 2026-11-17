@@ -1,7 +1,13 @@
 {
-  "totalBytes": 5873676,
-  "fileCount": 16,
+  "totalBytes": 13762651,
+  "fileCount": 21,
   "files": [
+    {
+      "file": "assets/barn-Cp2p5ieG.glb",
+      "bytes": 2284828,
+      "gzipBytes": 2242902,
+      "preferredFileLimit": false
+    },
     {
       "file": "assets/cartModel-BO6JS6II.js",
       "bytes": 551,
@@ -27,15 +33,21 @@
       "preferredFileLimit": true
     },
     {
-      "file": "assets/index-B98rRco9.css",
-      "bytes": 25017,
-      "gzipBytes": 5832,
+      "file": "assets/farmModels-vKtPZCdq.js",
+      "bytes": 911,
+      "gzipBytes": 565,
       "preferredFileLimit": true
     },
     {
-      "file": "assets/index-BwX1SAKl.js",
-      "bytes": 192257,
-      "gzipBytes": 59285,
+      "file": "assets/index-Cow836VI.css",
+      "bytes": 31126,
+      "gzipBytes": 6992,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/index-gYk-4YSD.js",
+      "bytes": 195402,
+      "gzipBytes": 60210,
       "preferredFileLimit": true
     },
     {
@@ -43,6 +55,18 @@
       "bytes": 25389,
       "gzipBytes": 24484,
       "preferredFileLimit": true
+    },
+    {
+      "file": "assets/leaderboard-D0vXaHQc.glb",
+      "bytes": 2968988,
+      "gzipBytes": 2946726,
+      "preferredFileLimit": false
+    },
+    {
+      "file": "assets/medival_well-DiK_lbYE.glb",
+      "bytes": 2484228,
+      "gzipBytes": 2459472,
+      "preferredFileLimit": false
     },
     {
       "file": "assets/model-loader-R4NtgU4i.js",
@@ -60,6 +84,12 @@
       "file": "assets/sell_sound-DgrPZFea.mp3",
       "bytes": 25389,
       "gzipBytes": 24468,
+      "preferredFileLimit": true
+    },
+    {
+      "file": "assets/shop-parchment-Di6Sa-TK.jpg",
+      "bytes": 140730,
+      "gzipBytes": 139049,
       "preferredFileLimit": true
     },
     {
@@ -83,13 +113,13 @@
     {
       "file": "index.html",
       "bytes": 1144,
-      "gzipBytes": 694,
+      "gzipBytes": 697,
       "preferredFileLimit": true
     },
     {
       "file": "technical-build.json",
-      "bytes": 382,
-      "gzipBytes": 224,
+      "bytes": 418,
+      "gzipBytes": 239,
       "preferredFileLimit": true
     },
     {
@@ -101,9 +131,27 @@
   ],
   "preferredFileExceptions": [
     {
+      "file": "assets/barn-Cp2p5ieG.glb",
+      "bytes": 2284828,
+      "gzipBytes": 2242902,
+      "preferredFileLimit": false
+    },
+    {
       "file": "assets/cart_colored-rCI2l03Y.glb",
       "bytes": 3129416,
       "gzipBytes": 3044957,
+      "preferredFileLimit": false
+    },
+    {
+      "file": "assets/leaderboard-D0vXaHQc.glb",
+      "bytes": 2968988,
+      "gzipBytes": 2946726,
+      "preferredFileLimit": false
+    },
+    {
+      "file": "assets/medival_well-DiK_lbYE.glb",
+      "bytes": 2484228,
+      "gzipBytes": 2459472,
       "preferredFileLimit": false
     },
     {

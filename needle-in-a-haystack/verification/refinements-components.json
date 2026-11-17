@@ -8,9 +8,9 @@
     "pig speed shortens return cadence"
   ],
   "snapshot": {
-    "legacyMedianMs": 20.535599999999988,
-    "freshMedianMs": 4.103499999999997,
-    "cachedMedianMs": 0.0001999999999497959
+    "legacyMedianMs": 20.108549999999923,
+    "freshMedianMs": 6.507749999999987,
+    "cachedMedianMs": 0.0003000000000383807
   },
   "pigs": {
     "scenarioSeconds": 600,

@@ -2,6 +2,12 @@
 
 Методика, а не результаты нового замера. В аудите 2026-11-16 игра и бенчмарки не запускались. Цели и бюджеты остаются в [ASSET_BUDGETS.md](../ASSET_BUDGETS.md), разрешения проверок — в [TESTING.md](TESTING.md).
 
+## Измерено повторным аудитом 2026-11-17
+
+По разрешению владельца выполнены Node-компонентные проверки и production-сборка исходника `739a6ef`, без браузера/скриншотов. Весь dist — **13 762 651 байт (13,13 МиБ), 21 файл**, крупнейший — cart GLB 3 129 416 байт. JS суммарно 829 593 байт, GLB суммарно 10 867 460 байт. Это размеры распакованного вывода, не cold-cache/initial network measurement. Три новых GLB документированы как исключения 512 КиБ; `check:build` синхронизирован с ними, жёсткие границы сохранены.
+
+Snapshot-проверки подтвердили legacy-byte-equivalence/cache и синтетический сценарий свинок. Новые значения `verification/refinements-components.json` получены на Node 22.13.1/Windows параллельно со сборкой; их не считать сопоставимым hardware baseline или замером FPS. Предыдущие desktop/dev плейтесты изложены в [PLAYTEST_ANALYSIS_2026-11-17_R1.md](../PLAYTEST_ANALYSIS_2026-11-17_R1.md); они предшествуют новым GLB и не доказывают текущую mobile/GPU-память. Готовность последних моделей на реальном устройстве остаётся непроверенной.
+
 ## Уже доступно
 
 - `Game.diagnostics()` и `?diagnostics`: frameMs, calls, triangles, geometries/textures, readyMs, startupMs, initialTransferBytes и состояние игры.

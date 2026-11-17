@@ -1,8 +1,18 @@
 # Архитектура проекта и карта документации
 
-Обновлено: **2026-11-16**. Краткий вход в проект для разработчика, тестировщика и Codex. Описывает текущий исходник; наличие системы не означает, что её последняя версия проверена на устройстве.
+Обновлено: **2026-11-17**, повторный аудит исходника `739a6ef`. Наличие системы не означает, что её последняя версия проверена на устройстве. Разделы с датированными дополнениями сохраняют историю; актуальное состояние кратко ниже.
 
 Главные источники: [AGENTS.md](AGENTS.md) — правила работы, [GAME_REQUIREMENTS.md](GAME_REQUIREMENTS.md) — поведение игры, [ART_DIRECTION.md](ART_DIRECTION.md) — визуальное направление. Этот обзор их поясняет, но не заменяет. При конфликте фиксируем расхождение и спрашиваем владельца о существенном продуктовом решении.
+
+## Текущий вход после повторного аудита
+
+- SaveData **v9**, загрузка v1–v9, ключ `needle.save.v1`; экономика по-прежнему v1, эксперимент v2 не активирован. Сундуки, колодец/алмазы, стартовые бафы и memory реализованы.
+- `systems/MetaProgress.ts` владеет метакошельком/покупками; `Game` объединяет его с hay/gems/coins в одном checkpoint. `startProgress` исключает бесплатную наследованную прокачку из оплаченных расходов. `RunClock/RunRecords` отделены от opt-in телеметрии.
+- Рекорды — **единый топ-5 по времени без разделения по бафам/прокачке** (ответ владельца Q-016 от 2026-11-17); Global остаётся вымышленным demo без backend.
+- Clock gameplay/action/event/pig использует foreground elapsed; движение/физика ограничены 50 мс. Pig speed теперь сокращает cooldown и прогулку по отдельному разрешению владельца; прочие маршруты/скорость не менялись.
+- `world/farmModels.ts` последовательно загружает GLB well→board→barn после первой интерактивности; fallback остаётся до успеха, поздний результат после dispose освобождается. Дистанции/коллизии отдельны от GLB: соответствие модели проверяется вручную.
+- Проверено в этом аудите: typecheck+production, `test:refinements`, новый `test:persistence` и исправленный `check:build`. Общий `npm test` всё ещё падает на старом ожидании. Браузер/скриншоты не запускались; мобильная/визуальная/itch.io приёмка последних изменений не подтверждена.
+- Текущий dist: **13 762 651 байт, 21 файл**, крупнейший 3 129 416 байт. Это весь распакованный build, не initial transfer. Полный результат и приоритеты — [docs/REPO_REVIEW.md](docs/REPO_REVIEW.md); команды — [docs/TESTING.md](docs/TESTING.md).
 
 ## 1. Что разрабатываем
 
@@ -123,12 +133,12 @@ flowchart TD
 | `legacyBalance.ts`, `legacyProgression.ts`, previous-функции цен | Исторические цены для проверки прежних расходов; нельзя «обновлять» их под новый баланс |
 | [balance.v2.ts](needle-in-a-haystack/src/config/balance.v2.ts) | **Неактивные** исходный и переработанный кандидаты v2, не production-источник |
 
-Не путать независимые версии: `economyVersion=1` — текущий профиль экономики; **SaveData v5** — формат игрового сохранения; ключ `needle.save.v1` исторически остаётся прежним. Новая модель v2 ещё не включена и не означает save v2.
+Не путать независимые версии: `economyVersion=1` — текущий профиль экономики; **SaveData v9** — формат игрового сохранения; ключ `needle.save.v1` исторически остаётся прежним. Новая модель v2 ещё не включена и не означает save v2.
 
 - Сохранение хранит остаток сена как компактный base64 `Int16Array`: ID, колонка, локальная позиция и вращение; полные меши/материалы не сериализуются.
 - Отдельно сохраняются инвентарь, монеты, уровни, выбранный инструмент, свинки, положение/взгляд, победа, события и маркеры профиля/карты.
 - `saleRevenue`, `discoveryCoins`, `eventRevenue`, остатки сотых и `pigEaten` позволяют раздельно восстановить деньги и груз. Проверяется равенство доходов и монет плюс исторические расходы.
-- `legacyProgress` и `priceBaseline` сохраняют смысл старых покупок после прежних изменений цен. SaveSystem принимает версии 1–5 и нормализует их для текущего сеанса.
+- `legacyProgress`, `priceBaseline`, `pigPriceBaseline` сохраняют смысл старых покупок; `startProgress` отделяет бесплатный перенос memory. SaveSystem принимает версии 1–9 и нормализует их для текущего сеанса. MetaProfile/GemState и chest/run также входят в общий checkpoint.
 - Настройки, завершение обучения и добровольные метрики живут в отдельных localStorage-ключах. Метрики по умолчанию выключены, без идентификаторов/сетевой отправки, только текущий сегмент; неполный сеанс нельзя выдавать за полный цикл.
 - Старые уровни **и эффекты** нельзя молча обрезать. Для будущего v2 политика сохранения прежних возможностей согласована, но её активационная миграция ещё не внедрялась.
 
@@ -224,7 +234,7 @@ Playground находится в соседнем репозитории, не �
 | Выбор/удаление соломинки | `world/Haystack.ts` | InputManager, Game, World, rarity, SaveSystem | Выбранный stable ID, swap/remove, snapshot/restore, исчерпание и опора |
 | Редкость | `config/rarity.ts` | Haystack, discovery ledger, SaveSystem | Фиксированные ID/seed, однократная награда и миграция версии |
 | Карта/амбар/прыжок | `balance.ts`, `progression.ts: barnWorld/barnWalls`, `systems/Locomotion.ts` | MovementSystem, Game, World/Barn/PigHerd, spawn | Navigation + целевые movement/layout/climb сценарии; ручной touch |
-| Формат сохранения | `systems/SaveSystem.ts` | Game restore/saveNow, Haystack, EconomySystem, main settings | Независимые фикстуры v1–v5, ledgers/исторические цены, повторная загрузка |
+| Формат сохранения/метаслой/рекорды | `systems/SaveSystem.ts`, `MetaProgress.ts`, `RunRecords.ts` | Game restore/saveNow/newGame, Haystack, EconomySystem, main settings | `npm run test:persistence`: v1–v9/ledgers/исторические цены/бесплатный старт; полный Game-reload отдельно |
 | Событие ×2 | `config/presentation.ts`, `systems/SaleEvent.ts` | Game frame, EconomySystem.unload, SaveSystem | Управляемые random/clock, pause/reload, eventRevenue, исключение pigs/rare |
 | HUD/книга/карточка/обучение | `src/ui/*`, `src/main.ts`, `src/style.css` | Game, presentation.ts, i18n | Реальное состояние против анимации, focus/modal input, RU/EN/reduced motion; ручная приёмка |
 | Звук/загрузка/очистка | `core/AudioManager.ts`, `world/World.ts`, `core/dispose.ts`, `Game.dispose` | main/HMR, held scene, cartModel/ToolAssets | Late async load после dispose, 10 restart, фон/меню/жест; производительность отдельно |

@@ -1,10 +1,10 @@
 ﻿# Needle in a Haystack — рабочий прототип
 
-Ферма от первого лица на Three.js + TypeScript + Vite. Основная геометрия процедурная; текстурированная GLB-телега и аудио предоставлены владельцем.
+Ферма от первого лица на Three.js + TypeScript + Vite. Основная геометрия процедурная; GLB-телега, амбар, колодец, доска и аудио предоставлены владельцем.
 
 Общий вход для разработчика: [архитектура, основные правила и карта документации](../ARCHITECTURE.md). Актуальное поведение — в [GAME_REQUIREMENTS.md](../GAME_REQUIREMENTS.md), рабочие инструкции — в [AGENTS.md](../AGENTS.md).
 
-Проверки и ограничения команд: [TESTING.md](../docs/TESTING.md). Методика измерений: [PERFORMANCE.md](../docs/PERFORMANCE.md). Находки статического аудита: [REPO_REVIEW.md](../docs/REPO_REVIEW.md). По постоянному решению владельца tests/typecheck/build/browser/скриншоты выполняются только по явному запросу. Исторические отчёты не подтверждают текущую версию.
+Проверки и ограничения команд: [TESTING.md](../docs/TESTING.md). Методика измерений: [PERFORMANCE.md](../docs/PERFORMANCE.md). Повторный аудит: [REPO_REVIEW.md](../docs/REPO_REVIEW.md). По постоянному решению владельца tests/typecheck/build/browser/скриншоты выполняются только по явному запросу. В аудите 2026-11-17 разрешены и прошли build/typecheck, test:refinements, новый test:persistence и check:build; общий npm test пока падает на старом ожидании. Браузер и скриншоты не запускались.
 
 ## Визуальный стиль
 
@@ -131,7 +131,7 @@ npm run verify
 
 Команда запускает TypeScript, тесты логики, production build, проверку размеров/путей и Playwright в установленном Chrome. Подробный результат и незакрытые вопросы находятся в `verification/AUDIT.md`; JSON-отчёты и скриншоты лежат рядом. Это проверка прототипа, не выпуск игры. Проверка на физическом телефоне и на самом itch.io остаётся на будущее.
 
-Настройки доступны кнопкой шестерёнки. Прогресс сохраняется при сделках, примерно раз в 5 секунд при изменениях и при уходе со страницы. Недоступное хранилище не блокирует игру. Текущий формат SaveData v5 принимает миграции v1–v5; исторический ключ `needle.save.v1` не означает версию формата. Для повреждённых/несовместимых данных начинается новая игра с сообщением. Незавершённые действия после загрузки не продолжаются автоматически.
+Настройки доступны кнопкой шестерёнки. Прогресс сохраняется при сделках, примерно раз в 5 секунд при изменениях и при уходе со страницы. Недоступное хранилище не блокирует игру. Текущий формат SaveData v9 принимает миграции v1–v9; исторический ключ `needle.save.v1` не означает версию формата. Алмазы, метапокупки, claim mask и игровой прогресс сохраняются вместе. New Game сохраняет метапрофиль и локальные рекорды; memory переносит согласованную прокачку, не монеты/инвентарь/сено. Для повреждённых/несовместимых данных начинается новая игра с сообщением. Незавершённые действия после загрузки не продолжаются автоматически.
 
 Новая игра запрашивает подтверждение. Для диагностики можно открыть страницу с `?diagnostics`; это только чтение метрик. Игровые ресурсы процедурные; происхождение и лицензии записаны в `ASSET_LICENSES.md`. YouTube SDK и внешние сервисы не подключены.
 
@@ -271,7 +271,7 @@ TEAM-01 routes every gameplay deny sound through Game.reject with a short locali
 
 ### Плейтест v3 и технические требования — 2026-11-17
 
-[PLAYTEST_REPORT_V3.md](PLAYTEST_REPORT_V3.md) обновляет прежнюю схему2. Реализованы случайный runId (только для забега, по явному запросу), номера сегментов/reportId, stages10% от totalHay, сбор по инструментам/источникам/исходам, full moving/stationary, свинки по уровням, purchase before/after, viewport-visible chest и отдельные очистка/иголка/победа/исход рекорда. Техническая часть: CPU/frame histogram/приближённые перцентили, longtasks, выборочный JS heap, WebGL recovery, UTF-8 save size и раздельные snapshot/serialize/storage timings. TechnicalTelemetry сопоставляет наблюдения с внутренними targets, не объявляя release pass; недоступные/ручные требования unknown. Следующая production-сборка Vite создаст technical-build.json с total/max/count output; dev→unknown, чтение локального manifest только opt-in. Основной SaveData остаётся9, link-поля RunState опциональны для старых saves. Нет user/device ID, raw URLs/UA/errors/input traces/upload; cap структуры ограничены. Код gameplay/баланс не менялся по намерению; helper отмены сбора добавляет только учёт. Typecheck/tests/build/browser/screenshots не запускались. Старые JSON не имеют этих метрик задним числом.
+[PLAYTEST_REPORT_V3.md](../PLAYTEST_REPORT_V3.md) обновляет прежнюю схему2. Реализованы случайный runId (только для забега, по явному запросу), номера сегментов/reportId, stages10% от totalHay, сбор по инструментам/источникам/исходам, full moving/stationary, свинки по уровням, purchase before/after, viewport-visible chest и отдельные очистка/иголка/победа/исход рекорда. Техническая часть: CPU/frame histogram/приближённые перцентили, longtasks, выборочный JS heap, WebGL recovery, UTF-8 save size и раздельные snapshot/serialize/storage timings. TechnicalTelemetry сопоставляет наблюдения с внутренними targets, не объявляя release pass; недоступные/ручные требования unknown. Следующая production-сборка Vite создаст technical-build.json с total/max/count output; dev→unknown, чтение локального manifest только opt-in. Основной SaveData остаётся9, link-поля RunState опциональны для старых saves. Нет user/device ID, raw URLs/UA/errors/input traces/upload; cap структуры ограничены. Код gameplay/баланс не менялся по намерению; helper отмены сбора добавляет только учёт. Typecheck/tests/build/browser/screenshots не запускались. Старые JSON не имеют этих метрик задним числом.
 
 ### Refinements r1 — таймеры, сбор, сохранения, свинки и рендер
 

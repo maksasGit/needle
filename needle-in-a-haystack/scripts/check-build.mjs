@@ -30,10 +30,10 @@ for (const file of files) {
 assert.ok(files.length<=8000);
 assert.ok(total<15*1024*1024,'Preferred initial-download target');
 assert.ok(total<250*1024*1024);
-// User-provided textured cart and optional background track are recorded
-// exceptions to the preferred 512 KiB target, not the 30 MiB hard ceiling.
+// Owner-approved textured models and music are documented exceptions in
+// MODEL_IMPORTS_2026-11-17.md / ASSET_BUDGETS.md, not a waiver of the hard ceiling.
 const preferredFileExceptions=metrics.filter(file=>!file.preferredFileLimit);
-assert.ok(preferredFileExceptions.every(file=>/^assets\/(?:cart_colored-[\w-]+\.glb|needlebackground_2-[\w-]+\.mp3)$/.test(file.file)), 'Unexpected preferred-file budget exception');
+assert.ok(preferredFileExceptions.every(file=>/^assets\/(?:(?:cart_colored|barn|medival_well|leaderboard)-[\w-]+\.glb|needlebackground_2-[\w-]+\.mp3)$/.test(file.file)), 'Unexpected preferred-file budget exception');
 const html=await readFile(path.join(root,'index.html'),'utf8');
 for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
   if (match[1].startsWith('data:')) continue;
