@@ -118,3 +118,7 @@ The owner now requests attention and a visible timer for ×2 money, plus a small
 ### Feedback and barn signs correction — 2026-11-17
 
 Owner rejects stacked labels/rewards over the crosshair and the external barn tool rack. Keep aim text off hay, busy-only thin progress (accessible name retained), hay/coin totals beside their HUD counters, separate interruptible notification lanes. Tools/backpack belong inside the porch behind front posts. Price signs use an original CanvasTexture wood/parchment atlas, teal equipped header and short labels. No new raster file/font/sound. This correction is not visually validated: previous one-off testing authorization has expired, and layout-70 screenshots show the prior layout.
+
+### Owner refinement: radial feedback — 2026-11-17
+
+The owner explicitly prefers rewards and notices around the crosshair rather than at HUD corners. This supersedes the previous corner placement: use separate sectors with85–120px horizontal offsets, coins above-right, hay below-left, notices above, denials below; retain bounded merging and busy-only thin progress. Barn displays are20%closer together and0.45units deeper, with narrower signs inside the opening. No automatic tests/build/screenshots requested; manual acceptance pending.

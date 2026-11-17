@@ -28,7 +28,7 @@ export class FloatingFeedback {
       if (now - this.lastFull < 450) return;
       this.lastFull = now;
     } else if (kind !== 'notice' && amount <= 0) return;
-    // Each feedback kind owns a fixed lane; rapid rewards merge, never stack.
+    // Separate sectors around the crosshair; rapid rewards merge, never stack.
     const slot = kind === 'hay' ? 0 : kind === 'coins' ? 1 : kind === 'notice' ? 2 : 3, item = this.items[slot];
     if (kind === 'hay' || kind === 'coins') {
       if (now - this.windows[kind] > presentation.messageMs) { this.windows[kind] = now; this.totals[kind] = 0; }

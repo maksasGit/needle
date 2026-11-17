@@ -29,7 +29,7 @@ export class Barn {
     assets.box(this.group, [5.3, .17, .18], [1.8, 2.6, -3.18], 0xfff2cd);
     this.fallback = this.group.children.slice();
     // Mount inside the porch, behind the front posts, rather than outside the barn.
-    assets.box(this.group, [4.75, .85, .10], [1.8, 1.4, -4.05], 0x99613d);
+    assets.box(this.group, [3.85, .85, .10], [1.8, 1.4, -4.5], 0x99613d);
     this.canvas.width = 1536; this.canvas.height = 512;
     this.texture = new THREE.CanvasTexture(this.canvas); this.texture.colorSpace = THREE.SRGBColorSpace;
     const material = new THREE.MeshBasicMaterial({ map: this.texture, toneMapped: false, alphaTest: .5 });
@@ -46,10 +46,11 @@ export class Barn {
       hitbox.position.set(item.x, target === 'pig' ? .4 : 1.25, item.z + .08);
       hitbox.userData.target = target; this.group.add(hitbox); this.pickables.push(hitbox);
       display.traverse(object => { if (object instanceof THREE.Mesh) { object.userData.target = target; this.pickables.push(object); } });
-      const geometry = new THREE.PlaneGeometry(.85, .85 * 2 / 3), uv = geometry.getAttribute('uv');
+      const signWidth = target === 'pig' ? .85 : .72;
+      const geometry = new THREE.PlaneGeometry(signWidth, signWidth * 2 / 3), uv = geometry.getAttribute('uv');
       for (let v = 0; v < uv.count; v++) uv.setXY(v, (i % 4 + uv.getX(v)) / 4, 1 - (Math.floor(i / 4) + 1 - uv.getY(v)) / 2);
       const sign = new THREE.Mesh(geometry, material);
-      sign.position.set(item.x, target === 'pig' ? 1.15 : 2.12, item.z + .12);
+      sign.position.set(item.x, target === 'pig' ? 1.15 : 2.02, item.z + .12);
       sign.userData.target = target; this.group.add(sign); this.pickables.push(sign);
       if (target !== 'pig') assets.box(this.group, [.09, .09, .12], [item.x, 1.72, item.z + .025], 0x6d3c24);
     }
