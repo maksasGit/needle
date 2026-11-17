@@ -5,6 +5,7 @@ import { recordsConfig } from '../config/records';
 export class NoticeBoard {
   readonly group = new THREE.Group();
   readonly hitbox: THREE.Mesh;
+  private fallback: THREE.Object3D[] = [];
   constructor() {
     const geometry = new THREE.BoxGeometry(1,1,1);
     const wood = new THREE.MeshStandardMaterial({ color: 0xb86b38, roughness: .75 });
@@ -20,8 +21,10 @@ export class NoticeBoard {
     for (const x of [-.57,0,.57]) box([.43,.66,.025],[x,1.55,-.1],paper).rotation.z = x * .12;
     // Three rising gold bars suggest records without relying on text or borrowed symbols.
     for (const [i,h] of [.14,.26,.4].entries()) box([.09,h,.035],[-.14+i*.14,1.4+h/2,-.13],gold);
-    this.hitbox = new THREE.Mesh(new THREE.BoxGeometry(2.2,1.6,.65),new THREE.MeshBasicMaterial({ visible:false }));
+    this.fallback = this.group.children.slice();
+    this.hitbox = new THREE.Mesh(new THREE.BoxGeometry(2.2,1.6,1.2),new THREE.MeshBasicMaterial({ visible:false }));
     this.hitbox.position.y=1.5; this.hitbox.userData.target='records'; this.group.add(this.hitbox);
     this.group.position.set(recordsConfig.x,0,recordsConfig.z);
   }
+  applyModel(model: THREE.Object3D) { for (const object of this.fallback) object.visible=false; this.group.add(model); }
 }

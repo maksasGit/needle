@@ -158,6 +158,20 @@ export class World {
       this.barn = new Barn(this.toolAssets); this.scene.add(this.barn.group); this.pickables.push(...this.barn.pickables);
       if (this.latestEconomy) this.barn.update(this.latestEconomy);
       this.barn.group.updateMatrixWorld(true); this.shadowDirty = true;
+      // Sequential optional transfers/parsing; preserve playable procedural fallbacks.
+      const barn = this.barn;
+      void import('./farmModels').then(async module => {
+        for (const [kind, owner] of [['well', well], ['board', board], ['barn', barn]] as const) {
+          if (this.disposed) return;
+          try {
+            const model = await module.loadFarmModel(kind);
+            if (this.disposed) { disposeTree(model); return; }
+            owner.applyModel(model);
+            owner.group.updateMatrixWorld(true);
+            this.shadowDirty = true;
+          } catch { /* One failed model must not prevent the other replacements. */ }
+        }
+      }).catch(() => { /* Optional imports never block gameplay. */ });
       void import('./FarmDecor').then(module => {
         if (this.disposed) return;
         this.scene.add(module.createFarmDecor()); this.shadowDirty = true;

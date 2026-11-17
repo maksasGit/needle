@@ -5,7 +5,7 @@ import type { EconomySystem } from '../systems/EconomySystem';
 import { t } from '../ui/i18n';
 import { ToolAssets } from './ToolAssets';
 
-/** Open front, walkable interior and a shared price-sign atlas. */
+/** Authored barn backdrop, accessible outdoor displays and shared price-sign atlas. */
 export class Barn {
   readonly group = new THREE.Group();
   readonly pickables: THREE.Object3D[] = [];
@@ -13,6 +13,7 @@ export class Barn {
   private texture: THREE.CanvasTexture;
   private lastState = '';
   private displays = new Map<BarnTarget, THREE.Object3D>();
+  private fallback: THREE.Object3D[] = [];
   object(target: BarnTarget) { return this.displays.get(target); }
   constructor(assets: ToolAssets) {
     for (const wall of barnWalls) {
@@ -26,6 +27,10 @@ export class Barn {
       roof.rotation.x = side * .35;
     }
     assets.box(this.group, [5.3, .17, .18], [1.8, 2.6, -3.18], 0xfff2cd);
+    this.fallback = this.group.children.slice();
+    // Independent rack keeps tools accessible in front of a closed GLB shell.
+    for (const x of [-.65, 4.25]) assets.box(this.group, [.12, 2.4, .12], [x, 1.2, -2.65], 0x6d3c24);
+    assets.box(this.group, [5.05, .85, .12], [1.8, 1.4, -2.65], 0xb86b38);
     this.canvas.width = 1024; this.canvas.height = 256;
     this.texture = new THREE.CanvasTexture(this.canvas); this.texture.colorSpace = THREE.SRGBColorSpace;
     const material = new THREE.MeshBasicMaterial({ map: this.texture, toneMapped: false, alphaTest: .5 });
@@ -50,6 +55,10 @@ export class Barn {
     }
     this.group.position.set(barnLayout.x, 0, barnLayout.z);
     this.group.rotation.y = barnLayout.yaw;
+  }
+  applyModel(model: THREE.Object3D) {
+    for (const object of this.fallback) object.visible = false;
+    this.group.add(model);
   }
   update(economy: EconomySystem) {
     const state = `${economy.levels.tools}/${economy.levels.capacity}/${economy.activeTool}/${economy.pigCount}/${t('shop')}`;

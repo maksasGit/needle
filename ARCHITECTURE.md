@@ -305,3 +305,7 @@ SaveData v9 читает1–9. MetaProfile.memoryProgress хранит один 
 ### Пункты1/2/3/5/7/9 — реализация2026-11-17
 
 Выполнены foreground-wall таймеры отдельно от capped physics; совместимый быстрый encoder+кеш snapshot с корректной invalidation settling; RU/EN ready/progress под прицелом; подтверждённое владельцем сокращение cooldown и прогулки свинок; lightweight ground-shadow proxy вместо shadow pass20k стеблей; production inventory/build-budget и адресные проверки. Подробности, фактические метрики и границы — needle-in-a-haystack/verification/REFINEMENTS_2026-11-17.md. Новый marker отчёта2026-11-17-refinements-r1. Production5873676bytes/16files; Node и browser component checks/typecheck/build/check:build прошли. Headless/touch emulation не заменяет настоящий телефон/visual acceptance/itch.io. Визуальная геометрия сена, цены/уровни, сохранённые покупки, формат SaveData v9 и кандидат v2 не менялись. Полный legacy suite не объявляется пройденным.
+
+### Новые модели фермы — 2026-11-17
+
+`world/farmModels.ts` загружает три локальных GLB после первой интерактивности через существующий World.loadNoncriticalAssets. Well, NoticeBoard и Barn меняют только визуальный fallback, lifecycle сохраняет disposeTree. Инструменты и рюкзак вынесены на наружную стойку; координаты взаимодействий синхронизированы через barnLocalItems. Старые collision walls пока сохранены. См. MODEL_IMPORTS_2026-11-17.md: размеры, текстуры, provenance и непроверенные визуальные/device условия. Сборка и тесты не запускались.

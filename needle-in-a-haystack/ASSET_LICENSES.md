@@ -68,6 +68,12 @@ Original project procedural geometry/materials in Well.ts and Diamonds.ts. No ex
 
 ### Generated shop parchment (2026-11-17)
 
+### Owner-generated farm GLBs (2026-11-17)
+
+Owner explicitly confirmed barn.glb, medival_well.glb and leaderboard.glb are their own generations and requested integration. Generator/provider terms were not supplied; this records owner provenance rather than independently certifying generator rights. Files are local, embedded-texture GLBs; materials/UVs retained. Technical inventory, fallback/loading behavior and pending manual checks: MODEL_IMPORTS_2026-11-17.md at repository root. No third-party download or attribution claim invented.
+
+### Shared parchment usage notes
+
 Leaderboard dialog also reuses this image with owner authorization. Rank badges are original CSS; existing SVGs are reused. No new image/font/audio or external service added.
 
 Also reused, at the owner's request, by BarnCard for tool/backpack/pig purchase confirmation. It references the same JPEG and existing original SVG icons; there is no additional image or sound asset.
