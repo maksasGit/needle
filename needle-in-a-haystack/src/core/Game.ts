@@ -1,5 +1,5 @@
-import { MetaProgress, freshGems } from '../systems/MetaProgress';
-import type { MetaProfile } from '../systems/MetaProgress';
+import { MetaProgress, freshGems, copyMemory } from '../systems/MetaProgress';
+import type { MetaProfile, MemoryProgress } from '../systems/MetaProgress';
 import { emptyBuffs, wellConfig } from '../config/meta';
 import type { MetaBuffs, MetaId } from '../config/meta';
 import { WellMenu } from '../ui/WellMenu';
@@ -67,6 +67,7 @@ export class Game {
   private displayedEventSeconds = -1;
   private meta = new MetaProgress();
   private buffs:MetaBuffs=emptyBuffs();
+  private startProgress?:MemoryProgress;
   private gems=freshGems();
   private gemAge=0;
   private wellMenu?:WellMenu;
@@ -136,6 +137,12 @@ export class Game {
       this.saleEvent=new SaleEvent(saved?.saleEvent,this.buffs.gold?2:1);
       this.chests=new ChestEvent(saved?.chestState,this.buffs.luck ? 0.5 : 1);
       if(!saved){this.economy.levels.tools=this.economy.activeTool=this.buffs.tool;this.economy.pigCount=this.buffs.friends?1:0;this.run.state.buffs={...this.buffs};}
+      if(!saved && this.buffs.memory){
+        const inherited=this.meta.profile.memoryProgress;
+        if(inherited){Object.assign(this.economy.levels,inherited.levels);this.economy.toolVolumes.splice(0,4,...inherited.toolVolumes);this.economy.toolSpecials.splice(0,4,...inherited.toolSpecials);this.economy.pigCount=inherited.pigCount;this.economy.pigPortionLevel=inherited.pigPortionLevel;this.economy.pigSpeedLevel=inherited.pigSpeedLevel;}
+        this.economy.levels.tools=Math.max(this.economy.levels.tools,this.buffs.tool);this.economy.activeTool=this.economy.levels.tools;this.economy.pigCount=Math.max(this.economy.pigCount,this.buffs.friends?1:0);
+        this.startProgress=this.progressSnapshot();
+      }
       this.player.movementSpeed=this.economy.movementSpeed;
       if (saved) {
         try {
@@ -143,7 +150,7 @@ export class Game {
           const sourceTotal = saved.totalHay ?? 10000;
           const restoredRemaining = this.world.restore(saved.hay, sourceTotal - remaining - saved.inventory - (saved.pigEaten ?? 0), saved.won, saved.hayContactScale ?? 1, sourceTotal, saved.hayProfile ?? 0);
           this.runTotal = saved.won ? sourceTotal : config.totalHay;
-          this.dirty = saved.version !== 8 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
+          this.dirty = saved.version !== 9 || saved.hayProfile !== config.hayVisual.profileVersion || saved.hayContactScale !== config.hayVisual.contactScale || saved.totalHay === undefined || (!saved.won && sourceTotal !== config.totalHay);
           Object.assign(this.economy.levels, saved.levels);
           this.economy.remaining = restoredRemaining; this.economy.inventory = saved.inventory; this.economy.coins = saved.coins;
           this.economy.discoveryCoins = saved.discoveryCoins ?? 0;
@@ -157,6 +164,8 @@ export class Game {
           this.chests = new ChestEvent(saved.chestState,this.buffs.luck ? 0.5 : 1);
           this.run = new RunClock(saved.run, false);
           if (!saved.run && saved.won) this.run.finish();
+          this.startProgress=saved.startProgress?copyMemory(saved.startProgress):undefined;
+          this.economy.pigPriceBaseline=saved.pigPriceBaseline??0;
           this.economy.pigCount = saved.pigCount ?? 0; this.economy.pigEaten = saved.pigEaten ?? 0;
           this.economy.activeTool = saved.activeTool ?? saved.levels.tools;
           for (let i = 0; i < 4; i++) {
@@ -532,7 +541,9 @@ export class Game {
     if(price>this.meta.diamonds){this.reject(t('metaMissing',{n:price-this.meta.diamonds}));return;}
     if(!this.meta.buy(id))return;this.lastMetaPurchaseAt=performance.now();this.dirty=true;this.saveNow();this.options.audio?.effect('sell');this.wellMenu?.render();this.wellMenu?.feedback(t('metaNextRun'));this.refreshHUD();
   }
-  metaSnapshot(){return this.meta.snapshot();}
+  private progressSnapshot():MemoryProgress{return {levels:{...this.economy.levels},toolVolumes:[...this.economy.toolVolumes],toolSpecials:[...this.economy.toolSpecials],pigCount:this.economy.pigCount,pigPortionLevel:this.economy.pigPortionLevel,pigSpeedLevel:this.economy.pigSpeedLevel};}
+  private captureMemory(){if(this.meta.profile.bought.memory)this.meta.profile.memoryProgress=this.progressSnapshot();}
+  metaSnapshot(){this.captureMemory();return this.meta.snapshot();}
   private buy(action: ShopAction) {
     let success = false;
     const before = this.economy.coins;
@@ -564,7 +575,8 @@ export class Game {
     if (!this.saveSystem || this.disposed) return;
     if (!this.paused && this.metrics.readyMs) this.dirty = true;
     if (!this.dirty) return;
-    const data = { version: 8 as const, meta:this.meta.snapshot(),buffs:{...this.buffs},gems:{claimed:this.gems.claimed,drops:this.gems.drops.map(p=>p?[...p] as [number,number,number]:null)}, run: this.run.snapshot(), chestRevenue: this.economy.chestRevenue, chestClaims: [...this.economy.chestClaims], chestState: this.chests.snapshot(), eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
+    this.captureMemory();
+    const data = { startProgress:this.startProgress?copyMemory(this.startProgress):undefined,version: 9 as const, pigPriceBaseline:this.economy.pigPriceBaseline, meta:this.meta.snapshot(),buffs:{...this.buffs},gems:{claimed:this.gems.claimed,drops:this.gems.drops.map(p=>p?[...p] as [number,number,number]:null)}, run: this.run.snapshot(), chestRevenue: this.economy.chestRevenue, chestClaims: [...this.economy.chestClaims], chestState: this.chests.snapshot(), eventRevenue: this.economy.eventRevenue, eventRemainder: this.economy.eventRemainder, saleEvent: this.saleEvent.snapshot(), priceBaseline: this.economy.priceBaseline, layoutVersion: config.layoutVersion, pigPortionLevel: this.economy.pigPortionLevel, pigSpeedLevel: this.economy.pigSpeedLevel, saleRemainder: this.economy.saleRemainder, legacyProgress: this.economy.legacyProgress, saleRevenue: this.economy.saleRevenue, activeTool: this.economy.activeTool, toolVolumes: [...this.economy.toolVolumes], toolSpecials: [...this.economy.toolSpecials], pigCount: this.economy.pigCount, pigEaten: this.economy.pigEaten, totalHay: this.runTotal, hay: this.world.snapshotHay(), hayContactScale: config.hayVisual.contactScale, hayProfile: config.hayVisual.profileVersion, discoveryCoins: this.economy.discoveryCoins, rarityVersion, inventory: this.economy.inventory, coins: this.economy.coins, levels: { ...this.economy.levels },
       position: [this.player.group.position.x, this.player.group.position.z] as [number, number], yaw: this.camera.yaw, pitch: this.camera.pitch, won: this.won };
     if (this.saveSystem.write(data)) this.dirty = false;
     this.updateSaveNotice();

@@ -1,4 +1,4 @@
-import { validateMeta } from './MetaProgress';
+import { validateMeta, validMemory } from './MetaProgress';
 import type { MetaProfile, GemState } from './MetaProgress';
 import type { MetaBuffs } from '../config/meta';
 import { validateRun } from './RunRecords';
@@ -7,7 +7,7 @@ import { config, upgrades, upgradePrice, previousUpgradePrice } from '../config/
 import type { UpgradeId } from '../config/balance';
 import type { Language } from '../ui/i18n';
 import { maxDiscoveryBonus, rarityVersion } from '../config/rarity';
-import { pigBalance, pigUpgrades, pigUpgradePrice, toolUpgradeLimits, toolUpgradePrice } from '../config/progression';
+import { pigBalance, preDiscountPigPrices, pigUpgrades, pigUpgradePrice, toolUpgradeLimits, toolUpgradePrice } from '../config/progression';
 import { upgrades as oldUpgrades, upgradePrice as oldUpgradePrice } from '../config/legacyBalance';
 import { pigBalance as oldPigs, toolUpgradePrice as oldToolPrice, toolUpgradeLimits as oldToolLimits } from '../config/legacyProgression';
 import { previousToolUpgradePrice, previousPigUpgradePrice, previousPigPrices } from '../config/progression';
@@ -19,7 +19,7 @@ export const SAVE_KEY = 'needle.save.v1';
 export type LegacyProgress = { levels: Record<UpgradeId, number>; toolVolumes: number[]; toolSpecials: number[]; pigCount: number };
 export type PriceBaseline = LegacyProgress & { pigPortionLevel: number; pigSpeedLevel: number };
 export type SaveData = {
-  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; hay: string; inventory: number; coins: number; levels: Record<UpgradeId, number>;
   position: [number, number]; yaw: number; pitch: number; won: boolean;
   hayContactScale?: number;
   totalHay?: number;
@@ -31,6 +31,8 @@ export type SaveData = {
   toolVolumes?: number[];
   toolSpecials?: number[];
   pigCount?: number;
+  pigPriceBaseline?: number;
+  startProgress?: PriceBaseline;
   pigEaten?: number;
   pigPortionLevel?: number;
   pigSpeedLevel?: number;
@@ -74,7 +76,7 @@ export function decodeHay(value: string): Int16Array {
 export function validateSave(value: unknown): SaveData {
   if (!value || typeof value !== 'object') throw new Error('Invalid save');
   const source = value as SaveData;
-  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(source.version) || typeof source.hay !== 'string' || !source.levels) throw new Error('Unsupported save');
   const s: SaveData = { ...source, levels: { ...source.levels, sale: source.levels.sale ?? 0 } };
   if (s.layoutVersion !== undefined && !integer(s.layoutVersion, 0, config.layoutVersion)) throw new Error('Invalid map layout');
   if (s.rarityVersion !== undefined && s.rarityVersion !== rarityVersion) throw new Error('Unsupported rarity version');
@@ -90,7 +92,7 @@ export function validateSave(value: unknown): SaveData {
   s.chestRevenue ??= 0; s.chestClaims ??= [0, 0, 0, 0];
   validateChestLedger(s.chestState, s.chestClaims, s.chestRevenue, remaining, total);
   if(source.version<8 && (s.meta!==undefined||s.buffs!==undefined||s.gems!==undefined))throw new Error('Unexpected legacy meta');
-  if(source.version===8 && (!s.meta||!s.buffs||!s.gems))throw new Error('Missing meta state');
+  if(source.version>=8 && (!s.meta||!s.buffs||!s.gems))throw new Error('Missing meta state');
   validateMeta(s.meta,s.buffs,s.gems);
   const capacity = config.capacity + s.levels.capacity * upgrades.capacity.step;
   const discoveryCoins = s.discoveryCoins ?? 0;
@@ -98,6 +100,9 @@ export function validateSave(value: unknown): SaveData {
   if (!integer(s.inventory, 0, capacity) || remaining + s.inventory > total) throw new Error('Invalid economy');
   const consumed = total - remaining - s.inventory;
   s.saleRevenue ??= consumed * config.salePrice;
+  if(source.version<9 && s.pigPriceBaseline!==undefined)throw new Error('Unexpected pig price baseline');
+  s.pigPriceBaseline=source.version<9?(s.pigCount??0):(s.pigPriceBaseline??0);
+  if(!integer(s.pigPriceBaseline,0,s.pigCount??0))throw new Error('Invalid pig price baseline');
   s.pigCount ??= 0; s.pigEaten ??= 0; s.activeTool ??= s.levels.tools;
   s.eventRevenue ??= 0; s.eventRemainder ??= 0;
   if (!integer(s.eventRevenue, 0, Number.MAX_SAFE_INTEGER) || !integer(s.eventRemainder, 0, 99) || (source.version < 5 && (s.eventRevenue || s.eventRemainder || s.saleEvent !== undefined))) throw new Error('Invalid event ledger');
@@ -151,7 +156,7 @@ export function validateSave(value: unknown): SaveData {
       for (let level = 0; level < progress.toolVolumes[tool - 1]; level++) spent += (old ? oldToolPrice : previous ? previousToolUpgradePrice : toolUpgradePrice)(tool, 'volume', level);
       for (let level = 0; level < progress.toolSpecials[tool - 1]; level++) spent += (old ? oldToolPrice : previous ? previousToolUpgradePrice : toolUpgradePrice)(tool, 'special', level);
     }
-    for (let pig = 0; pig < progress.pigCount; pig++) spent += (old ? oldPigs.prices : previous ? previousPigPrices : pigBalance.prices)[pig];
+    for (let pig = 0; pig < progress.pigCount; pig++) spent += (old ? oldPigs.prices : previous ? previousPigPrices : (pig < s.pigPriceBaseline! ? preDiscountPigPrices : pigBalance.prices))[pig];
     return spent;
   };
   let spent = cost({ levels: s.levels, toolVolumes: s.toolVolumes, toolSpecials: s.toolSpecials, pigCount: s.pigCount }, false);
@@ -160,16 +165,26 @@ export function validateSave(value: unknown): SaveData {
   for (let level = 0; level < s.pigPortionLevel; level++) spent += (level < (baseline?.pigPortionLevel ?? 0) ? previousPigUpgradePrice : pigUpgradePrice)('portion', level);
   for (let level = 0; level < s.pigSpeedLevel; level++) spent += (level < (baseline?.pigSpeedLevel ?? 0) ? previousPigUpgradePrice : pigUpgradePrice)('speed', level);
   const startTool=s.buffs?.tool??0, startPig=s.buffs?.friends?1:0;
+  if(s.buffs?.memory && !s.startProgress)throw new Error('Missing memory starting progress');
   if(startTool>s.levels.tools||startPig>s.pigCount)throw new Error('Missing starting items');
+  if(s.startProgress!==undefined){
+    const start=s.startProgress;
+    if(!s.buffs?.memory||!validMemory(start)||Object.keys(upgrades).some(k=>start.levels[k as UpgradeId]>s.levels[k as UpgradeId])||start.pigCount>s.pigCount||start.pigPortionLevel>s.pigPortionLevel||start.pigSpeedLevel>s.pigSpeedLevel||start.toolVolumes.some((n,i)=>n>s.toolVolumes![i])||start.toolSpecials.some((n,i)=>n>s.toolSpecials![i]))throw new Error('Invalid free starting progress');
+    spent-=cost(start,false);
+    for(let level=0;level<start.pigPortionLevel;level++)spent-=pigUpgradePrice('portion',level);
+    for(let level=0;level<start.pigSpeedLevel;level++)spent-=pigUpgradePrice('speed',level);
+  }else{
   for(let level=0;level<startTool;level++)spent-=upgradePrice('tools',level);
-  for(let pig=0;pig<startPig;pig++)spent-=pigBalance.prices[pig];
+  for(let pig=0;pig<startPig;pig++)spent-=(pig<s.pigPriceBaseline?preDiscountPigPrices:pigBalance.prices)[pig];
+  }
+  if(source.version<9&&(s.startProgress!==undefined||s.buffs?.memory||s.meta?.bought.memory))throw new Error('Unexpected legacy memory');
   const income = s.saleRevenue + discoveryCoins + s.eventRevenue + s.chestRevenue;
   if (!Number.isSafeInteger(income) || !Number.isSafeInteger(s.coins + spent) || s.coins + spent !== income) throw new Error('Unbalanced economy');
   if (!Array.isArray(s.position) || s.position.length !== 2 || s.position.some(v => !Number.isFinite(v) || Math.abs(v) > config.worldHalfSize)) throw new Error('Invalid position');
   if (!Number.isFinite(s.yaw) || !Number.isFinite(s.pitch) || Math.abs(s.pitch) > 1.25 || typeof s.won !== 'boolean' || (s.won && remaining > 0)) throw new Error('Invalid camera/progress');
   if (source.version < 7 && s.run !== undefined) throw new Error('Unexpected legacy run');
   validateRun(s.run, s.won);
-  if(s.buffs && ['legs','luck','gold','friends','tool'].some(k=>(s.run?.buffs?.[k as keyof MetaBuffs]??(k==='tool'?0:false))!==s.buffs![k as keyof MetaBuffs]))throw new Error('Run buffs mismatch');
+  if(s.buffs && ['legs','luck','gold','friends','memory','tool'].some(k=>(s.run?.buffs?.[k as keyof MetaBuffs]??(k==='tool'?0:false))!==(s.buffs![k as keyof MetaBuffs]??(k==='tool'?0:false))))throw new Error('Run buffs mismatch');
   return s;
 }
 export class SaveSystem {

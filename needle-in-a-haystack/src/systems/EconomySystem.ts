@@ -18,6 +18,7 @@ export class EconomySystem {
   discoveryCoins = 0;
   saleRevenue = 0;
   pigCount = 0;
+  pigPriceBaseline=0;
   pigEaten = 0;
   pigPortionLevel = 0;
   pigSpeedLevel = 0;

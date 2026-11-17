@@ -834,3 +834,7 @@ This supersedes the pending-design note above. Owner explicitly approved 20 diam
 ### TEAM-06/07 refinements (2026-11-17)
 
 Owner requested default interaction reach ×1.5 and a visible ×2-sale countdown. Hay collection base center distance is now (hay.radius + playerRadius + gap + tolerance) × collectionRangeMultiplier (1.5), 2.93→4.395m; tool reach remains additive. Reuse Game.inRange for touch/desktop, vacuum, tutorial and final collection check. Other object ranges/collisions are unchanged. SaleEvent.remainingSeconds exposes ceil remaining, HUD shows m:ss and changes DOM only on whole-second transitions; respects existing pause/save/45s or well90s duration. No new timer loops/audio/urgency effects, no tests/build/screenshots unless requested.
+
+### Pigs and muscle memory (2026-11-17)
+
+Owner authorized pigs eating×3 at ALL levels (base3/6/9, portion step3), purchase prices−15% (476/1428/4284). Do not change upgrade prices, intervals or pig AI. Preserve historical paid costs with pigPriceBaseline (pre-discount560/1680/5040); no refunds. Owner explicitly confirmed muscle memory50 diamonds carries all character/backpack/tool levels and all pigs + their upgrades to New Game, with coins/inventory/hay-progress reset. Persist one memoryProgress snapshot in MetaProfile; record free startProgress in SaveData v9 and exclude it from coin spending. No fictional sale revenue. Combine starter tool/friends with carried progress via max, not addition. Old saves/records retained; ↺ badge marks memory. No automatic checks unless requested, v2 remains inactive.
